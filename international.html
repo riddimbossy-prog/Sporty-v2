@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-auth-required="member" data-auth-gate="pending">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#08090d">
+  <meta name="color-scheme" content="light dark">
+  <script>try{const t=localStorage.getItem('sporty_theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t;const m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==='dark'?'#07090d':'#f2f4f8'}catch{}</script>
+  <meta name="description" content="Review Ghana public SportyBet codes and rebuild the listed selections for your own country on sporty.codes.">
+  <meta property="og:title" content="sporty.codes International">
+  <meta property="og:description" content="Choose your country, review the selections and rebuild public slips on your local platform.">
+  <meta property="og:image" content="https://sporty.codes/assets/share-card-default.png">
+  <meta property="og:url" content="https://sporty.codes/international.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="sporty.codes">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="alternate icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/icons/icon-180.png">
+  <link rel="stylesheet" href="/styles.css?v=21.3.0">
+  <link rel="stylesheet" href="/pwa.css?v=21.3.0">
+  <link rel="stylesheet" href="/responsive.css?v=21.3.0">
+  <title>sporty.codes — International</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+</head>
+<body data-page="international" data-region="international">
+<header class="topbar">
+  <a class="brand" href="/international.html" aria-label="sporty.codes international home"><img class="brand-logo brand-logo-dark" src="/assets/logo-wordmark-dark.webp" width="180" height="40" alt="sporty.codes" decoding="async" fetchpriority="high"><img class="brand-logo brand-logo-light" src="/assets/logo-wordmark-light.webp" width="180" height="40" alt="sporty.codes" decoding="async" fetchpriority="high"></a>
+  <nav class="desktop-nav" aria-label="Main navigation"><a class="nav-link active" href="/international.html">International</a><a class="nav-link" href="/marketplace.html">Free Codes</a><a class="nav-link" href="/smart-board.html">Smart Board</a><a class="nav-link" href="/elite-picks.html">Elite Picks</a><a class="nav-link" href="/saved.html">Saved</a><a class="nav-link" href="/performance.html">Performance</a></nav>
+  <div class="top-actions"><a class="account-button" data-auth-link href="/login.html">Sign in</a><button class="install-button" id="installButton" type="button">Install</button><button class="icon-button" id="themeButton" type="button" aria-label="Change theme">☾</button></div>
+</header>
+<nav class="mobile-nav" aria-label="Mobile navigation"><a class="active" href="/international.html"><b>◎</b><span>Global</span></a><a href="/marketplace.html"><b>▦</b><span>Codes</span></a><a href="/smart-board.html"><b>◆</b><span>Board</span></a><a href="/elite-picks.html"><b>◆</b><span>Elite</span></a><a href="/account.html"><b>●</b><span>Account</span></a></nav>
+
+<main class="shell international-shell">
+  <section class="international-hero">
+    <div class="international-hero-copy">
+      <div class="eyebrow">sporty.codes outside Ghana</div>
+      <h1>Same intelligence. A safer country-specific flow.</h1>
+      <p class="lead">Ghana booking codes can be country-specific. Choose where you are, review the selections inside each public slip, and rebuild only the markets available on your local platform.</p>
+      <div class="international-country-row">
+        <label for="internationalCountry">Your country</label>
+        <select id="internationalCountry" aria-label="Choose your country">
+          <option value="INTL">Other / not listed</option>
+          <option value="NG">Nigeria</option>
+          <option value="KE">Kenya</option>
+          <option value="TZ">Tanzania</option>
+          <option value="ZM">Zambia</option>
+          <option value="UG">Uganda</option>
+          <option value="ZA">South Africa</option>
+          <option value="BR">Brazil</option>
+        </select>
+      </div>
+      <div class="hero-actions"><a class="button primary" href="#internationalCodes">Browse slips</a><a class="button secondary" id="openCountrySite" href="https://www.sportybet.com/" target="_blank" rel="noopener noreferrer">Open official SportyBet ↗</a><button class="button ghost" id="switchToGhana" type="button">Use Ghana version</button></div>
+      <div class="hero-trust-row"><span>Country choice saved</span><span>Same account and saved items</span><span>18+ only</span></div>
+    </div>
+    <aside class="international-flow-card" aria-label="International use flow">
+      <span class="eyebrow">How it works</span>
+      <ol>
+        <li><b>01</b><div><strong>Choose your country</strong><span>We remember only this choice on your device.</span></div></li>
+        <li><b>02</b><div><strong>Open a public slip</strong><span>See the fixture, market, selection and source odds.</span></div></li>
+        <li><b>03</b><div><strong>Rebuild locally</strong><span>Check every market and price again before use.</span></div></li>
+      </ol>
+      <div class="international-flow-note"><strong>Important</strong><span>sporty.codes does not transfer accounts, balances or booking codes between countries.</span></div>
+    </aside>
+  </section>
+
+  <section class="international-status-grid" aria-label="International feed status">
+    <article><span>Available public slips</span><strong id="internationalCount">0</strong></article>
+    <article><span>Mapped selections</span><strong id="internationalSelections">0</strong></article>
+    <article><span>Selected country</span><strong data-country-name>International</strong></article>
+    <article><span>Feed status</span><strong id="internationalUpdated">Loading…</strong></article>
+  </section>
+
+  <section class="section international-code-section" id="internationalCodes">
+    <div class="section-head international-section-head">
+      <div><span class="eyebrow">International slip builder</span><h2>Review the selections before rebuilding.</h2><p id="countryAvailabilityNote">Use the listed selections to rebuild the slip on your local platform. Market names and odds can differ by country.</p></div>
+      <span class="international-source-badge">Source feed: Ghana</span>
+    </div>
+    <div class="international-controls">
+      <label>Search<input id="internationalSearch" type="search" placeholder="Code, team, league or market"></label>
+      <label>Slip size<select id="internationalSize"><option value="all">All sizes</option><option value="small">Up to 5 selections</option><option value="medium">6–15 selections</option><option value="large">16+ selections</option></select></label>
+    </div>
+    <div class="international-caution"><strong>Country check required:</strong><span>A market shown in the Ghana source may be missing or priced differently in <span data-country-name>your country</span>. Never assume the original total odds will remain the same.</span></div>
+    <div class="international-code-grid" id="internationalCodesGrid"><div class="loading-shimmer"></div></div>
+  </section>
+
+  <section class="international-help-grid">
+    <article><span class="eyebrow">Still useful everywhere</span><h3>Smart Board and Elite Picks remain shared.</h3><p>The intelligence pages analyse public tips and statistical support independently of the country page. Your account, saved tips and performance views remain the same.</p><div class="hero-actions"><a class="button secondary" href="/smart-board.html">Open Smart Board</a><a class="button secondary" href="/elite-picks.html">Open Elite Picks</a></div></article>
+    <article><span class="eyebrow">Responsible use</span><h3>No transfer guarantee.</h3><p>Availability, rules, prices and local legal requirements can differ. Review the official platform in your country and use only where legally permitted. 18+ only.</p></article>
+  </section>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<footer class="footer"><span class="footer-brand"><img src="/assets/logo-mark.webp" width="30" height="30" alt="" loading="lazy" decoding="async" fetchpriority="low">sporty.codes</span><span>International selection review. 18+ only. Use responsibly.</span></footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
+<script src="/config.js?v=21.3.0" defer></script>
+<script src="/src/region.js?v=21.3.0" defer></script>
+<script src="/src/auth.js?v=21.3.0" defer></script>
+<script src="/src/saved.js?v=21.3.0" defer></script>
+<script src="/src/member-home.js?v=21.3.0" defer></script>
+<script src="/src/pwa.js?v=21.3.0" defer></script>
+<script src="/src/experience.js?v=21.3.0" defer></script>
+<script src="/src/international.js?v=21.3.0" defer></script>
+</body>
+</html>

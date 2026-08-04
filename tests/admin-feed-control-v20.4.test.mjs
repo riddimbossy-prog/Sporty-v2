@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const read=p=>fs.readFileSync(new URL(`../${p}`,import.meta.url),'utf8');
+const html=read('control-room.html');const js=read('src/control-room.js');const css=read('styles.css');const render=read('scripts/render-build.sh');
+for(const id of ['feedHealthBanner','qualityBadge','feedTimeline','visibilityList','downloadOverrides','addResultOverride','draftStatus','runSyncLink'])assert.match(html,new RegExp(`id="${id}"`));
+assert.match(html,/Run feed sync/);
+assert.match(js,/toggleVisibility/);
+assert.match(js,/manual-overrides\.json/);
+assert.match(js,/hidden:!isHidden/);
+assert.match(js,/escape=value/);
+assert.match(css,/feed-health-banner/);
+assert.match(css,/visibility-row/);
+assert.match(render,/product: clean-start-custom-api/);
+assert.match(render,/\"version\":2,\"state\":\"preparing\"/);
+console.log('Admin feed control v20.4 checks passed');

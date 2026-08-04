@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-auth-required="member" data-auth-gate="pending">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#08090d">
+  <meta name="color-scheme" content="light dark">
+  <script>try{const t=localStorage.getItem('sporty_theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t;const m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==='dark'?'#07090d':'#f2f4f8'}catch{}</script>
+  <meta name="description" content="Elite Picks combines independent public-tip consensus with market-specific statistical verification.">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="sporty.codes">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="alternate icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/icons/icon-180.png">
+  <link rel="stylesheet" href="/styles.css?v=21.3.0">
+  <link rel="stylesheet" href="/responsive.css?v=21.3.0">
+  <link rel="stylesheet" href="/pwa.css?v=21.3.0">
+  <title>Elite Picks — sporty.codes</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+</head>
+<body data-page="elite">
+<header class="topbar">
+  <a class="brand" href="/" aria-label="sporty.codes home"><img class="brand-logo brand-logo-dark" src="/assets/logo-wordmark-dark.webp" width="180" height="40" alt="sporty.codes" decoding="async" fetchpriority="high"><img class="brand-logo brand-logo-light" src="/assets/logo-wordmark-light.webp" width="180" height="40" alt="sporty.codes" decoding="async" fetchpriority="high"></a>
+  <nav class="desktop-nav" aria-label="Main navigation"><a class="nav-link" href="/">Discover</a><a class="nav-link" href="/marketplace.html">Free Codes</a><a class="nav-link" href="/smart-board.html">Smart Board</a><a class="nav-link active" href="/elite-picks.html">Elite Picks</a><a class="nav-link" href="/saved.html">Saved</a><a class="nav-link" href="/performance.html">Performance</a><a class="nav-link" href="/won-codes.html">Results</a></nav>
+  <div class="top-actions"><a class="account-button" data-auth-link href="/login.html">Sign in</a><button class="install-button" id="installButton" type="button">Install</button><button class="icon-button" id="themeButton" type="button" aria-label="Change theme">☾</button></div>
+</header>
+<nav class="mobile-nav" aria-label="Mobile navigation"><a href="/"><b>⌂</b><span>Discover</span></a><a href="/marketplace.html"><b>▦</b><span>Codes</span></a><a class="active" href="/elite-picks.html"><b>◆</b><span>Elite</span></a><a href="/smart-board.html"><b>◈</b><span>Board</span></a><a href="/account.html"><b>●</b><span>Account</span></a></nav>
+<main class="shell">
+  <section class="page-intro elite-intro">
+    <div><div class="eyebrow">Independent consensus + team statistics</div><h1>Elite Picks Intelligence.</h1><p class="lead">Most Added discovers the candidate. Venue-adjusted form, goal records, market history and competition context decide whether it deserves Elite status.</p></div>
+    <div class="elite-method-badge"><span>Dual verification</span><strong>Consensus + statistics</strong><small>Ranking score, not a probability</small></div>
+  </section>
+
+  <section class="stats-grid elite-stats" id="eliteStatsSection" hidden>
+    <div class="stat-card"><span>Elite Verified</span><strong data-elite-stat="verified">0</strong></div>
+    <div class="stat-card"><span>Elite Supported</span><strong data-elite-stat="supported">0</strong></div>
+    <div class="stat-card"><span>Trending</span><strong data-elite-stat="trending">0</strong></div>
+    <div class="stat-card"><span>Total candidates</span><strong data-elite-stat="total">0</strong></div>
+  </section>
+
+  <section class="elite-policy">
+    <strong>How Elite works</strong>
+    <p>A selection cannot qualify through popularity alone. It must pass independent-source checks, copied-source protection, opposition checks and market-specific statistical verification. Empty or incomplete categories stay hidden.</p>
+  </section>
+
+  <section class="section elite-browser" id="eliteContent" hidden>
+    <div class="section-head"><div><div class="eyebrow">Statistically verified repeated tips</div><h2>Today’s Elite board</h2><p>Only candidates that pass the two-stage engine appear here.</p></div></div>
+    <div class="elite-toolbar">
+      <div class="elite-tabs" role="tablist" aria-label="Elite classifications">
+        <button class="active" type="button" data-elite-filter="all">All</button>
+        <button type="button" data-elite-filter="elite_verified">Elite Verified</button>
+        <button type="button" data-elite-filter="elite_supported">Elite Supported</button>
+        <button type="button" data-elite-filter="trending">Trending</button>
+      </div>
+      <label class="elite-search">Search<input id="eliteSearch" type="search" placeholder="Fixture, market, selection or league"></label>
+    </div>
+    <div class="elite-grid" id="eliteGrid"></div>
+  </section>
+
+  <section class="section elite-loading" id="eliteLoading"><div class="loading-card"><span class="loading-spinner" aria-hidden="true"></span><strong>Checking Elite candidates…</strong><p>Comparing independent consensus with current team statistics.</p></div></section>
+  <section class="section" id="eliteEmpty" hidden><div class="empty-state"><div class="eyebrow">Elite engine active</div><h2>No qualified Elite Picks right now</h2><p>The Elite page remains available, but no current candidate passes both independent-consensus and statistical-verification gates. Qualified selections will appear here automatically.</p><a class="button secondary" href="/smart-board.html">Review Smart Board</a></div></section>
+</main>
+
+<dialog class="elite-evidence-dialog" id="eliteEvidenceDialog">
+  <div class="elite-dialog-head"><div><span class="eyebrow">Verification evidence</span><h2 id="eliteEvidenceTitle">Elite evidence</h2><p id="eliteEvidencePick"></p></div><button class="icon-button" id="closeEliteEvidence" type="button" aria-label="Close evidence">×</button></div>
+  <div class="elite-evidence-grid" id="eliteEvidenceGrid"></div>
+  <p class="elite-evidence-reason" id="eliteEvidenceReason"></p>
+  <small id="eliteEvidenceUpdated"></small>
+  <p class="elite-dialog-note">Elite Score is a ranking score. It is not a guaranteed outcome or a stated chance of winning. 18+ only.</p>
+</dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<footer class="footer"><span class="footer-brand"><img src="/assets/logo-mark.webp" width="30" height="30" alt="" loading="lazy" decoding="async" fetchpriority="low">sporty.codes</span><span>Statistical discovery tools for public codes. 18+ only. Use responsibly.</span></footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
+<script src="/config.js?v=21.3.0" defer></script>
+<script src="/src/region.js?v=21.3.0" defer></script>
+<script src="/src/auth.js?v=21.3.0" defer></script>
+<script src="/src/saved.js?v=21.3.0" defer></script>
+<script src="/src/share.js?v=21.3.0" defer></script>
+<script src="/src/elite.js?v=21.3.0" defer></script>
+<script src="/src/pwa.js?v=21.3.0" defer></script>
+<script src="/src/experience.js?v=21.3.0" defer></script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#08090d">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css?v=19.8.2">
+  <title>Audience — sporty.codes</title>
+</head>
+<body class="admin-audience-body" data-page="admin-users">
+<header class="control-header">
+  <a class="brand" href="/"><img class="brand-logo brand-logo-dark" src="/assets/logo-wordmark-dark.png" alt="sporty.codes"><img class="brand-logo brand-logo-light" src="/assets/logo-wordmark-light.png" alt="sporty.codes"></a>
+  <div class="top-actions"><a class="button secondary compact" href="/control-room.html">Feed control</a><a class="button secondary compact" href="/">Public site</a><a class="account-button signed-in" href="/admin-login.html">Admin account</a></div>
+</header>
+<main class="audience-shell">
+  <section class="admin-gate" id="adminGate" hidden><div class="gate-icon">🔒</div><h1>Admin access required</h1><p>This page is available only through the separate official administrator sign-in.</p><a class="button primary" href="/admin-login.html?next=/admin-users.html">Administrator sign in</a></section>
+  <div id="adminApp" hidden>
+    <section class="audience-hero"><div><span class="eyebrow">Audience control</span><h1>Users and live presence.</h1><p>See who is active, recent sign-ins, device summaries and approximate location only when a user agreed to share it.</p></div><div class="audience-actions"><button class="button secondary" id="exportAudience" type="button">Export CSV</button><button class="button primary" id="refreshAudience" type="button">Refresh</button></div></section>
+    <p class="admin-error" id="adminError" hidden></p>
+    <section class="audience-metrics" id="adminMetrics"></section>
+    <section class="audience-panel">
+      <div class="audience-toolbar"><div><h2>User activity</h2><span id="lastAdminRefresh">Updating…</span></div><div class="audience-filters"><input id="userSearch" type="search" placeholder="Search name, email, device…" aria-label="Search users"><select id="presenceFilter" aria-label="Filter presence"><option value="all">All users</option><option value="online">Online now</option><option value="offline">Offline</option></select></div></div>
+      <div class="audience-list-head"><span id="userCountLabel">0 shown</span><small>Online means active within the last two minutes.</small></div>
+      <div class="audience-rows" id="audienceRows"><div class="loading-shimmer"></div></div>
+    </section>
+    <p class="audience-footnote">Approximate coordinates are rounded to about a broad city area. Exact addresses are not collected by this dashboard.</p>
+  </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/config.js?v=19.8.2"></script>
+<script src="/src/auth.js?v=19.8.2"></script>
+<script src="/src/admin-users.js?v=19.8.2"></script>
+</body></html>

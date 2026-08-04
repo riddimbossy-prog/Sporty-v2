@@ -1,0 +1,4 @@
+sporty.codes 21.3.0
+product: clean-start-custom-api
+api: same-domain-compatibility-api
+state: repository-source

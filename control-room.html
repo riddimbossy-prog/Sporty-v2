@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#08090d">
+  <meta name="color-scheme" content="light dark">
+  <script>try{const t=localStorage.getItem('sporty_theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t;const m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==='dark'?'#07090d':'#f2f4f8'}catch{}</script>
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>Control Room — sporty.codes</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css?v=21.3.0">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+  <link rel="stylesheet" href="/responsive.css?v=21.3.0">
+</head>
+<body class="control-body">
+<header class="control-header">
+  <a class="brand" href="/"><img class="brand-logo brand-logo-dark" src="/assets/logo-wordmark-dark.webp" width="180" height="40" alt="sporty.codes" decoding="async" fetchpriority="high"><img class="brand-logo brand-logo-light" src="/assets/logo-wordmark-light.webp" width="180" height="40" alt="sporty.codes" decoding="async" fetchpriority="high"></a>
+  <div class="top-actions"><a class="button secondary compact" href="/admin-users.html">User activity</a><a class="button secondary compact" href="/">Back to site</a><a class="account-button" href="/admin-login.html">Admin account</a></div>
+</header>
+<main class="control-shell">
+  <section class="admin-gate" id="controlGate" hidden><div class="gate-icon">🔒</div><h1>Admin access required</h1><p>Use the separate official administrator sign-in.</p><a class="button primary" href="/admin-login.html?next=/control-room.html">Administrator sign in</a></section>
+  <div id="controlApp" hidden>
+    <section class="page-intro control-intro">
+      <div><div class="eyebrow">Operator control room</div><h1>Feed reliability and settlement proof.</h1><p class="lead">Only complete codes and verified settlements reach the public site. Unverified manual results stay in the review queue.</p></div>
+      <div class="control-intro-actions"><button class="button secondary" id="refreshControl" type="button">Refresh status</button><a class="button primary" id="runSyncLink" href="https://github.com/riddimbossy-prog/sporty-codes/actions/workflows/sync-codehub.yml" target="_blank" rel="noopener">Run feed sync</a></div>
+    </section>
+
+    <section class="feed-health-banner" id="feedHealthBanner"><div><span class="feed-health-dot"></span><strong id="feedHealthTitle">Checking feed…</strong><p id="feedHealthCopy">Reading the latest update record.</p></div><span class="feed-health-age" id="feedHealthAge">—</span></section>
+
+    <section class="control-panel"><div class="control-panel-head"><div><div class="eyebrow">Live validation</div><h2>Current health</h2></div><span class="control-badge" id="qualityBadge">Preparing</span></div><div class="control-metrics" id="controlMetrics"></div></section>
+
+    <section class="control-panel elite-control-panel"><div class="control-panel-head"><div><div class="eyebrow">Elite Picks connector</div><h2>Statistical verification health</h2><p class="card-note">Tracks candidate discovery, Parse API verification, credit use, mapping gaps and published Elite classifications.</p></div><span class="control-badge" id="eliteHealthBadge">Checking</span></div><div class="control-metrics" id="eliteControlMetrics"></div><div class="feed-timeline elite-timeline" id="eliteTimeline"></div></section>
+
+    <section class="control-grid control-grid-v204">
+      <article class="control-panel"><div class="control-panel-head"><div><div class="eyebrow">Rejected before publishing</div><h2>Quality exceptions</h2></div></div><ul class="quality-list" id="qualityReasons"></ul></article>
+      <article class="control-panel"><div class="control-panel-head"><div><div class="eyebrow">Source monitor</div><h2>Update timeline</h2></div></div><dl class="feed-timeline" id="feedTimeline"></dl></article>
+    </section>
+
+    <section class="control-panel settlement-review-panel">
+      <div class="control-panel-head"><div><div class="eyebrow">Proof automation</div><h2>Settlement review queue</h2><p class="card-note">Source-confirmed results are verified automatically. Manual results remain private to this workflow until you confirm them with evidence.</p></div><span class="control-badge" id="settlementReviewBadge">Checking</span></div>
+      <div class="settlement-review-list" id="settlementReviewList"><div class="control-empty">Loading settlement records…</div></div>
+    </section>
+
+    <section class="control-panel control-visibility-panel"><div class="control-panel-head"><div><div class="eyebrow">Visibility control</div><h2>Published codes</h2><p class="card-note">Hide a code from the next feed update, or restore a previously hidden code. Download the override file after making changes.</p></div><button class="button secondary compact" id="downloadOverrides" type="button">Download overrides</button></div><div class="visibility-list" id="visibilityList"><div class="control-empty">Loading current codes…</div></div></section>
+
+    <section class="control-grid control-grid-v204">
+      <article class="control-panel">
+        <div class="control-panel-head"><div><div class="eyebrow">Settlement review</div><h2>Set a manual result</h2></div></div>
+        <label>Code<select id="overrideCode"><option>Loading…</option></select></label>
+        <label>Result<select id="overrideResult"><option value="">Choose result</option><option value="won">Won</option><option value="lost">Lost</option><option value="void">Void</option><option value="pending">Pending</option></select></label>
+        <label class="verification-check"><input id="overrideVerified" type="checkbox"><span><strong>Mark as verified</strong><small>Only tick this after checking supporting evidence.</small></span></label>
+        <label>Evidence URL<input id="overrideEvidence" type="url" maxlength="300" placeholder="https://…"></label>
+        <label>Verification note<input id="overrideNote" type="text" maxlength="180" placeholder="What was checked?"></label>
+        <p class="card-note">A verified manual result needs an HTTPS evidence link or a clear verification note. Unverified results enter the review queue and do not appear publicly.</p>
+        <button class="button primary" id="addResultOverride" type="button">Add result to override file</button>
+      </article>
+      <article class="control-panel">
+        <div class="control-panel-head"><div><div class="eyebrow">Safe publishing flow</div><h2>Apply changes</h2></div></div>
+        <ol class="control-steps"><li>Download <code>manual-overrides.json</code>.</li><li>Replace <code>data/manual-overrides.json</code> in GitHub.</li><li>Commit the file. The hourly sync runs automatically.</li><li>Use <strong>Run feed sync</strong> above when the change is urgent.</li></ol>
+        <p class="card-note">No secret key or administrator token is stored in the browser.</p><div class="control-draft-status" id="draftStatus">No unsaved override changes.</div>
+      </article>
+    </section>
+  </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
+<script src="/config.js?v=21.3.0" defer></script>
+<script src="/src/region.js?v=21.3.0" defer></script>
+<script src="/src/auth.js?v=21.3.0" defer></script>
+<script src="/src/control-room.js?v=21.3.0" defer></script>
+<script src="/src/experience.js?v=21.3.0" defer></script>
+</body>
+</html>

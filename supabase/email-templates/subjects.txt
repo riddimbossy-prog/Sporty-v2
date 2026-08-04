@@ -1,0 +1,8 @@
+Confirm signup:
+Welcome to sporty.codes — confirm your account
+
+Reset password:
+Reset your sporty.codes password
+
+Password changed:
+Your sporty.codes password was changed successfully

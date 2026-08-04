@@ -1,0 +1,44 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+
+const root=path.resolve(path.dirname(new URL(import.meta.url).pathname),'..');
+const read=file=>fs.readFileSync(path.join(root,file),'utf8');
+
+const home=read('index.html');
+const market=read('marketplace.html');
+const mvp=read('src/mvp.js');
+const intel=read('src/intelligence.js');
+const saved=read('src/saved-page.js');
+const share=read('src/share.js');
+const styles=read('styles.css');
+const sw=read('service-worker.js');
+
+assert.match(home,/Find the right SportyBet codes for your pocket\./);
+assert.match(home,/sporty\.codes scans free public codes/);
+assert.match(market,/Codes that fit your pocket\./);
+assert.match(home,/src\/share\.js\?v=21\.3\.0/);
+assert.match(market,/src\/share\.js\?v=21\.3\.0/);
+assert.match(mvp,/SportyShare\.button\(\{type:'code'/);
+assert.match(mvp,/SportyShare\.button\(\{type:'tip'/);
+assert.match(intel,/SportyShare\.button\(\{type:'tip'/);
+assert.match(saved,/window\.SportyShare/);
+assert.match(share,/I found this free on sporty\.codes/);
+assert.match(share,/share-dialog-shell/);
+assert.match(share,/Share image/);
+assert.match(share,/Save image/);
+assert.match(share,/Copy caption/);
+assert.match(share,/Copy link/);
+assert.match(share,/canNativeShareFile/);
+assert.match(share,/navigator\.share\(\{title:session\.title,text:session\.caption,files:\[session\.file\]\}\)/);
+assert.match(share,/Keep the share call directly inside this click event/);
+assert.match(share,/document\.execCommand\('copy'\)/);
+assert.match(styles,/compact, reliable share panel/);
+assert.match(styles,/share-dialog-loader\[hidden\]/);
+assert.match(styles,/share-dialog-body/);
+assert.match(share,/const icons=/);
+assert.match(styles,/@media\(max-width:760px\)/);
+assert.match(sw,/src\/share\.js/);
+assert.ok(fs.existsSync(path.join(root,'assets/share-card-default.png')));
+assert.ok(fs.statSync(path.join(root,'assets/share-card-default.png')).size>20_000);
+console.log('v21.3.0 share behavior checks passed');

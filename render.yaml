@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: sporty-codes-staging
+    runtime: node
+    buildCommand: bash scripts/render-build.sh
+    startCommand: node server/index.mjs
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: CUSTOM_API_ADMIN_TOKEN
+        generateValue: true
+      - key: UPSTREAM_DAILY_REQUEST_BUDGET
+        value: 30
+      - key: EVENT_CACHE_TTL_SECONDS
+        value: 1800
+      - key: CODE_CACHE_TTL_SECONDS
+        value: 300
+      - key: STATS_CACHE_TTL_SECONDS
+        value: 28800
+      - key: API_RATE_LIMIT_PER_MINUTE
+        value: 120
+      - key: EVENT_DAYS_AHEAD
+        value: 3
+      - key: UPSTREAM_TIMEOUT_MS
+        value: 16000

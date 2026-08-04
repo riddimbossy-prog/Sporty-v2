@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const source=fs.readFileSync(new URL('../src/mvp.js', import.meta.url),'utf8');
+assert.match(source,/https:\/\/www\.sportybet\.com\/gh\/m\/code-hub\/load-code/);
+assert.match(source,/SportyHandoff\.open/);
+const handoff=fs.readFileSync(new URL('../src/handoff.js', import.meta.url),'utf8');
+assert.match(handoff,/navigator\.clipboard\.writeText/);
+assert.doesNotMatch(source,/intent:\/\//);
+assert.doesNotMatch(source,/sportybet:\/\//);
+assert.doesNotMatch(source,/com\.sportybet\.android\.gp/);
+assert.doesNotMatch(source,/handoffRetry|handoffAppHome|handoffDeepLink/);
+console.log('website handoff v19.6 tests passed');

@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const css=fs.readFileSync('styles.css','utf8');
+const share=fs.readFileSync('src/share.js','utf8');
+assert.match(css,/mobile, tablet and Z Fold share experience/);
+assert.match(css,/@media\(max-width:599px\)/);
+assert.match(css,/grid-template-rows:minmax\(0,1fr\) auto/);
+assert.match(css,/@media\(pointer:coarse\) and \(min-width:600px\) and \(max-width:1100px\)/);
+assert.match(css,/orientation:landscape/);
+assert.match(css,/env\(safe-area-inset-bottom\)/);
+assert.match(share,/const isIOSLike=/);
+assert.match(share,/Press and hold the image to save it/);
+assert.match(share,/typeof navigator\.canShare!==['"]function['"]\)return false/);
+console.log('v21.0.0 mobile, tablet and Z Fold share checks passed');

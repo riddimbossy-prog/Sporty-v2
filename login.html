@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#08090d">
+  <meta name="color-scheme" content="light dark">
+  <script>try{const t=localStorage.getItem('sporty_theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t;const m=document.querySelector('meta[name=\"theme-color\"]');if(m)m.content=t==='dark'?'#07090d':'#f2f4f8'}catch{}</script>
+  <meta name="description" content="Secure sporty.codes account access with email or Google.">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="alternate icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/icons/icon-180.png">
+  <link rel="stylesheet" href="/styles.css?v=21.3.0">
+  <link rel="stylesheet" href="/pwa.css?v=21.3.0">
+  <title>Account access — sporty.codes</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+  <link rel="stylesheet" href="/responsive.css?v=21.3.0">
+</head>
+<body data-page="login">
+<header class="topbar">
+  <a class="brand" href="/" aria-label="sporty.codes home">
+    <img class="brand-logo brand-logo-dark" src="/assets/logo-wordmark-dark.webp" width="180" height="40" alt="sporty.codes" decoding="async" fetchpriority="high">
+    <img class="brand-logo brand-logo-light" src="/assets/logo-wordmark-light.webp" width="180" height="40" alt="sporty.codes" decoding="async" fetchpriority="high">
+  </a>
+  <div class="top-actions"><a class="button secondary compact" href="/">Back to site</a><button class="icon-button" id="themeButton" type="button" aria-label="Change theme">☾</button></div>
+</header>
+
+<main class="auth-shell">
+  <section class="auth-card auth-card-featured" id="authForms">
+    
+    <div class="auth-heading">
+      <span class="eyebrow">Your account</span>
+      <h1>Welcome back.</h1>
+      <p>Sign in to save codes, tips and preferences.</p>
+    </div>
+
+    <div class="auth-tabs" role="tablist" aria-label="Account access mode">
+      <button class="active" type="button" role="tab" data-auth-mode="signin">Sign in</button>
+      <button type="button" role="tab" data-auth-mode="signup">Create account</button>
+    </div>
+
+    <button class="google-button" id="googleSignIn" type="button"><span class="google-g" aria-hidden="true">G</span><strong>Continue with Google</strong></button>
+    <div class="auth-divider"><span>or use email</span></div>
+
+    <form id="emailAuthForm" class="auth-form">
+      <label id="nameField" hidden><span>Name</span><input id="nameInput" name="name" type="text" autocomplete="name" maxlength="80" placeholder="Your name"></label>
+      <label><span>Email</span><input id="emailInput" name="email" type="email" autocomplete="email" inputmode="email" required placeholder="you@example.com"></label>
+      <label class="password-field"><span>Password</span><span class="password-input-wrap"><input id="passwordInput" name="password" type="password" autocomplete="current-password" minlength="8" required placeholder="At least 8 characters"><button class="password-toggle" data-password-toggle="passwordInput" type="button" aria-pressed="false">Show</button></span></label>
+      <div class="password-strength" id="passwordStrengthWrap" hidden><div class="password-strength-track"><span id="passwordStrength" data-score="0"></span></div><small>Password strength: <strong id="passwordStrengthLabel">Very weak</strong></small></div>
+
+      <button class="button primary auth-submit" id="emailSubmit" type="submit">Sign in</button>
+      <button class="text-button" id="forgotPassword" type="button">Forgot password?</button>
+    </form>
+
+    <p class="auth-privacy">By continuing, you agree to the <a href="/privacy.html">privacy terms</a>.</p>
+  </section>
+
+  <section class="auth-card account-card" id="accountPanel" hidden>
+    <div class="account-avatar" id="loginAccountAvatar" aria-hidden="true"></div>
+    <span class="eyebrow">Signed in</span>
+    <h1 id="accountName">Member</h1>
+    <p id="accountEmail"></p>
+    <div class="account-actions"><a class="button primary" href="/account.html">Open my account</a><a class="button secondary" href="/smart-board.html">Smart Board</a><button class="button secondary" id="signOutButton" type="button">Sign out</button></div>
+  </section>
+
+  <section class="auth-card recovery-card" id="recoveryPanel" hidden>
+    <div class="recovery-icon" aria-hidden="true">↻</div>
+    <span class="eyebrow">Secure password recovery</span>
+    <h2>Create a new password</h2>
+    <p id="recoveryMessage">Choose a secure new password for your account.</p>
+    <label class="password-field"><span>New password</span><span class="password-input-wrap"><input id="newPassword" type="password" minlength="8" autocomplete="new-password" placeholder="Create a strong password"><button class="password-toggle" data-password-toggle="newPassword" type="button" aria-pressed="false">Show</button></span></label>
+    <div class="password-strength"><div class="password-strength-track"><span id="recoveryStrength" data-score="0"></span></div><small>Password strength: <strong id="recoveryStrengthLabel">Very weak</strong></small></div>
+    <label class="password-field"><span>Confirm new password</span><span class="password-input-wrap"><input id="confirmPassword" type="password" minlength="8" autocomplete="new-password" placeholder="Repeat the new password"><button class="password-toggle" data-password-toggle="confirmPassword" type="button" aria-pressed="false">Show</button></span></label>
+    <div class="recovery-guidance"><span>Use at least 8 characters</span><span>Avoid passwords used elsewhere</span><span>Do not share recovery links</span></div>
+    <button class="button primary" id="updatePassword" type="button">Update password securely</button>
+  </section>
+  <p class="auth-status auth-status-global" id="authStatus" hidden aria-live="polite"></p>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
+<script src="/config.js?v=21.3.0" defer></script>
+<script src="/src/region.js?v=21.3.0" defer></script>
+<script src="/src/auth.js?v=21.3.0" defer></script>
+<script src="/src/login.js?v=21.3.0" defer></script>
+<script src="/src/pwa.js?v=21.3.0" defer></script>
+<script src="/src/experience.js?v=21.3.0" defer></script>
+</body>
+</html>

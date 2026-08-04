@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Sporty.codes Deployment Check</title>
+  <style>
+    :root{font-family:Inter,system-ui,sans-serif;color-scheme:dark;background:#080b12;color:#eef2ff}body{margin:0;padding:24px}.wrap{max-width:760px;margin:auto}.card{background:#111827;border:1px solid #273244;border-radius:18px;padding:20px;margin:14px 0}.row{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid #273244}.row:last-child{border:0}.ok{color:#5ee39b}.warn{color:#ffd166}.bad{color:#ff7b7b}button{padding:12px 16px;border:0;border-radius:12px;font-weight:800;cursor:pointer}pre{white-space:pre-wrap;word-break:break-word;background:#080b12;padding:14px;border-radius:12px}</style>
+</head>
+<body><main class="wrap"><h1>Deployment check</h1><p>This page never displays secret values.</p><button id="run">Run checks</button><section id="out" class="card">Ready.</section></main>
+<script>
+const out=document.querySelector('#out');
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function get(path){const r=await fetch(path,{cache:'no-store'});const j=await r.json().catch(()=>({error:'Unreadable response'}));return{status:r.status,data:j}}
+async function run(){out.innerHTML='Checking…';const results=[];for(const [label,path] of [['Health','/api/health'],['Upcoming events','/api/get_upcoming_events?days=1'],['Code Hub','/api/get_code_hub_codes?limit=3']]){try{results.push({label,path,...await get(path)})}catch(error){results.push({label,path,status:0,data:{error:error.message}})}}const health=results[0]?.data||{};out.innerHTML=`<div class="row"><b>Service</b><span class="${health.ok?'ok':'bad'}">${health.ok?'ONLINE':'FAILED'}</span></div><div class="row"><b>Production ready</b><span class="${health.ready?'ok':'warn'}">${health.ready?'YES':'SETUP STILL REQUIRED'}</span></div><div class="row"><b>Supabase</b><span>${esc(health.configuration?.supabase_status||'unknown')}</span></div><div class="row"><b>API-Football</b><span>${health.configuration?.api_football_configured?'configured':'not configured'}</span></div><div class="row"><b>Odds API</b><span>${health.configuration?.odds_api_configured?'configured':'optional / off'}</span></div><pre>${esc(JSON.stringify(results,null,2))}</pre>`}
+document.querySelector('#run').addEventListener('click',run);run();
+</script></body></html>

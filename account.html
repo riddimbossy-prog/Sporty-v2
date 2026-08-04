@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-auth-required="member" data-auth-gate="pending">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#08090d">
+  <meta name="color-scheme" content="light dark">
+  <script>try{const t=localStorage.getItem('sporty_theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t;const m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==='dark'?'#07090d':'#f2f4f8'}catch{}</script>
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icons/icon-180.png">
+  <link rel="stylesheet" href="/styles.css?v=21.3.0">
+  <link rel="stylesheet" href="/pwa.css?v=21.3.0">
+  <title>My account — sporty.codes</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+  <link rel="stylesheet" href="/responsive.css?v=21.3.0">
+</head>
+<body data-page="account">
+<header class="topbar">
+  <a class="brand" href="/" aria-label="sporty.codes home"><img class="brand-logo brand-logo-dark" src="/assets/logo-wordmark-dark.webp" width="180" height="40" alt="sporty.codes" decoding="async" fetchpriority="high"><img class="brand-logo brand-logo-light" src="/assets/logo-wordmark-light.webp" width="180" height="40" alt="sporty.codes" decoding="async" fetchpriority="high"></a>
+  <nav class="desktop-nav" aria-label="Main navigation"><a class="nav-link" href="/">Discover</a><a class="nav-link" href="/marketplace.html">Free Codes</a><a class="nav-link" href="/smart-board.html">Smart Board</a><a class="nav-link" href="/elite-picks.html">Elite Picks</a><a class="nav-link" href="/saved.html">Saved</a><a class="nav-link" href="/performance.html">Performance</a></nav>
+  <div class="top-actions"><a class="account-button signed-in" data-auth-link href="/account.html" aria-label="Open account">Account</a><button class="icon-button" id="themeButton" type="button" aria-label="Change theme">☾</button></div>
+</header>
+<nav class="mobile-nav" aria-label="Mobile navigation"><a href="/"><b>⌂</b><span>Discover</span></a><a href="/marketplace.html"><b>▦</b><span>Codes</span></a><a href="/smart-board.html"><b>◆</b><span>Board</span></a><a href="/elite-picks.html"><b>◆</b><span>Elite</span></a><a class="active" href="/account.html"><b>●</b><span>Account</span></a></nav>
+<main class="shell account-shell">
+  <div id="accountLoading" class="account-loading"><img src="/assets/logo-mark.webp" width="54" height="54" alt=""><p>Loading…</p></div>
+  <section id="accountBlocked" class="admin-gate" hidden><div class="gate-icon">🔒</div><h1>Account unavailable</h1><p id="blockedCopy">This account is unavailable.</p><button class="button secondary" id="blockedSignOut" type="button">Sign out</button></section>
+  <div id="accountApp" hidden>
+    <section class="account-hero">
+      <div class="account-identity"><div id="accountHeroAvatar" class="account-hero-avatar" aria-hidden="true"></div><div><span class="eyebrow">My account</span><h1 id="accountName">Member</h1><p id="accountEmail"></p></div></div>
+      <div class="account-hero-actions"><a class="button primary" href="/saved.html">Open saved items <span data-saved-count>0</span></a><button class="button secondary" id="accountSignOut" type="button">Sign out</button></div>
+    </section>
+    <p class="auth-status auth-status-global" id="accountMessage" hidden></p>
+
+    <section class="account-layout">
+      <div class="account-main-column">
+        <article class="account-panel">
+          <div class="section-head compact"><div><span class="eyebrow">Profile</span><h2>Your details</h2></div></div>
+          <form id="profileForm" class="account-form">
+            <label>Display name<input id="displayName" type="text" maxlength="80" autocomplete="name" required></label>
+            <label>Username<input id="username" type="text" maxlength="28" autocomplete="username" placeholder="optional_username"></label>
+            <button class="button primary" type="submit">Save profile</button>
+          </form>
+        </article>
+
+        <article class="account-panel" id="preferences">
+          <div class="section-head compact"><div><span class="eyebrow">Preferences</span><h2>Choose what you want to see</h2><p>Use the dropdowns to personalize your Smart Board and saved-code views.</p></div></div>
+          <form id="preferencesForm" class="account-form preferences-grid">
+            <div class="preference-field preference-field-wide">
+              <span class="preference-label">Favourite markets</span>
+              <details class="preference-dropdown">
+                <summary><span data-summary-for="favoriteMarkets">All markets</span><span class="preference-chevron" aria-hidden="true">⌄</span></summary>
+                <div class="preference-options">
+                  <label><input data-preference-option name="favoriteMarkets" type="checkbox" value="Goals"><span>Goals</span></label>
+                  <label><input data-preference-option name="favoriteMarkets" type="checkbox" value="Over 1.5"><span>Over 1.5</span></label>
+                  <label><input data-preference-option name="favoriteMarkets" type="checkbox" value="Over 2.5"><span>Over 2.5</span></label>
+                  <label><input data-preference-option name="favoriteMarkets" type="checkbox" value="Under 3.5"><span>Under 3.5</span></label>
+                  <label><input data-preference-option name="favoriteMarkets" type="checkbox" value="BTTS"><span>BTTS</span></label>
+                  <label><input data-preference-option name="favoriteMarkets" type="checkbox" value="Home Win"><span>Home Win</span></label>
+                  <label><input data-preference-option name="favoriteMarkets" type="checkbox" value="Away Win"><span>Away Win</span></label>
+                  <label><input data-preference-option name="favoriteMarkets" type="checkbox" value="Double Chance"><span>Double Chance</span></label>
+                  <label><input data-preference-option name="favoriteMarkets" type="checkbox" value="Draw No Bet"><span>Draw No Bet</span></label>
+                  <label><input data-preference-option name="favoriteMarkets" type="checkbox" value="Team Goals"><span>Team Goals</span></label>
+                  <label><input data-preference-option name="favoriteMarkets" type="checkbox" value="Corners"><span>Corners</span></label>
+                  <label><input data-preference-option name="favoriteMarkets" type="checkbox" value="Cards"><span>Cards</span></label>
+                </div>
+              </details>
+            </div>
+
+            <div class="preference-field preference-field-wide">
+              <span class="preference-label">Favourite leagues</span>
+              <details class="preference-dropdown">
+                <summary><span data-summary-for="favoriteLeagues">All leagues</span><span class="preference-chevron" aria-hidden="true">⌄</span></summary>
+                <div class="preference-options">
+                  <label><input data-preference-option name="favoriteLeagues" type="checkbox" value="Premier League"><span>Premier League</span></label>
+                  <label><input data-preference-option name="favoriteLeagues" type="checkbox" value="La Liga"><span>La Liga</span></label>
+                  <label><input data-preference-option name="favoriteLeagues" type="checkbox" value="Serie A"><span>Serie A</span></label>
+                  <label><input data-preference-option name="favoriteLeagues" type="checkbox" value="Bundesliga"><span>Bundesliga</span></label>
+                  <label><input data-preference-option name="favoriteLeagues" type="checkbox" value="Ligue 1"><span>Ligue 1</span></label>
+                  <label><input data-preference-option name="favoriteLeagues" type="checkbox" value="Champions League"><span>Champions League</span></label>
+                  <label><input data-preference-option name="favoriteLeagues" type="checkbox" value="Europa League"><span>Europa League</span></label>
+                  <label><input data-preference-option name="favoriteLeagues" type="checkbox" value="MLS"><span>MLS</span></label>
+                  <label><input data-preference-option name="favoriteLeagues" type="checkbox" value="Saudi Pro League"><span>Saudi Pro League</span></label>
+                  <label><input data-preference-option name="favoriteLeagues" type="checkbox" value="Other"><span>Other leagues</span></label>
+                </div>
+              </details>
+            </div>
+
+            <label>Minimum Tip Strength<select id="minStrength"><option value="50">50+</option><option value="60">60+</option><option value="65">65+</option><option value="70">70+</option><option value="75">75+</option><option value="80">80+</option><option value="85">85+</option><option value="90">90+</option></select></label>
+            <label>Maximum opposition<select id="maxOpposition"><option value="10">10%</option><option value="20">20%</option><option value="30">30%</option><option value="40">40%</option><option value="50">50%</option></select></label>
+            <label>Minimum source count<select id="minSources"><option value="1">1 source</option><option value="2">2 sources</option><option value="3">3 sources</option><option value="4">4 sources</option><option value="5">5+ sources</option></select></label>
+            <label>Preferred day<select id="preferredDay"><option value="all">All days</option><option value="today">Today</option><option value="tomorrow">Tomorrow</option><option value="week">Next 7 days</option></select></label>
+            <label>Minimum selections<select id="selectionsMin"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="10">10</option></select></label>
+            <label>Maximum selections<select id="selectionsMax"><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="30">30</option><option value="50">50</option><option value="100">Any size</option></select></label>
+            <label>Minimum odds<select id="oddsMin"><option value="1.10">1.10</option><option value="1.20">1.20</option><option value="1.30">1.30</option><option value="1.50">1.50</option><option value="1.75">1.75</option><option value="2.00">2.00</option></select></label>
+            <label>Maximum odds<select id="oddsMax"><option value="2.00">2.00</option><option value="3.00">3.00</option><option value="5.00">5.00</option><option value="10.00">10.00</option><option value="25.00">25.00</option><option value="50.00">50.00</option><option value="100.00">100+</option><option value="1000.00">Any odds</option></select></label>
+            <div class="notification-settings preference-field-wide" id="notification-settings">
+              <span class="preference-label">Notification settings</span>
+              <label class="check-row"><input id="notificationsOptIn" type="checkbox"><span>Show saved-item changes and preference matches inside my account.</span></label>
+              <label>In-app digest frequency<select id="digestFrequency"><option value="off">Off</option><option value="daily">Daily summary</option><option value="weekly">Weekly summary</option></select></label>
+              <small>Digest frequency controls in-app summaries only. This release does not send promotional betting emails.</small>
+            </div>
+            <label class="check-row preference-field-wide age-confirm-row"><input id="ageConfirmed" type="checkbox"><span>I confirm that I am 18 or older.</span></label>
+            <p class="member-responsible-note preference-field-wide">These preferences only organise public codes. They do not recommend a bet or guarantee an outcome.</p>
+            <button class="button primary preference-field-wide" type="submit">Save preferences</button>
+          </form>
+        </article>
+
+        <article class="account-panel">
+          <div class="section-head compact"><div><span class="eyebrow">Security</span><h2>Recent sign-ins</h2></div></div>
+          <div id="signinHistory" class="account-history"><div class="loading-shimmer"></div></div>
+          <button class="button danger-outline" id="signOutEverywhere" type="button">Sign out on every device</button>
+        </article>
+      </div>
+
+      <aside class="account-side-column">
+        <article class="account-panel">
+          <div class="section-head compact"><div><span class="eyebrow">Saved</span><h2>Your shortlist</h2></div><a href="/saved.html">View all</a></div>
+          <div id="savedPreview" class="saved-preview"></div>
+        </article>
+
+        <article class="account-panel" id="recent-codes">
+          <div class="section-head compact"><div><span class="eyebrow">Recent</span><h2>Recently opened codes</h2></div></div>
+          <div id="recentCodes" class="saved-preview"></div>
+        </article>
+
+        <article class="account-panel danger-zone">
+          <div class="section-head compact"><div><span class="eyebrow">Account</span><h2>Delete account</h2></div></div>
+          <div id="deletionState" class="deletion-state"><strong>No deletion request</strong><span>Your account remains active.</span></div>
+          <label>Reason (optional)<textarea id="deleteReason" rows="3" maxlength="1000" placeholder="Tell us what should be reviewed"></textarea></label>
+          <label>Type DELETE to confirm<input id="deleteConfirm" type="text" autocomplete="off"></label>
+          <button class="button danger" id="requestDeletion" type="button">Request account deletion</button>
+          <button class="button secondary" id="cancelDeletion" type="button" hidden>Cancel deletion request</button>
+          <small>Your password is never visible to anyone at sporty.codes.</small>
+        </article>
+      </aside>
+    </section>
+  </div>
+</main>
+<footer class="footer"><span class="footer-brand"><img src="/assets/logo-mark.webp" width="30" height="30" alt="" loading="lazy" decoding="async" fetchpriority="low">sporty.codes</span><span>Your sporty.codes account. 18+ only.</span></footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
+<script src="/config.js?v=21.3.0" defer></script>
+<script src="/src/region.js?v=21.3.0" defer></script>
+<script src="/src/auth.js?v=21.3.0" defer></script>
+<script src="/src/saved.js?v=21.3.0" defer></script>
+<script src="/src/account.js?v=21.3.0" defer></script>
+<script src="/src/member-home.js?v=21.3.0" defer></script>
+<script src="/src/pwa.js?v=21.3.0" defer></script>
+<script src="/src/experience.js?v=21.3.0" defer></script>
+</body>
+</html>

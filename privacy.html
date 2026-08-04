@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#08090d">
+  <meta name="color-scheme" content="light dark">
+  <script>try{const t=localStorage.getItem('sporty_theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t;const m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==='dark'?'#07090d':'#f2f4f8'}catch{}</script>
+  <meta name="description" content="How sporty.codes handles account and session activity.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css?v=21.3.0">
+  <link rel="stylesheet" href="/responsive.css?v=21.3.0">
+  <title>Account privacy — sporty.codes</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+</head>
+<body>
+<header class="topbar"><a class="brand" href="/"><img class="brand-logo brand-logo-dark" src="/assets/logo-wordmark-dark.webp" width="180" height="40" alt="sporty.codes" decoding="async" fetchpriority="high"><img class="brand-logo brand-logo-light" src="/assets/logo-wordmark-light.webp" width="180" height="40" alt="sporty.codes" decoding="async" fetchpriority="high"></a><div class="top-actions"><a class="account-button" data-auth-link href="/login.html">Sign in</a><a class="button secondary compact" href="/">Back</a><button class="icon-button" id="themeButton" type="button" aria-label="Change theme">☾</button></div></header>
+<main class="shell privacy-shell">
+  <section class="page-intro"><div><span class="eyebrow">Privacy</span><h1>Your account activity, explained simply.</h1><p class="lead">sporty.codes uses basic account and session information to keep members signed in, protect accounts and show the administrator how the service is being used.</p></div></section>
+  <section class="privacy-grid">
+    <article class="privacy-card"><h2>Account details</h2><p>Your email address, display name, username and sign-in provider are used to operate your account. Administrators cannot see your password.</p></article>
+    <article class="privacy-card"><h2>Session activity</h2><p>The service records sign-in time, last active time, device class, browser, operating system, time zone and the current sporty.codes page.</p></article>
+    <article class="privacy-card"><h2>No browser location prompt</h2><p>sporty.codes does not request GPS or browser location permission. Precise location is not shown in the member account or administrator dashboard.</p></article>
+    <article class="privacy-card"><h2>Online status</h2><p>A member is shown as online for a short period after recent activity. Closing the site may take a little time to appear offline.</p></article>
+    <article class="privacy-card"><h2>Saved preferences</h2><p>Your selected markets, leagues, odds range, slip size, saved items and recently opened codes may be synchronized to your account so they work across signed-in devices.</p></article><article class="privacy-card"><h2>In-app summaries</h2><p>You control whether preference matches and saved-item changes appear inside your account. This release does not send promotional betting emails.</p></article>
+    <article class="privacy-card"><h2>Retention</h2><p>Live presence is intended for short-term operations, detailed activity for up to 30 days and security sign-in records for up to 90 days.</p></article>
+  </section>
+  <section class="privacy-note"><h2>Your controls</h2><p>You can review recent sign-ins, sign out every device and request account deletion from your account page.</p><a class="button primary" href="/account.html">Open account</a></section>
+</main>
+<footer class="footer"><span class="footer-brand"><img src="/assets/logo-mark.webp" width="30" height="30" alt="" loading="lazy" decoding="async" fetchpriority="low">sporty.codes</span><span>Account privacy. 18+ only.</span></footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script><script src="/config.js?v=21.3.0" defer></script>
+<script src="/src/region.js?v=21.3.0" defer></script><script src="/src/auth.js?v=21.3.0" defer></script><script src="/src/member-home.js?v=21.3.0" defer></script>
+<script src="/src/experience.js?v=21.3.0" defer></script>
+</body>
+</html>

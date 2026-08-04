@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#08090d">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="description" content="Restricted sporty.codes administrator access.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css?v=19.8.2">
+  <title>Administrator access — sporty.codes</title>
+</head>
+<body data-page="admin-login" class="admin-login-body">
+<header class="topbar">
+  <a class="brand" href="/" aria-label="sporty.codes home">
+    <img class="brand-logo brand-logo-dark" src="/assets/logo-wordmark-dark.png" alt="sporty.codes">
+    <img class="brand-logo brand-logo-light" src="/assets/logo-wordmark-light.png" alt="sporty.codes">
+  </a>
+  <div class="top-actions"><a class="button secondary compact" href="/">Public site</a><button class="icon-button" id="themeButton" type="button" aria-label="Change theme">☾</button></div>
+</header>
+
+<main class="auth-shell admin-auth-shell">
+  <section class="auth-card auth-card-featured admin-auth-card" id="adminAuthForm">
+    <div class="admin-security-mark" aria-hidden="true">◆</div>
+    <div class="auth-security-ribbon admin-ribbon"><span aria-hidden="true">●</span> Restricted operator access</div>
+    <div class="auth-heading">
+      <span class="eyebrow">sporty.codes administration</span>
+      <h1>Administrator sign in.</h1>
+      <p>This entrance is separate from member accounts. Only the approved official administrator identity can continue.</p>
+    </div>
+
+    <button class="google-button" id="adminGoogleSignIn" type="button"><span class="google-g" aria-hidden="true">G</span><strong>Continue with official Google account</strong></button>
+    <div class="auth-divider"><span>or use administrator password</span></div>
+
+    <form id="adminEmailForm" class="auth-form">
+      <label><span>Administrator email</span><input id="adminEmail" name="email" type="email" autocomplete="username" inputmode="email" required value="sportycodesofficial@gmail.com"></label>
+      <label class="password-field"><span>Password</span><span class="password-input-wrap"><input id="adminPassword" name="password" type="password" autocomplete="current-password" minlength="8" required placeholder="Administrator password"><button class="password-toggle" data-password-toggle="adminPassword" type="button" aria-pressed="false">Show</button></span></label>
+      <button class="button primary auth-submit" id="adminEmailSubmit" type="submit">Enter admin area</button>
+      <button class="text-button" id="adminForgotPassword" type="button">Reset administrator password</button>
+    </form>
+
+    <div class="admin-access-notice"><strong>Identity lock</strong><span>Having a normal sporty.codes account or knowing this page address does not grant administrator access. Authorization is checked again by the database before any audience data is returned.</span></div>
+    <p class="auth-privacy">Use this page only on a trusted device. Normal members should use the <a href="/login.html">member sign-in page</a>.</p>
+  </section>
+
+  <section class="auth-card account-card admin-account-card" id="adminAccountPanel" hidden>
+    <div class="account-avatar admin-avatar" aria-hidden="true">◆</div>
+    <span class="eyebrow">Official administrator verified</span>
+    <h1>Admin access active</h1>
+    <p id="adminAccountEmail"></p>
+    <div class="account-facts"><span>Authorization <strong>Official admin</strong></span><span>Session <strong>Protected</strong></span></div>
+    <div class="account-actions"><a class="button primary" href="/admin-users.html">Open audience dashboard</a><a class="button secondary" href="/control-room.html">Open control room</a><a class="button secondary" href="/">Open public site</a><button class="button secondary" id="adminSignOut" type="button">Sign out of admin</button></div>
+  </section>
+
+  <section class="auth-card admin-denied-card" id="adminDeniedPanel" hidden>
+    <div class="gate-icon" aria-hidden="true">🔒</div>
+    <span class="eyebrow">Access not approved</span>
+    <h1>Wrong account for administration.</h1>
+    <p>The signed-in account is a normal member account and cannot open administrator tools.</p>
+    <div class="account-actions"><button class="button primary" id="switchAdminAccount" type="button">Switch to official admin account</button><a class="button secondary" href="/login.html">Open member account</a><a class="button secondary" href="/">Return to site</a></div>
+  </section>
+
+  <p class="auth-status auth-status-global" id="adminAuthStatus" hidden aria-live="polite"></p>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="/config.js?v=19.8.2"></script>
+<script src="/src/auth.js?v=19.8.2"></script>
+<script src="/src/admin-login.js?v=19.8.2"></script>
+</body>
+</html>
