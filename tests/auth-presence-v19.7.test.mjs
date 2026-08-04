@@ -39,7 +39,7 @@ assert.match(sql,/public\.is_admin\(\)/);
 for(const page of ['index.html','marketplace.html','smart-board.html','most-added.html','won-codes.html','performance.html','sources.html']){
   const html=read(page);
   assert.match(html,/data-auth-link/);
-  assert.match(html,/src\/auth\.js\?v=21\.4\.0/);
+  assert.match(html,/src\/auth\.js\?v=21\.4\.1/);
   assert.match(html,/supabase-js@2/);
 }
 

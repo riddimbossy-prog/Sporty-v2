@@ -110,7 +110,7 @@ export async function getSourceStatus(){
 
 export async function getCodeHubCodes({limit=24,force=false}={}){
   const safeLimit=Math.max(1,Math.min(100,number(limit)||24));
-  return cached(`v214:codehub:${safeLimit}`,ttlSeconds('CODE_CACHE_TTL_SECONDS'),async()=>{
+  return cached(`v2141:codehub:${safeLimit}`,ttlSeconds('CODE_CACHE_TTL_SECONDS'),async()=>{
     let rows=[];let collected=[];let source='supabase-booking-codes';
     if(db.configured())rows=await db.select('booking_codes',{select:'*,booking_code_selections(*)',status:'eq.published',order:'published_at.desc.nullslast,created_at.desc',limit:String(safeLimit)}).catch(()=>[]);
     if(force||!rows.length){
@@ -123,7 +123,7 @@ export async function getCodeHubCodes({limit=24,force=false}={}){
     if(!items.length&&collected.length)items=collected.map(normalizeCodeRow).filter(item=>item.code).slice(0,safeLimit);
     if(!items.length){const fallback=await readJson(`${root}/data/codehub-banner.json`,{items:[]});items=(fallback.items||[]).map(normalizeCodeRow).filter(item=>item.code).slice(0,safeLimit);if(items.length)source='local-fallback'}
     return{version:8,source,collector:'sportybet-public-direct',generated_at:nowIso(),status:items.length?'ok':'empty',count:items.length,slips_with_tips:items.filter(item=>item.tips.length).length,total_tips:items.reduce((sum,item)=>sum+item.tips.length,0),items};
-  },{source:'booking_codes-v214',force});
+  },{source:'booking_codes-v2141',force});
 }
 
 export async function getBooking(code){
@@ -165,7 +165,7 @@ function mergeOdds(fixtures,oddsRows){
 
 export async function getUpcomingEvents({force=false,days=3}={}){
   const safeDays=Math.max(1,Math.min(7,number(days)||3));
-  return cached(`v214:upcoming:${safeDays}`,ttlSeconds('EVENT_CACHE_TTL_SECONDS'),async()=>{
+  return cached(`v2141:upcoming:${safeDays}`,ttlSeconds('EVENT_CACHE_TTL_SECONDS'),async()=>{
     let events=[];let source='none';const errors=[];
     try{
       if(await budgetAvailable('sportybet-public-events',1)){events=await collectSportyBetEvents({days:safeDays});if(events.length)source='sportybet-public-direct'}
@@ -175,7 +175,7 @@ export async function getUpcomingEvents({force=false,days=3}={}){
     }
     if(!events.length){const fallback=await readJson(`${root}/sportybet-events.json`,{events:[]});events=(fallback.events||[]).map(row=>({...row,event_id:text(row.event_id||`fallback:${row.game_id}`)}));if(events.length)source='cached-fallback'}
     events=events.sort((a,b)=>number(a.start_time)-number(b.start_time));return{version:3,updated_at:nowIso(),source,collector:'sportybet-public-direct',count:events.length,errors:errors.slice(0,2),events};
-  },{source:'events-v214',force});
+  },{source:'events-v2141',force});
 }
 
 function summarizeFixtures(rows,teamId){

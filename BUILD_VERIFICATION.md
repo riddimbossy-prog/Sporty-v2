@@ -1,4 +1,4 @@
-# Build verification — Sporty.codes v21.4.0
+# Build verification — Sporty.codes v21.4.1
 
 Verified locally:
 
@@ -7,7 +7,7 @@ Verified locally:
 - Public Code Hub HTML/JSON normalization passed.
 - Render build completed.
 - Node service started successfully.
-- `/api/health` returned v21.4.0.
+- `/api/health` returned v21.4.1.
 - `/api/get_upcoming_events` returned two normalized mock SportyBet events with 1X2 odds.
 - `/api/get_code_hub_codes` returned one mock public code with two detailed selections.
 - `/api/source-status` reported successful event and code collection.

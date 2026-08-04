@@ -1,4 +1,4 @@
-# Sporty.codes v21.4.0
+# Sporty.codes v21.4.1
 
 Sporty.codes now includes a same-domain **direct public SportyBet collector** for upcoming football fixtures and public market prices, plus a public Code Hub collector, Supabase caching, and the existing Ghana/international PWA.
 

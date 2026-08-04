@@ -1,0 +1,37 @@
+{
+  "bizCode": 10000,
+  "message": "success",
+  "data": {
+    "pageNum": 1,
+    "pageSize": 100,
+    "totalNum": 1,
+    "tournamentList": [
+      {
+        "tournamentId": "sr:tournament:17",
+        "tournamentName": "Premier League",
+        "categoryName": "England",
+        "events": [
+          {
+            "eventId": "sr:match:998877",
+            "gameId": "998877",
+            "estimateStartTime": 1785942000000,
+            "homeTeamName": "Home United",
+            "awayTeamName": "Away City",
+            "eventStatusDesc": "Not start",
+            "markets": [
+              {
+                "id": "1",
+                "desc": "1X2",
+                "outcomes": [
+                  {"id": "1", "desc": "Home", "odd": "1.72"},
+                  {"id": "2", "desc": "Draw", "odd": "3.55"},
+                  {"id": "3", "desc": "Away", "odd": "4.60"}
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

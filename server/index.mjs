@@ -21,7 +21,7 @@ function securityHeaders(extra={}){return{'x-content-type-options':'nosniff','x-
 
 async function api(req,url){
   const path=url.pathname.replace(/^\/api/,'');
-  if(req.method==='GET'&&path==='/health'){const status=await getSystemStatus();return json({ok:true,service:'sporty.codes-custom-api',version:'21.4.0',api_contract:'sporty-codes-compatibility-v2',official_sportybet_api:false,direct_public_sportybet_collector:true,time:new Date().toISOString(),...status});}
+  if(req.method==='GET'&&path==='/health'){const status=await getSystemStatus();return json({ok:true,service:'sporty.codes-custom-api',version:'21.4.1',api_contract:'sporty-codes-compatibility-v2',official_sportybet_api:false,direct_public_sportybet_collector:true,time:new Date().toISOString(),...status});}
   if(req.method==='GET'&&path==='/source-status')return json(await getSourceStatus());
   if(req.method==='GET'&&path==='/get_code_hub_codes')return json(await getCodeHubCodes({limit:url.searchParams.get('limit')||24}));
   if(req.method==='GET'&&path==='/get_booking'){const item=await getBooking(url.searchParams.get('code'));return item?json(item):json({error:'Code not found'},404)}
@@ -55,4 +55,4 @@ const server=http.createServer(async(req,res)=>{
     send(res,await staticFile(url.pathname));
   }catch(error){console.error('[server]',publicError(error));send(res,json({error:publicError(error)},500,securityHeaders()))}
 });
-server.listen(port,'0.0.0.0',()=>console.log(`sporty.codes v21.4.0 listening on ${port}`));
+server.listen(port,'0.0.0.0',()=>console.log(`sporty.codes v21.4.1 listening on ${port}`));
