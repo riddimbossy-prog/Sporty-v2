@@ -1,56 +1,40 @@
-# Sporty.codes v21.3.0
+# Sporty.codes v21.4.0
 
-Fresh-start website and same-domain Node compatibility API for Ghana and international users.
+Sporty.codes now includes a same-domain **direct public SportyBet collector** for upcoming football fixtures and public market prices, plus a public Code Hub collector, Supabase caching, and the existing Ghana/international PWA.
 
-## Included
+## Main change
 
-- Existing Sporty.codes user interface and PWA
-- Ghana and international region flow
-- Node Web Service for Render
-- Supabase cache, request-budget, and booking-code tables
-- API-Football fixture and statistics adapter
-- Optional The Odds API adapter
-- Same-domain API routes
-- Private administrator publishing and refresh routes
-- Clean GitHub validation workflow
-- Render Blueprint
-- Browser deployment checker and Windows PowerShell helpers
+The previous compatibility-only API has been replaced by a real collector module:
 
-## Important first file
-
-Read [`START_HERE.md`](START_HERE.md).
-
-## Commands
-
-```bash
-npm test
-npm run build
-npm run smoke
-npm start
+```text
+server/lib/sportybet-public.mjs
 ```
 
-`npm run build` creates `.render-site`. The server serves the website and API from the same Render Web Service.
+It performs public GET requests only. It does not use user accounts, cookies, CAPTCHA bypasses, customer data, or private authentication.
 
-## Public routes
+## Live API routes
 
 - `GET /api/health`
-- `GET /api/get_upcoming_events`
+- `GET /api/source-status`
+- `GET /api/get_upcoming_events?days=3`
 - `GET /api/get_code_hub_codes`
 - `GET /api/get_booking?code=...`
 - `GET /api/search_matches?date=YYYY-MM-DD`
 - `GET /api/get_fixture_stats?event_id=...`
-
-Compatibility aliases without `/api` remain available for the existing frontend.
-
-## Private routes
-
 - `POST /api/admin/refresh`
 - `POST /api/admin/codes`
 
-Private routes require `CUSTOM_API_ADMIN_TOKEN` in a Bearer authorization header.
+## Smart Board behavior
 
-## Data-source boundary
+The Smart Board now has two independent layers:
 
-This repository does not include a paid pass-through collector or unauthorized access to a betting platform. Fixtures/statistics come from configured providers. Booking codes come from records stored in Supabase by authorized administrators or verified contributors.
+1. **SportyBet Match Board** — upcoming public fixtures and 1X2 prices from the direct collector.
+2. **Booking-code consensus** — only appears when public or administrator-published booking codes contain detailed selections.
 
-18+ only. Predictions are informational and are not guarantees.
+This prevents the entire page from appearing empty while code consensus is still being collected.
+
+## Optional providers
+
+API-Football and The Odds API are optional fallbacks/enrichment sources. They are not required for the direct SportyBet collector or application readiness.
+
+Read `SPORTYBET_COLLECTOR_SETUP.md` and `START_HERE.md` before deploying.

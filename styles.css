@@ -781,3 +781,8 @@ img[loading="lazy"]{content-visibility:auto}
 .elite-evidence-reason{margin:0;padding:14px;border:1px solid var(--line);border-radius:15px;background:var(--surface-2);font-size:.78rem;line-height:1.6}
 .elite-evidence-dialog>small{display:block;margin-top:12px;color:var(--muted)}
 .elite-dialog-note{margin:14px 0 0;color:var(--muted);font-size:.68rem;line-height:1.5}
+
+/* v21.4 direct public SportyBet market board */
+.event-board-section{display:grid;gap:1rem}.market-board-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}.market-board-card{min-height:250px}.market-board-card:before{background:var(--red)}.market-board-card h3{margin:0;font-size:1.08rem;line-height:1.35}.market-odds-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem}.market-odds-grid .metric{text-align:center}.market-odds-grid .metric strong{font-size:1.08rem;font-variant-numeric:tabular-nums}.market-source-row{display:flex;align-items:center;justify-content:space-between;gap:.7rem;margin-top:auto}.market-source-row small{color:var(--muted)}.market-board-empty{grid-column:1/-1;padding:1rem;border:1px dashed var(--line);border-radius:20px;background:var(--surface-2)}.market-board-empty strong{display:block;margin-bottom:.35rem}.market-board-empty p{margin:0;color:var(--muted);line-height:1.55}
+@media(max-width:980px){.market-board-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.market-board-grid{grid-template-columns:1fr}.market-board-card{min-height:0}}

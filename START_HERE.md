@@ -1,106 +1,95 @@
-# START HERE — Sporty.codes v21.3.0 Fresh Start
+# START HERE — Sporty.codes v21.4.0
 
-This package is designed for a brand-new GitHub repository and a brand-new Render Blueprint service. It does not contain a `CNAME`, GitHub Pages deployment, scheduled paid collectors, old cached matches, or old public booking-code data.
+This is a full replacement build for the current staging repository and Render Blueprint service.
 
-## What this API is
+## What changed
 
-The included Node service is the Sporty.codes same-domain compatibility API. It supplies the routes the website expects, stores administrator or verified-contributor booking codes in Supabase, obtains football fixtures/statistics from API-Football, and can optionally add consensus odds from The Odds API.
+- Added `server/lib/sportybet-public.mjs`.
+- Added direct public SportyBet fixture and 1X2 normalization.
+- Added public Code Hub discovery and optional booking-detail expansion.
+- Added `/api/source-status` diagnostics.
+- Added a visible SportyBet Match Board so Smart Board is not blank while booking-code consensus is unavailable.
+- Made API-Football optional instead of a readiness requirement.
+- Kept Supabase accounts, profiles, booking tables and all existing pages.
 
-It is not an official SportyBet API and does not bypass SportyBet login, private endpoints, anti-bot controls, or booking-code creation rules. Genuine SportyBet booking codes must come from an authorized source, an administrator, or a verified contributor.
+## Deploy this replacement
 
-## Stage 1 — Create the GitHub repository
+1. Replace the files in the GitHub repository with this ZIP.
+2. Commit and push.
+3. In Render, open the Blueprint-managed service.
+4. Use **Manual Deploy → Clear build cache & deploy**.
+5. Keep your existing Supabase variables unchanged.
 
-1. Create a new empty GitHub repository.
-2. Extract this ZIP.
-3. Upload the contents of the extracted folder so `package.json`, `render.yaml`, `server`, `src`, and `supabase` are at the repository root.
-4. Commit and push.
+No new SQL migration is required when migrations 001–007 already succeeded.
 
-Do not add a `CNAME` file yet. Do not enable GitHub Pages.
+## Blueprint variables
 
-## Stage 2 — Create the Render Blueprint
+The included `render.yaml` supplies:
 
-1. In Render, create a new Blueprint.
-2. Connect the new GitHub repository.
-3. Render will read `render.yaml` and create `sporty-codes-staging` as a Node Web Service.
-4. The first deployment can open before Supabase or API-Football is connected.
+```env
+SPORTYBET_COUNTRY=gh
+SPORTYBET_PUBLIC_EVENTS_URL=https://www.sportybet.com/api/{country}/factsCenter/pcUpcomingEvents?sportId=sr%3Asport%3A1&marketId=1&pageNum={page}&pageSize=100
+SPORTYBET_PUBLIC_CODEHUB_URL=https://www.sportybet.com/{country}/m/code-hub/codes
+SPORTYBET_MAX_PAGES=3
+SPORTYBET_CODE_EXPANSION_LIMIT=6
+```
 
-The initial health response should show `ok: true` and `ready: false`. That is expected during setup.
+The public website route can change. After deployment, `/api/source-status` will show whether the collector returned data or a sanitized error.
 
-Open:
+## First checks
 
-- `/api/health`
-- `/deployment-check.html`
+Open these in order:
 
-## Stage 3 — Prepare the existing Supabase project
+```text
+/api/health
+/api/source-status
+/api/get_upcoming_events?days=3
+/api/get_code_hub_codes
+/smart-board.html
+```
 
-Because the existing Supabase project is being kept, run only:
+A healthy application should show:
 
-`supabase/migrations/007_custom_api.sql`
+```json
+{
+  "ok": true,
+  "ready": true,
+  "collector": "sportybet-public-direct"
+}
+```
 
-The migration is idempotent and adds:
+`ready: true` now depends on Supabase and migration readiness. API-Football is optional.
 
-- `api_cache`
-- `api_request_usage`
-- `booking_codes`
-- `booking_code_selections`
-- `reserve_api_request(...)`
+The events response should preferably show:
 
-Do not rerun migrations `001` through `006` unless the existing project never received them.
+```text
+source: sportybet-public-direct
+count: greater than 0
+```
 
-## Stage 4 — Add Render environment values
+## Force the first refresh
 
-Add these in the Render Web Service environment settings:
+Use the existing Render `CUSTOM_API_ADMIN_TOKEN`:
 
-- `SUPABASE_URL`
-- `SUPABASE_PUBLISHABLE_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `API_FOOTBALL_KEY`
+```powershell
+$headers = @{
+  Authorization = "Bearer YOUR_CUSTOM_API_ADMIN_TOKEN"
+}
 
-Render generates `CUSTOM_API_ADMIN_TOKEN` automatically from the Blueprint. Copy it into a password manager.
+Invoke-RestMethod `
+  -Method Post `
+  -Uri "https://sporty-codes-staging.onrender.com/api/admin/refresh" `
+  -Headers $headers
+```
 
-Optional, after the core service is verified:
+Then reload `/api/source-status` and `/smart-board.html`.
 
-- `ODDS_API_KEY`
-- `ODDS_API_SPORT_KEYS`
-- `ODDS_API_REGIONS`
+## About public booking codes
 
-After adding values, save and redeploy.
+The match board can populate from the public SportyBet event feed. Booking-code consensus requires code records with detailed selections. The collector reads embedded public Code Hub JSON when available. A confirmed public booking-detail endpoint can be added later with:
 
-## Stage 5 — Confirm readiness
+```env
+SPORTYBET_PUBLIC_BOOKING_URL_TEMPLATE=https://PUBLIC-SPORTYBET-ENDPOINT/{code}
+```
 
-Open `/api/health`. A complete setup should show:
-
-- `ok: true`
-- `ready: true`
-- `supabase_status: connected`
-- `migration_ready: true`
-- `api_football_configured: true`
-
-Then test:
-
-- `/api/get_upcoming_events?days=1`
-- `/api/get_code_hub_codes?limit=3`
-- `/international`
-- `/elite-picks`
-- `/smart-board`
-- `/login`
-
-On Windows, run `tools/check-staging.ps1` for the same checks.
-
-## Stage 6 — Refresh through the private admin route
-
-Run `tools/admin-refresh.ps1`, or send:
-
-`POST /api/admin/refresh`
-
-with:
-
-`Authorization: Bearer YOUR_CUSTOM_API_ADMIN_TOKEN`
-
-Never place the service-role key or admin token in browser code, GitHub files, screenshots, or public messages.
-
-## Stage 7 — Connect the domain later
-
-Keep the temporary Render URL until all tests pass. Then add the custom domain in Render and copy the exact DNS records Render displays into Hostinger.
-
-Do not create a repository `CNAME`; the production domain belongs to the Render Web Service.
+No private account access or protected automation is included.

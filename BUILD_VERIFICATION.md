@@ -1,17 +1,16 @@
-# Build verification — v21.3.0
+# Build verification — Sporty.codes v21.4.0
 
-Verified on 2026-08-04:
+Verified locally:
 
 - Complete inherited application test suite passed.
-- Fresh-start repository tests passed.
-- Static reference and schema validation passed.
-- Setup-mode Render build passed without Supabase or provider secrets.
-- Local Node server smoke test passed.
-- `/api/health` returned HTTP 200 with safe readiness fields.
-- Homepage, deployment checker, upcoming-events route, and Code Hub route returned successfully.
-- No production `CNAME` is included.
-- Only `.github/workflows/validate.yml` is included.
-- Old cached fixtures, booking codes, tip history, and Elite history are reset.
-- No retired paid collector references or obvious secret values were found.
+- Direct SportyBet event response normalization passed.
+- Public Code Hub HTML/JSON normalization passed.
+- Render build completed.
+- Node service started successfully.
+- `/api/health` returned v21.4.0.
+- `/api/get_upcoming_events` returned two normalized mock SportyBet events with 1X2 odds.
+- `/api/get_code_hub_codes` returned one mock public code with two detailed selections.
+- `/api/source-status` reported successful event and code collection.
+- Smart Board contains the new market-board UI and responsive rules.
 
-Live upstream data was not called because private API keys are intentionally not bundled.
+The live SportyBet public route could not be contacted from the build environment. Verify it after Render deployment through `/api/source-status`. If SportyBet changes its public URL, update `SPORTYBET_PUBLIC_EVENTS_URL` without changing the application code.

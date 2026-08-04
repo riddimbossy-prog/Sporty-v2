@@ -23,5 +23,15 @@ services:
         value: 120
       - key: EVENT_DAYS_AHEAD
         value: 3
+      - key: SPORTYBET_COUNTRY
+        value: gh
+      - key: SPORTYBET_PUBLIC_EVENTS_URL
+        value: "https://www.sportybet.com/api/{country}/factsCenter/pcUpcomingEvents?sportId=sr%3Asport%3A1&marketId=1&pageNum={page}&pageSize=100"
+      - key: SPORTYBET_PUBLIC_CODEHUB_URL
+        value: "https://www.sportybet.com/{country}/m/code-hub/codes"
+      - key: SPORTYBET_MAX_PAGES
+        value: 3
+      - key: SPORTYBET_CODE_EXPANSION_LIMIT
+        value: 6
       - key: UPSTREAM_TIMEOUT_MS
         value: 16000

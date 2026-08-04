@@ -72,7 +72,7 @@ assert.match(sync,/updateSettlementLedger/);
 assert.match(sync,/settlement_review_count/);
 assert.match(render,/settlement-ledger\.json/);
 assert.match(render,/results-summary\.json/);
-assert.match(render,/clean-start-custom-api/);
+assert.match(render,/direct-public-sportybet-custom-api/);
 assert.match(workflow,/npm test/);
 assert.match(server,/\/admin\/refresh/);
 console.log('v20.6 verified results and proof automation checks passed');

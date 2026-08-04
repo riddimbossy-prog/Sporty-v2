@@ -17,5 +17,6 @@ export async function select(table,query={}){if(!configured())return[];return re
 export async function upsert(table,rows,{onConflict='',returning='minimal'}={}){if(!configured())return null;const url=urlFor(table,onConflict?{on_conflict:onConflict}:{});const prefer=[`return=${returning}`,'resolution=merge-duplicates'].join(',');return request(url,{method:'POST',headers:headers({Prefer:prefer}),body:JSON.stringify(Array.isArray(rows)?rows:[rows])})}
 export async function insert(table,rows,{returning='representation'}={}){if(!configured())return null;return request(urlFor(table),{method:'POST',headers:headers({Prefer:`return=${returning}`}),body:JSON.stringify(Array.isArray(rows)?rows:[rows])})}
 export async function patch(table,query,values){if(!configured())return null;return request(urlFor(table,query),{method:'PATCH',headers:headers({Prefer:'return=representation'}),body:JSON.stringify(values)})}
+export async function remove(table,query){if(!configured())return null;return request(urlFor(table,query),{method:'DELETE',headers:headers({Prefer:'return=minimal'})})}
 
 export async function rpc(name,args={}){if(!configured())return null;return request(urlFor(`rpc/${name}`),{method:'POST',headers:headers(),body:JSON.stringify(args)})}

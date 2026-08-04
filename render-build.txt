@@ -1,4 +1,4 @@
-sporty.codes 21.3.0
-product: clean-start-custom-api
-api: same-domain-compatibility-api
+sporty.codes 21.4.0
+product: direct-public-sportybet-custom-api
+api: same-domain-direct-public-sportybet-collector
 state: repository-source

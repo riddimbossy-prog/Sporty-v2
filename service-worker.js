@@ -1,5 +1,5 @@
-const VERSION='sporty-codes-v21.3.0';
-const ASSET_VERSION='21.3.0';
+const VERSION='sporty-codes-v21.4.0';
+const ASSET_VERSION='21.4.0';
 const STATIC_CACHE=`${VERSION}-static`;
 const PAGE_CACHE=`${VERSION}-pages`;
 const DATA_CACHE=`${VERSION}-data`;
@@ -7,7 +7,7 @@ const IMAGE_CACHE=`${VERSION}-images`;
 const CORE=[
   '/login.html','/international.html','/offline.html','/manifest.json','/data/codehub-banner.json','/sportybet-events.json',
   `/styles.css?v=${ASSET_VERSION}`,`/responsive.css?v=${ASSET_VERSION}`,`/pwa.css?v=${ASSET_VERSION}`,
-  `/config.js?v=${ASSET_VERSION}`,`/src/region.js?v=${ASSET_VERSION}`,`/src/international.js?v=${ASSET_VERSION}`,`/src/auth.js?v=${ASSET_VERSION}`,`/src/login.js?v=${ASSET_VERSION}`,`/src/admin-login.js?v=${ASSET_VERSION}`,`/src/member-home.js?v=${ASSET_VERSION}`,`/src/share.js?v=${ASSET_VERSION}`,`/src/experience.js?v=${ASSET_VERSION}`,
+  `/config.js?v=${ASSET_VERSION}`,`/src/market-board.js?v=${ASSET_VERSION}`,`/src/region.js?v=${ASSET_VERSION}`,`/src/international.js?v=${ASSET_VERSION}`,`/src/auth.js?v=${ASSET_VERSION}`,`/src/login.js?v=${ASSET_VERSION}`,`/src/admin-login.js?v=${ASSET_VERSION}`,`/src/member-home.js?v=${ASSET_VERSION}`,`/src/share.js?v=${ASSET_VERSION}`,`/src/experience.js?v=${ASSET_VERSION}`,
   '/icons/icon-192.png','/assets/logo-wordmark-dark.webp','/assets/logo-wordmark-light.webp','/favicon.svg'
 ];
 const ROUTES={
@@ -115,7 +115,8 @@ self.addEventListener('fetch',event=>{
 
   if(url.pathname.startsWith('/api/')){
     const fallback=url.pathname==='/api/get_code_hub_codes'?'/data/codehub-banner.json':url.pathname==='/api/get_upcoming_events'?'/sportybet-events.json':null;
-    event.respondWith(networkFirst(request,DATA_CACHE,{timeout:4500,normalize:true,fallback,maxEntries:36}));
+    const timeout=url.pathname==='/api/get_upcoming_events'||url.pathname==='/api/get_code_hub_codes'?18000:6000;
+    event.respondWith(networkFirst(request,DATA_CACHE,{timeout,normalize:true,fallback,maxEntries:36}));
     return;
   }
 

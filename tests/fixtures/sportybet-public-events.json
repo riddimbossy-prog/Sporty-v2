@@ -1,0 +1,39 @@
+{
+  "data": {
+    "total_events": 2,
+    "tournaments": [
+      {
+        "tournament_name": "Premier League",
+        "country": "England",
+        "events": [
+          {
+            "event_id": "evt-1001",
+            "game_id": "game-1001",
+            "home_team": "North City",
+            "away_team": "South United",
+            "start_time": 1893456000000,
+            "match_status": "Not start",
+            "markets": [
+              {
+                "market_id": "1",
+                "name": "1X2",
+                "outcomes": [
+                  {"id":"1","description":"Home","odds":"1.85"},
+                  {"id":"2","description":"Draw","odds":"3.40"},
+                  {"id":"3","description":"Away","odds":"4.20"}
+                ]
+              }
+            ]
+          },
+          {
+            "event_id": "evt-1002",
+            "home_team": "River FC",
+            "away_team": "Mountain SC",
+            "start_time": 1893463200000,
+            "markets": [{"id":"1","outcomes":[{"id":"1","odds":2.1},{"id":"2","odds":3.1},{"id":"3","odds":3.3}]}]
+          }
+        ]
+      }
+    ]
+  }
+}

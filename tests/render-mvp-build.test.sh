@@ -10,8 +10,8 @@ cp -R "$ROOT"/. "$TMP"/
   SUPABASE_PUBLISHABLE_KEY='sb_publishable_example_key_abcdefghijklmnopqrstuvwxyz123456' \
   bash scripts/render-build.sh >/tmp/sporty_mvp_build.log
 )
-grep -q 'sporty.codes 21.3.0' "$TMP/.render-site/render-build.txt"
-grep -q 'clean-start-custom-api' "$TMP/.render-site/render-build.txt"
+grep -q 'sporty.codes 21.4.0' "$TMP/.render-site/render-build.txt"
+grep -q 'direct-public-sportybet-custom-api' "$TMP/.render-site/render-build.txt"
 grep -q 'https://example.supabase.co' "$TMP/.render-site/config.js"
 grep -q 'sb_publishable_example_key' "$TMP/.render-site/config.js"
 test -f "$TMP/.render-site/smart-board.html"
@@ -28,6 +28,7 @@ test -f "$TMP/.render-site/privacy/index.html"
 test -f "$TMP/.render-site/account/index.html"
 test -f "$TMP/.render-site/saved/index.html"
 test -f "$TMP/.render-site/src/auth.js"
+test -f "$TMP/.render-site/src/market-board.js"
 test -f "$TMP/.render-site/src/login.js"
 test -f "$TMP/.render-site/src/admin-login.js"
 test -f "$TMP/.render-site/src/admin-users.js"

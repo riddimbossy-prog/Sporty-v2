@@ -22,7 +22,7 @@ CORE_REQUIRED=(
   performance.html sources.html control-room.html login.html admin-users.html
   privacy.html admin-login.html account.html saved.html deployment-check.html 404.html offline.html manifest.json service-worker.js styles.css responsive.css pwa.css
   favicon.svg
-  src/mvp.js src/intelligence.js src/elite.js src/stability.js src/control-room.js src/region.js src/international.js
+  src/mvp.js src/market-board.js src/intelligence.js src/elite.js src/stability.js src/control-room.js src/region.js src/international.js
   src/handoff.js src/share.js src/auth.js src/member-home.js src/login.js src/admin-login.js src/admin-users.js src/saved.js src/account.js src/saved-page.js src/pwa.js src/experience.js
   assets/logo-mark.png assets/logo-wordmark-dark.png assets/logo-wordmark-light.png assets/logo-mark.webp assets/logo-wordmark-dark.webp assets/logo-wordmark-light.webp
   assets/logo-email.png assets/share-card-default.png
@@ -33,7 +33,7 @@ CORE_REQUIRED=(
   supabase/migrations/005_remove_member_location_data.sql
   supabase/migrations/006_member_personalization.sql
   supabase/migrations/007_custom_api.sql
-  server/index.mjs server/lib/core.mjs server/lib/supabase.mjs server/lib/data-service.mjs
+  server/index.mjs server/lib/core.mjs server/lib/supabase.mjs server/lib/data-service.mjs server/lib/sportybet-public.mjs
   supabase/email-templates/confirm-signup.html
   supabase/email-templates/reset-password.html
   supabase/email-templates/password-changed.html
@@ -106,7 +106,7 @@ window.SPORTY_CONFIG = {
 };
 CONFIG
 
-printf 'sporty.codes %s\nproduct: clean-start-custom-api\napi: same-domain-compatibility-api\nsetup_pending: %s\n' "$VERSION" "$SETUP_PENDING" > "$OUTPUT_DIR/render-build.txt"
+printf 'sporty.codes %s\nproduct: direct-public-sportybet-custom-api\napi: same-domain-direct-public-sportybet-collector\nsetup_pending: %s\n' "$VERSION" "$SETUP_PENDING" > "$OUTPUT_DIR/render-build.txt"
 
 for route in international marketplace free-codes smart-board elite-picks most-added won-codes performance sources control-room login admin-login admin-users privacy account saved deployment-check; do
   mkdir -p "$OUTPUT_DIR/$route"
@@ -119,7 +119,7 @@ OUTPUT_REQUIRED=(
   index.html international.html marketplace.html smart-board.html elite-picks.html most-added.html won-codes.html
   performance.html sources.html control-room.html login.html admin-users.html
   privacy.html admin-login.html account.html saved.html deployment-check.html config.js render-build.txt service-worker.js manifest.json offline.html responsive.css
-  src/mvp.js src/intelligence.js src/elite.js src/stability.js src/control-room.js src/region.js src/international.js
+  src/mvp.js src/market-board.js src/intelligence.js src/elite.js src/stability.js src/control-room.js src/region.js src/international.js
   src/handoff.js src/share.js src/auth.js src/member-home.js src/login.js src/admin-login.js src/admin-users.js src/saved.js src/account.js src/saved-page.js src/pwa.js src/experience.js
   data/codehub-banner.json data/tip-history.json data/source-stats.json
   data/performance-summary.json data/feed-health.json data/manual-overrides.json data/settlement-ledger.json data/results-summary.json data/elite-picks.json data/elite-feed-health.json data/elite-performance.json
@@ -135,4 +135,4 @@ done
 
 echo "Render publish directory prepared at $OUTPUT_DIR"
 echo "Build version: $VERSION"
-echo "Product mode: Fresh-start custom API"
+echo "Product mode: Direct public SportyBet custom API"

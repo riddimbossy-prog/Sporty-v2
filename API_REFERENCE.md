@@ -1,4 +1,4 @@
-# Custom API reference
+# Sporty.codes custom API reference — v21.4.0
 
 Base URL on staging:
 
@@ -8,28 +8,45 @@ Base URL on staging:
 
 `GET /api/health`
 
-Returns service status and configuration booleans without revealing secret values.
+Reports Supabase readiness, direct collector presence, and optional-provider flags. API-Football is not required for `ready: true`.
 
-## Upcoming events
+## Collector diagnostics
+
+`GET /api/source-status`
+
+Returns sanitized status for the direct public SportyBet event and Code Hub collectors, including last attempt, last success, last error and item count. It never returns secret values or the administrator token.
+
+## Upcoming public events
 
 `GET /api/get_upcoming_events?days=3`
 
 - `days` accepts `1` through `7`.
-- Fixtures use API-Football when configured.
-- H2H odds are added only when The Odds API is configured.
-- Cached fallback output is used when an upstream provider is unavailable.
+- Tries the direct public SportyBet collector first.
+- Normalizes fixtures, leagues, kickoff times and 1X2 odds.
+- Uses API-Football only as an optional fallback.
+- Uses The Odds API only as optional fallback enrichment.
+- Returns cached data when available.
+
+Preferred response source:
+
+```text
+sportybet-public-direct
+```
 
 ## Code Hub
 
 `GET /api/get_code_hub_codes?limit=24`
 
-Returns published, unexpired booking-code records from Supabase.
+- Reads published records already stored in Supabase.
+- When the table is empty or an administrator forces refresh, checks the public SportyBet Code Hub source.
+- Stores collected public codes and detailed selections in Supabase.
+- Returns an empty list rather than fabricating codes when no public code data is exposed.
 
 ## Booking details
 
 `GET /api/get_booking?code=ABC123`
 
-Returns one published booking code and its selections.
+Returns one published public booking code and its selections.
 
 ## Match search
 
@@ -41,7 +58,7 @@ Returns normalized fixtures for the requested date.
 
 `GET /api/get_fixture_stats?event_id=api-football:12345`
 
-Returns recent-team statistical summaries from API-Football.
+Optional API-Football statistical enrichment. This route requires `API_FOOTBALL_KEY`; the direct SportyBet event collector does not.
 
 ## Administrator refresh
 
@@ -50,6 +67,8 @@ Returns recent-team statistical summaries from API-Football.
 Header:
 
 `Authorization: Bearer CUSTOM_API_ADMIN_TOKEN`
+
+Forces the event collector, public Code Hub collector and cache refresh.
 
 ## Administrator code publishing
 
