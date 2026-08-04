@@ -1,4 +1,4 @@
--- sporty.codes v21.4.1
+-- sporty.codes v21.4.2
 -- Parse-free custom API cache, booking-code store and request controls.
 -- Run after 006_member_personalization.sql.
 

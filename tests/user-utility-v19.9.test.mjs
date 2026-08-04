@@ -51,7 +51,7 @@ assert.match(admin,/maskEmail/);
 for(const page of ['index.html','marketplace.html','smart-board.html','most-added.html','won-codes.html']){
   const html=read(page);
   assert.match(html,/\/saved\.html/);
-  assert.match(html,/\/src\/saved\.js\?v=21\.4\.1/);
+  assert.match(html,/\/src\/saved\.js\?v=21\.4\.2/);
 }
 
 const build=read('scripts/render-build.sh');

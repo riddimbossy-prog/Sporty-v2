@@ -16,6 +16,9 @@ const emptyDiagnostic = () => ({
   pages_attempted: 0,
   parsed_before_filter: 0,
   filtered_out: 0,
+  html_codes_found: 0,
+  extraction_methods: [],
+  script_tags_found: 0,
 });
 
 const status = {
@@ -131,20 +134,115 @@ function decodeHtml(value) {
     .replace(/&gt;/g, '>');
 }
 
+function decodeJsEscapes(value) {
+  return String(value || '')
+    .replace(/\\u([0-9a-f]{4})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/\\x([0-9a-f]{2})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/\\\//g, '/')
+    .replace(/\\"/g, '"')
+    .replace(/\\'/g, "'")
+    .replace(/\\n/g, '\n')
+    .replace(/\\r/g, '\r')
+    .replace(/\\t/g, '\t')
+    .replace(/\\\\/g, '\\');
+}
+
+function balancedJsonAt(source, start) {
+  const open = source[start];
+  const close = open === '{' ? '}' : open === '[' ? ']' : null;
+  if (!close) return null;
+  let depth = 0;
+  let quote = null;
+  let escaped = false;
+  for (let i = start; i < source.length; i += 1) {
+    const char = source[i];
+    if (quote) {
+      if (escaped) escaped = false;
+      else if (char === '\\') escaped = true;
+      else if (char === quote) quote = null;
+      continue;
+    }
+    if (char === '"' || char === "'") { quote = char; continue; }
+    if (char === open) depth += 1;
+    else if (char === close) {
+      depth -= 1;
+      if (depth === 0) return source.slice(start, i + 1);
+    }
+  }
+  return null;
+}
+
+function parseEmbeddedAssignments(source, out) {
+  const markers = [
+    '__INITIAL_STATE__', '__PRELOADED_STATE__', '__APOLLO_STATE__',
+    '__NEXT_DATA__', '__NUXT__', '__NUXT_DATA__', 'INITIAL_STATE',
+  ];
+  for (const marker of markers) {
+    let offset = 0;
+    while ((offset = source.indexOf(marker, offset)) !== -1) {
+      const brace = source.slice(offset + marker.length).search(/[\[{]/);
+      if (brace < 0) break;
+      const start = offset + marker.length + brace;
+      const fragment = balancedJsonAt(source, start);
+      if (fragment) {
+        try { out.push(JSON.parse(fragment)); } catch {}
+        offset = start + fragment.length;
+      } else offset = start + 1;
+    }
+  }
+}
+
+function parseJsonParseCalls(source, out) {
+  const re = /JSON\.parse\(\s*(["'])([\s\S]*?)\1\s*\)/g;
+  for (const match of source.matchAll(re)) {
+    try {
+      const decoded = decodeJsEscapes(match[2]);
+      out.push(JSON.parse(decoded));
+    } catch {}
+  }
+}
+
 function jsonCandidates(body, contentType = '') {
   const out = [];
+  const seen = new Set();
+  const add = (value) => {
+    if (!value || typeof value !== 'object') return;
+    let key = '';
+    try { key = JSON.stringify(value); } catch { return; }
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    out.push(value);
+  };
   const raw = String(body || '').trim();
   if (/json/i.test(contentType) || raw.startsWith('{') || raw.startsWith('[')) {
-    try { out.push(JSON.parse(raw)); } catch {}
+    try { add(JSON.parse(raw)); } catch {}
   }
-  const scriptRe = /<script\b[^>]*(?:type=["']application\/json["']|id=["'](?:__NEXT_DATA__|__NUXT_DATA__|__INITIAL_STATE__)["'])[^>]*>([\s\S]*?)<\/script>/gi;
-  for (const match of raw.matchAll(scriptRe)) {
-    try { out.push(JSON.parse(decodeHtml(match[1]).trim())); } catch {}
+
+  const decoded = decodeHtml(raw);
+  const scripts = [...decoded.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
+  for (const match of scripts) {
+    const script = String(match[1] || '').trim();
+    if (!script) continue;
+    if (script.startsWith('{') || script.startsWith('[')) {
+      try { add(JSON.parse(script)); } catch {}
+    }
+    const unescaped = decodeJsEscapes(script);
+    if (unescaped !== script && (unescaped.trim().startsWith('{') || unescaped.trim().startsWith('['))) {
+      try { add(JSON.parse(unescaped.trim())); } catch {}
+    }
+    const local = [];
+    parseEmbeddedAssignments(script, local);
+    parseEmbeddedAssignments(unescaped, local);
+    parseJsonParseCalls(script, local);
+    parseJsonParseCalls(unescaped, local);
+    for (const value of local) add(value);
   }
-  const assignmentRe = /(?:window\.)?(?:__INITIAL_STATE__|__PRELOADED_STATE__|__APOLLO_STATE__)\s*=\s*([\[{][\s\S]*?)[;]\s*(?:<\/script>|$)/gi;
-  for (const match of raw.matchAll(assignmentRe)) {
-    try { out.push(JSON.parse(decodeHtml(match[1]).trim())); } catch {}
-  }
+
+  const bodyAssignments = [];
+  parseEmbeddedAssignments(decoded, bodyAssignments);
+  parseEmbeddedAssignments(decodeJsEscapes(decoded), bodyAssignments);
+  parseJsonParseCalls(decoded, bodyAssignments);
+  for (const value of bodyAssignments) add(value);
   return out;
 }
 
@@ -507,6 +605,76 @@ function codeCandidate(raw) {
   };
 }
 
+
+function numericNear(context, patterns, { min = 0, max = Number.MAX_SAFE_INTEGER, anchor = 0 } = {}) {
+  let best = null;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const pattern of patterns) {
+    const flags = [...new Set(`${pattern.flags || ''}g`.split(''))].join('');
+    const re = new RegExp(pattern.source, flags);
+    for (const match of context.matchAll(re)) {
+      const value = number(match?.[1]);
+      if (!Number.isFinite(value) || value < min || value > max) continue;
+      const distance = Math.abs((match.index || 0) - anchor);
+      if (distance < bestDistance) { best = value; bestDistance = distance; }
+    }
+  }
+  return best;
+}
+
+function collectCodesFromHtml(body) {
+  const raw = decodeHtml(String(body || ''));
+  const sources = [raw, decodeJsEscapes(raw)];
+  const found = new Map();
+  const add = (code, index, source, method) => {
+    const clean = text(code).toUpperCase();
+    if (!/^[A-Z0-9]{6}$/.test(clean)) return;
+    const from = Math.max(0, index - 450);
+    const to = Math.min(source.length, index + 700);
+    const context = source.slice(from, to);
+    const odds = numericNear(context, [
+      /(?:total[_\s-]*odds?|totalOdd|totalOdds)[^0-9]{0,70}([0-9]+(?:\.[0-9]+)?)/i,
+      /([0-9]+(?:\.[0-9]+)?)\s*(?:total\s*)?odds\b/i,
+    ], { min: 1.01, max: 10000000, anchor: index - from });
+    const selections = numericNear(context, [
+      /(?:selections?[_\s-]*count|selectionCount|selectionsCount|betCount)[^0-9]{0,60}(\d{1,3})/i,
+      /(\d{1,3})\s*(?:selections?|picks?|events?|legs?)\b/i,
+    ], { min: 1, max: 250, anchor: index - from });
+    const existing = found.get(clean);
+    const candidate = {
+      id: hashKey(clean),
+      code: clean,
+      title: 'Free public SportyBet code',
+      odds,
+      selections: selections || 0,
+      author: 'SportyBet Code Hub',
+      tag: 'Code Hub',
+      status: 'upcoming',
+      result: null,
+      created_at: new Date().toISOString(),
+      expires_at: null,
+      source_url: `https://www.sportybet.com/${cleanCountry()}/m/code-hub/codes`,
+      tips: [],
+      extraction_method: method,
+    };
+    if (!existing || (!existing.odds && candidate.odds) || (!existing.selections && candidate.selections)) {
+      found.set(clean, { ...existing, ...candidate, odds: candidate.odds || existing?.odds || null, selections: candidate.selections || existing?.selections || 0 });
+    }
+  };
+
+  const patterns = [
+    { method: 'data-attribute', re: /data-(?:booking-|bet-|coupon-|share-)?code\s*=\s*["']([A-Z0-9]{6})["']/gi },
+    { method: 'json-key', re: /(?:bookingCode|booking_code|betCode|bet_code|couponCode|coupon_code|shareCode|share_code)\s*["']?\s*[:=]\s*["']([A-Z0-9]{6})["']/gi },
+    { method: 'visible-label', re: /\b(?:booking|bet|coupon|share)\s*code\b[^A-Z0-9]{0,50}([A-Z0-9]{6})\b/gi },
+  ];
+  for (const source of sources) {
+    for (const { method, re } of patterns) {
+      for (const match of source.matchAll(re)) add(match[1], match.index || 0, source, method);
+    }
+  }
+  return [...found.values()];
+}
+
 function collectCodesFromObject(root) {
   const output = [];
   const seen = new Set();
@@ -640,12 +808,34 @@ export async function collectSportyBetCodes({ limit = 24 } = {}) {
     const url = renderTemplate(configured.value, { country, page: 1, limit });
     const response = await fetchPublic(url, { timeoutMs: number(env('UPSTREAM_TIMEOUT_MS', '16000')) || 16000 });
     const candidates = jsonCandidates(response.body, response.contentType);
-    updateDiagnostic(status.codes, response, candidates, { pages_attempted: 1 });
+    const htmlItems = collectCodesFromHtml(response.body);
+    const extractionMethods = new Set();
+    if (candidates.length) extractionMethods.add('embedded-json');
+    for (const item of htmlItems) extractionMethods.add(item.extraction_method || 'html');
+    updateDiagnostic(status.codes, response, candidates, {
+      pages_attempted: 1,
+      html_codes_found: htmlItems.length,
+      extraction_methods: [...extractionMethods],
+      script_tags_found: [...String(response.body || '').matchAll(/<script\b/gi)].length,
+    });
 
     let items = [];
     for (const candidate of candidates) items.push(...collectCodesFromObject(candidate));
+    items.push(...htmlItems);
     const map = new Map();
-    for (const item of items) if (!map.has(item.code)) map.set(item.code, item);
+    for (const item of items) {
+      if (!map.has(item.code)) map.set(item.code, item);
+      else {
+        const existing = map.get(item.code);
+        map.set(item.code, {
+          ...existing,
+          ...item,
+          odds: item.odds || existing.odds || null,
+          selections: item.selections || existing.selections || item.tips?.length || existing.tips?.length || 0,
+          tips: item.tips?.length ? item.tips : existing.tips || [],
+        });
+      }
+    }
     items = [...map.values()].slice(0, Math.max(1, Math.min(100, number(limit) || 24)));
 
     const template = text(env('SPORTYBET_PUBLIC_BOOKING_URL_TEMPLATE'));
@@ -656,10 +846,19 @@ export async function collectSportyBetCodes({ limit = 24 } = {}) {
       }
     }
 
-    status.codes.last_success_at = new Date().toISOString();
-    status.codes.last_error = candidates.length ? null : 'SportyBet Code Hub returned no readable public JSON';
-    status.codes.count = items.length;
     status.codes.diagnostic.parsed_before_filter = items.length;
+    if (!items.length) {
+      const kind = classifyBody(response.body, response.contentType);
+      if (kind === 'html') {
+        throw new Error('SportyBet Code Hub loaded, but no public booking codes were embedded in the server HTML or page state');
+      }
+      if (!candidates.length) throw new Error('SportyBet Code Hub returned no readable JSON or HTML code data');
+      throw new Error('SportyBet Code Hub data was readable, but its booking-code schema was not recognized');
+    }
+
+    status.codes.last_success_at = new Date().toISOString();
+    status.codes.last_error = null;
+    status.codes.count = items.length;
     return items;
   } catch (error) {
     status.codes.last_error = publicError(error);
@@ -672,6 +871,7 @@ export const __test = {
   jsonCandidates,
   collectEventsFromObject,
   collectCodesFromObject,
+  collectCodesFromHtml,
   eventCandidate,
   codeCandidate,
   renderTemplate,

@@ -34,7 +34,14 @@ async function writePersistentCache(key,payload,ttl,source){
 async function cached(key,ttl,loader,{source='custom-api',force=false}={}){
   if(!force){const local=memoryGet(key);if(local)return local;const persisted=await readPersistentCache(key);if(persisted)return memorySet(key,persisted,ttl)}
   if(inflight.has(key))return inflight.get(key);
-  const work=(async()=>{const value=await loader();memorySet(key,value,ttl);await writePersistentCache(key,value,ttl,source);return value})().finally(()=>inflight.delete(key));
+  const work=(async()=>{
+    const value=await loader();
+    const emptyFeed=Boolean(value&&typeof value==='object'&&number(value.count)===0&&(key.includes('codehub')||key.includes('upcoming')));
+    const effectiveTtl=emptyFeed?Math.min(ttl,60):ttl;
+    memorySet(key,value,effectiveTtl);
+    await writePersistentCache(key,value,effectiveTtl,source);
+    return value;
+  })().finally(()=>inflight.delete(key));
   inflight.set(key,work);return work;
 }
 
@@ -110,20 +117,36 @@ export async function getSourceStatus(){
 
 export async function getCodeHubCodes({limit=24,force=false}={}){
   const safeLimit=Math.max(1,Math.min(100,number(limit)||24));
-  return cached(`v2141:codehub:${safeLimit}`,ttlSeconds('CODE_CACHE_TTL_SECONDS'),async()=>{
-    let rows=[];let collected=[];let source='supabase-booking-codes';
-    if(db.configured())rows=await db.select('booking_codes',{select:'*,booking_code_selections(*)',status:'eq.published',order:'published_at.desc.nullslast,created_at.desc',limit:String(safeLimit)}).catch(()=>[]);
+  return cached(`v2142:codehub:${safeLimit}`,ttlSeconds('CODE_CACHE_TTL_SECONDS'),async()=>{
+    let rows=[];let collected=[];let source='none';const errors=[];
+    if(db.configured()){
+      rows=await db.select('booking_codes',{select:'*,booking_code_selections(*)',status:'eq.published',order:'published_at.desc.nullslast,created_at.desc',limit:String(safeLimit)}).catch(()=>[]);
+      if(rows.length)source='supabase-booking-codes';
+    }
     if(force||!rows.length){
       try{
         if(await budgetAvailable('sportybet-public-codes',1))collected=await collectSportyBetCodes({limit:safeLimit});
-        if(collected.length){source='sportybet-public-direct';await persistCollectedCodes(collected);if(db.configured())rows=await db.select('booking_codes',{select:'*,booking_code_selections(*)',status:'eq.published',order:'published_at.desc.nullslast,created_at.desc',limit:String(safeLimit)}).catch(()=>[])}
-      }catch(error){console.warn('[custom-api] SportyBet code refresh failed:',publicError(error))}
+        else errors.push('Daily upstream request budget reached');
+        if(collected.length){
+          source='sportybet-public-direct';
+          await persistCollectedCodes(collected);
+          if(db.configured())rows=await db.select('booking_codes',{select:'*,booking_code_selections(*)',status:'eq.published',order:'published_at.desc.nullslast,created_at.desc',limit:String(safeLimit)}).catch(()=>[]);
+        }
+      }catch(error){
+        const message=publicError(error);
+        errors.push(message);
+        console.warn('[custom-api] SportyBet code refresh failed:',message);
+      }
     }
     let items=rows.map(normalizeCodeRow).filter(item=>item.code);
     if(!items.length&&collected.length)items=collected.map(normalizeCodeRow).filter(item=>item.code).slice(0,safeLimit);
-    if(!items.length){const fallback=await readJson(`${root}/data/codehub-banner.json`,{items:[]});items=(fallback.items||[]).map(normalizeCodeRow).filter(item=>item.code).slice(0,safeLimit);if(items.length)source='local-fallback'}
-    return{version:8,source,collector:'sportybet-public-direct',generated_at:nowIso(),status:items.length?'ok':'empty',count:items.length,slips_with_tips:items.filter(item=>item.tips.length).length,total_tips:items.reduce((sum,item)=>sum+item.tips.length,0),items};
-  },{source:'booking_codes-v2141',force});
+    if(!items.length){
+      const fallback=await readJson(`${root}/data/codehub-banner.json`,{items:[]});
+      items=(fallback.items||[]).map(normalizeCodeRow).filter(item=>item.code).slice(0,safeLimit);
+      if(items.length)source='local-fallback';
+    }
+    return{version:9,source,collector:'sportybet-public-direct',source_url:'https://www.sportybet.com/gh/m/code-hub/codes',generated_at:nowIso(),status:items.length?'ok':'empty',count:items.length,slips_with_tips:items.filter(item=>item.tips.length).length,total_tips:items.reduce((sum,item)=>sum+item.tips.length,0),errors:errors.slice(0,2),items};
+  },{source:'booking_codes-v2142',force});
 }
 
 export async function getBooking(code){
@@ -165,7 +188,7 @@ function mergeOdds(fixtures,oddsRows){
 
 export async function getUpcomingEvents({force=false,days=3}={}){
   const safeDays=Math.max(1,Math.min(7,number(days)||3));
-  return cached(`v2141:upcoming:${safeDays}`,ttlSeconds('EVENT_CACHE_TTL_SECONDS'),async()=>{
+  return cached(`v2142:upcoming:${safeDays}`,ttlSeconds('EVENT_CACHE_TTL_SECONDS'),async()=>{
     let events=[];let source='none';const errors=[];
     try{
       if(await budgetAvailable('sportybet-public-events',1)){events=await collectSportyBetEvents({days:safeDays});if(events.length)source='sportybet-public-direct'}
@@ -175,7 +198,7 @@ export async function getUpcomingEvents({force=false,days=3}={}){
     }
     if(!events.length){const fallback=await readJson(`${root}/sportybet-events.json`,{events:[]});events=(fallback.events||[]).map(row=>({...row,event_id:text(row.event_id||`fallback:${row.game_id}`)}));if(events.length)source='cached-fallback'}
     events=events.sort((a,b)=>number(a.start_time)-number(b.start_time));return{version:3,updated_at:nowIso(),source,collector:'sportybet-public-direct',count:events.length,errors:errors.slice(0,2),events};
-  },{source:'events-v2141',force});
+  },{source:'events-v2142',force});
 }
 
 function summarizeFixtures(rows,teamId){

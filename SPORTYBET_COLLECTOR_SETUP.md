@@ -1,4 +1,4 @@
-# Sporty.codes v21.4.1 — Direct public SportyBet collector
+# Sporty.codes v21.4.2 — Direct public SportyBet collector
 
 The custom API now includes `server/lib/sportybet-public.mjs`. It makes public GET requests only, normalizes public fixture/market responses, caches them in Supabase, and exposes them through `/api/get_upcoming_events`.
 

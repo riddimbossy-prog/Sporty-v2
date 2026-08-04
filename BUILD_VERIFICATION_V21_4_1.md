@@ -1,4 +1,4 @@
-# sporty.codes v21.4.1 build verification
+# sporty.codes v21.4.2 build verification
 
 Verified on 2026-08-04.
 

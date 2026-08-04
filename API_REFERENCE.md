@@ -1,4 +1,4 @@
-# Sporty.codes custom API reference — v21.4.1
+# Sporty.codes custom API reference — v21.4.2
 
 Base URL on staging:
 

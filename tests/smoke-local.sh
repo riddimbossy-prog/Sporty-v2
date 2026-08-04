@@ -17,5 +17,5 @@ curl -fsS "http://127.0.0.1:$PORT/" >/dev/null
 curl -fsS "http://127.0.0.1:$PORT/deployment-check.html" >/dev/null
 curl -fsS "http://127.0.0.1:$PORT/api/get_code_hub_codes?limit=1" >/dev/null
 curl -fsS "http://127.0.0.1:$PORT/api/get_upcoming_events?days=1" >/dev/null
-node -e "const h=require('/tmp/sporty-health.json');if(!h.ok||h.version!=='21.4.1')process.exit(1)"
+node -e "const h=require('/tmp/sporty-health.json');if(!h.ok||h.version!=='21.4.2')process.exit(1)"
 echo "Local smoke test passed on port $PORT"
