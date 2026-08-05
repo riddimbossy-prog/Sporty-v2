@@ -2,7 +2,7 @@ from pathlib import Path
 import json,re
 root=Path(__file__).resolve().parents[1]
 version=(root/'VERSION').read_text(encoding='utf-8').strip()
-required=['index.html','marketplace.html','smart-board.html','most-added.html','won-codes.html','performance.html','sources.html','login.html','admin-login.html','admin-users.html','privacy.html','account.html','saved.html','styles.css','responsive.css','src/mvp.js','src/intelligence.js','src/stability.js','src/control-room.js','src/auth.js','src/login.js','src/admin-login.js','src/admin-users.js','src/saved.js','src/account.js','src/saved-page.js','src/experience.js','src/handoff.js','control-room.html','data/feed-health.json','data/manual-overrides.json','scripts/codehub-normalizer.mjs','scripts/intelligence-history.mjs','render.yaml','manifest.json','assets/logo-mark.png','assets/logo-wordmark-dark.png','assets/logo-wordmark-light.png','assets/logo-mark.webp','assets/logo-wordmark-dark.webp','assets/logo-wordmark-light.webp','data/tip-history.json','data/source-stats.json','data/performance-summary.json','supabase/migrations/002_auth_presence_admin.sql','supabase/migrations/003_official_admin_lockdown.sql','supabase/migrations/004_user_utility_admin_controls.sql','supabase/migrations/005_remove_member_location_data.sql']
+required=['index.html','marketplace.html','smart-board.html','most-added.html','won-codes.html','performance.html','sources.html','login.html','admin-login.html','admin-users.html','privacy.html','account.html','saved.html','styles.css','responsive.css','src/mvp.js','src/intelligence.js','src/stability.js','src/control-room.js','src/auth.js','src/login.js','src/admin-login.js','src/admin-users.js','src/saved.js','src/account.js','src/saved-page.js','src/experience.js','src/handoff.js','control-room.html','data/feed-health.json','data/manual-overrides.json','scripts/codehub-normalizer.mjs','scripts/intelligence-history.mjs','render.yaml','Dockerfile','server/lib/chromium-cdp.mjs','server/lib/sportybet-browser.mjs','manifest.json','assets/logo-mark.png','assets/logo-wordmark-dark.png','assets/logo-wordmark-light.png','assets/logo-mark.webp','assets/logo-wordmark-dark.webp','assets/logo-wordmark-light.webp','data/tip-history.json','data/source-stats.json','data/performance-summary.json','supabase/migrations/002_auth_presence_admin.sql','supabase/migrations/003_official_admin_lockdown.sql','supabase/migrations/004_user_utility_admin_controls.sql','supabase/migrations/005_remove_member_location_data.sql']
 missing=[p for p in required if not (root/p).exists()]
 assert not missing, missing
 for page in ['index.html','marketplace.html','smart-board.html','most-added.html','won-codes.html','performance.html','sources.html']:
@@ -41,8 +41,10 @@ assert manifest['name'].startswith('sporty.codes')
 assert any(x['url'].startswith('/smart-board') for x in manifest['shortcuts'])
 render=(root/'render.yaml').read_text()
 server=(root/'server/index.mjs').read_text()
-assert 'runtime: node' in render
-assert 'startCommand: node server/index.mjs' in render
+assert 'runtime: docker' in render
+assert 'dockerfilePath: ./Dockerfile' in render
+docker=(root/'Dockerfile').read_text()
+assert 'CMD ["node", "server/index.mjs"]' in docker
 for route in ['/smart-board','/control-room','/login','/admin-login','/admin-users','/privacy','/account','/saved']:
     assert f"'{route}'" in server,route
 print('Tip Intelligence account and presence MVP validation passed')

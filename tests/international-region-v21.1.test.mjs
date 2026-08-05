@@ -6,7 +6,7 @@ import {fileURLToPath} from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=file=>fs.readFileSync(path.join(root,file),'utf8');
 
-assert.equal(read('VERSION').trim(),'21.4.2','version should be 21.4.2');
+assert.equal(read('VERSION').trim(),'21.5.0','version should be 21.5.0');
 assert.ok(fs.existsSync(path.join(root,'international.html')),'international page must exist');
 assert.ok(fs.existsSync(path.join(root,'src/region.js')),'region controller must exist');
 assert.ok(fs.existsSync(path.join(root,'src/international.js')),'international feed controller must exist');
@@ -22,7 +22,7 @@ const render=read('render.yaml');
 const worker=read('service-worker.js');
 const server=read('server/index.mjs');
 
-assert.match(index,/src\/region\.js\?v=21\.4\.2/,'Ghana home should load the shared region controller');
+assert.match(index,/src\/region\.js\?v=21\.5\.0/,'Ghana home should load the shared region controller');
 assert.match(config,/sportybet\.com\/gh\/m\/code-hub\/load-code/,'original Ghana load-code URL must remain');
 assert.match(config,/sportyOfficialUrl:\s*'https:\/\/www\.sportybet\.com\/'/,'international flow should use the official generic destination');
 assert.match(international,/data-region="international"/,'international page should identify its region');
@@ -40,7 +40,7 @@ assert.match(internationalJs,/Copy selections/,'international users should be ab
 assert.match(internationalJs,/Market names and odds can differ by country/,'country variation warning should be rendered');
 assert.match(build,/international\.html/,'Render build should publish the international page');
 assert.match(build,/src\/region\.js src\/international\.js/,'Render build should publish regional scripts');
-assert.match(render,/startCommand:\s*node server\/index\.mjs/,'Render should start the same-domain service');
+assert.match(render,/dockerfilePath:\s*\.\/Dockerfile/,'Render should start the same-domain Docker service');
 assert.match(server,/'\/international':'international\.html'/,'Server should expose the clean international route');
 assert.match(worker,/'\/international':'\/international\.html'/,'service worker should support offline international routing');
 

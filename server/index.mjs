@@ -3,7 +3,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { env, text, number, json, publicError } from './lib/core.mjs';
-import { getSystemStatus, getSourceStatus, getCodeHubCodes, getBooking, getUpcomingEvents, searchMatches, getFixtureStats, refreshAll, publishCode } from './lib/data-service.mjs';
+import { getSystemStatus, getSourceStatus, getCodeHubCodes, getBooking, getUpcomingEvents, searchMatches, getFixtureStats, refreshAll, publishCode, runBrowserCollector, getBrowserCollectorStatus } from './lib/data-service.mjs';
 
 const root=resolve(fileURLToPath(new URL('../.render-site/',import.meta.url)));
 const port=number(env('PORT','10000'))||10000;
@@ -21,8 +21,9 @@ function securityHeaders(extra={}){return{'x-content-type-options':'nosniff','x-
 
 async function api(req,url){
   const path=url.pathname.replace(/^\/api/,'');
-  if(req.method==='GET'&&path==='/health'){const status=await getSystemStatus();return json({ok:true,service:'sporty.codes-custom-api',version:'21.4.2',api_contract:'sporty-codes-compatibility-v2',official_sportybet_api:false,direct_public_sportybet_collector:true,time:new Date().toISOString(),...status});}
+  if(req.method==='GET'&&path==='/health'){const status=await getSystemStatus();return json({ok:true,service:'sporty.codes-custom-api',version:'21.5.0',api_contract:'sporty-codes-compatibility-v3',official_sportybet_api:false,browser_agent_collector:true,time:new Date().toISOString(),...status});}
   if(req.method==='GET'&&path==='/source-status')return json(await getSourceStatus());
+  if(req.method==='GET'&&path==='/collector-status')return json({ok:true,collector:'sportybet-browser-agent',status:getBrowserCollectorStatus()});
   if(req.method==='GET'&&path==='/get_code_hub_codes')return json(await getCodeHubCodes({limit:url.searchParams.get('limit')||24}));
   if(req.method==='GET'&&path==='/get_booking'){const item=await getBooking(url.searchParams.get('code'));return item?json(item):json({error:'Code not found'},404)}
   if(req.method==='GET'&&path==='/get_upcoming_events')return json(await getUpcomingEvents({days:url.searchParams.get('days')||3}));
@@ -30,8 +31,19 @@ async function api(req,url){
   if(req.method==='GET'&&path==='/get_fixture_stats')return json(await getFixtureStats(url.searchParams.get('event_id')));
   if(req.method==='POST'&&path==='/admin/refresh'){if(!auth(req))return json({error:'Admin authorization required'},401);return json(await refreshAll())}
   if(req.method==='POST'&&path==='/admin/refresh-codes'){if(!auth(req))return json({error:'Admin authorization required'},401);return json(await getCodeHubCodes({limit:100,force:true}))}
+  if(req.method==='POST'&&path==='/admin/collector/run'){if(!auth(req))return json({error:'Admin authorization required'},401);const payload=await body(req);return json(await runBrowserCollector({limit:payload.limit||20}))}
+  if(req.method==='GET'&&path==='/admin/collector/status'){if(!auth(req))return json({error:'Admin authorization required'},401);return json({ok:true,status:getBrowserCollectorStatus()})}
   if(req.method==='POST'&&path==='/admin/codes'){if(!auth(req))return json({error:'Admin authorization required'},401);return json(await publishCode(await body(req)),201)}
   return json({error:'API route not found'},404);
+}
+
+function runtimeConfig(){
+  const supabaseUrl=text(env('SUPABASE_URL'));
+  const supabaseKey=text(env('SUPABASE_PUBLISHABLE_KEY'));
+  const setupPending=!(supabaseUrl&&supabaseKey);
+  const payload={mode:'auto',allowDemoFallback:false,setupPending,configSource:'render-runtime',buildVersion:'21.5.0',supabaseUrl,supabaseAnonKey:supabaseKey,currency:'GHS',platformFeePercent:10,codeHubBannerEnabled:true,apiBaseUrl:'/api',codeHubFeedUrl:'/api/get_code_hub_codes',upcomingEventsUrl:'/api/get_upcoming_events',codeHubLoadUrl:'https://www.sportybet.com/gh/m/code-hub/load-code',sportyOfficialUrl:'https://www.sportybet.com/',regionalSites:{GH:'https://www.sportybet.com/gh/'},carouselIntervalMs:4300};
+  return `window.SPORTY_CONFIG = ${JSON.stringify(payload)};
+`;
 }
 
 function cacheControl(path){
@@ -53,7 +65,17 @@ const server=http.createServer(async(req,res)=>{
     if(!allow(req)){send(res,json({error:'Too many requests'},429,{'retry-after':'60'}));return}
     const isApi=url.pathname.startsWith('/api/')||['/get_code_hub_codes','/get_booking','/get_upcoming_events','/search_matches','/get_fixture_stats'].includes(url.pathname);
     if(isApi){const result=await api(req,url);result.headers={...securityHeaders(),...result.headers};send(res,result);return}
+    if(url.pathname==='/config.js'){send(res,{status:200,headers:securityHeaders({'content-type':'text/javascript; charset=utf-8','cache-control':'no-cache, no-store, must-revalidate'}),body:runtimeConfig()});return}
     send(res,await staticFile(url.pathname));
   }catch(error){console.error('[server]',publicError(error));send(res,json({error:publicError(error)},500,securityHeaders()))}
 });
-server.listen(port,'0.0.0.0',()=>console.log(`sporty.codes v21.4.2 listening on ${port}`));
+server.listen(port,'0.0.0.0',()=>{
+  console.log(`sporty.codes v21.5.0 listening on ${port}`);
+  const enabled=!/^(0|false|no|off)$/i.test(env('SPORTYBET_BROWSER_SCHEDULE_ENABLED','true'));
+  const minutes=Math.max(15,number(env('SPORTYBET_BROWSER_SCHEDULE_MINUTES','60'))||60);
+  if(enabled){
+    const run=()=>runBrowserCollector({limit:number(env('SPORTYBET_BROWSER_CODE_LIMIT','20'))||20}).then(result=>console.log(`[collector] stored ${result.count} public codes`)).catch(error=>console.warn('[collector]',publicError(error)));
+    setTimeout(run,Math.max(10000,number(env('SPORTYBET_BROWSER_START_DELAY_MS','45000'))||45000));
+    setInterval(run,minutes*60000).unref();
+  }
+});

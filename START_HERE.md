@@ -1,95 +1,90 @@
-# START HERE — Sporty.codes v21.4.2
+# START HERE — Sporty.codes v21.5.0
 
-This is a full replacement build for the current staging repository and Render Blueprint service.
+## 1. Upload the repository
 
-## What changed
-
-- Added `server/lib/sportybet-public.mjs`.
-- Added direct public SportyBet fixture and 1X2 normalization.
-- Added public Code Hub discovery and optional booking-detail expansion.
-- Added `/api/source-status` diagnostics.
-- Added a visible SportyBet Match Board so Smart Board is not blank while booking-code consensus is unavailable.
-- Made API-Football optional instead of a readiness requirement.
-- Kept Supabase accounts, profiles, booking tables and all existing pages.
-
-## Deploy this replacement
-
-1. Replace the files in the GitHub repository with this ZIP.
-2. Commit and push.
-3. In Render, open the Blueprint-managed service.
-4. Use **Manual Deploy → Clear build cache & deploy**.
-5. Keep your existing Supabase variables unchanged.
-
-No new SQL migration is required when migrations 001–007 already succeeded.
-
-## Blueprint variables
-
-The included `render.yaml` supplies:
-
-```env
-SPORTYBET_COUNTRY=gh
-SPORTYBET_PUBLIC_EVENTS_URL=https://www.sportybet.com/api/{country}/factsCenter/pcUpcomingEvents?sportId=sr%3Asport%3A1&marketId=1&pageNum={page}&pageSize=100
-SPORTYBET_PUBLIC_CODEHUB_URL=https://www.sportybet.com/{country}/m/code-hub/codes
-SPORTYBET_MAX_PAGES=3
-SPORTYBET_CODE_EXPANSION_LIMIT=6
-```
-
-The public website route can change. After deployment, `/api/source-status` will show whether the collector returned data or a sanitized error.
-
-## First checks
-
-Open these in order:
+Extract the ZIP and upload its contents directly to the root of the GitHub repository. Confirm these files are at root:
 
 ```text
-/api/health
-/api/source-status
-/api/get_upcoming_events?days=3
-/api/get_code_hub_codes
-/smart-board.html
+Dockerfile
+render.yaml
+package.json
+server/
+scripts/
+src/
+index.html
 ```
 
-A healthy application should show:
+Commit and push:
+
+```text
+Deploy v21.5.0 browser-agent collector
+```
+
+## 2. Update the Render Blueprint
+
+This release changes the service from a normal Node runtime to a Docker runtime so Chromium can be installed.
+
+In Render, sync/apply the Blueprint from the updated `render.yaml`. If Render will not change the existing service runtime, create a new Blueprint service from the same repository and test it on its temporary `.onrender.com` URL.
+
+Do not create a Static Site.
+
+## 3. Keep these Render secrets
+
+```text
+SUPABASE_URL
+SUPABASE_PUBLISHABLE_KEY
+SUPABASE_SERVICE_ROLE_KEY
+CUSTOM_API_ADMIN_TOKEN
+```
+
+No new Supabase SQL migration is required when migrations 001–007 already ran.
+
+## 4. Deploy and verify
+
+After Render finishes building the Docker image, open:
+
+```text
+https://YOUR-SERVICE.onrender.com/api/health
+https://YOUR-SERVICE.onrender.com/api/collector-status
+```
+
+The health response should report:
 
 ```json
 {
-  "ok": true,
-  "ready": true,
-  "collector": "sportybet-public-direct"
+  "version": "21.5.0",
+  "browser_agent_collector": true,
+  "collector": "sportybet-browser-agent"
 }
 ```
 
-`ready: true` now depends on Supabase and migration readiness. API-Football is optional.
+## 5. Run the first collector manually
 
-The events response should preferably show:
-
-```text
-source: sportybet-public-direct
-count: greater than 0
-```
-
-## Force the first refresh
-
-Use the existing Render `CUSTOM_API_ADMIN_TOKEN`:
+Windows PowerShell:
 
 ```powershell
 $headers = @{
   Authorization = "Bearer YOUR_CUSTOM_API_ADMIN_TOKEN"
+  "Content-Type" = "application/json"
 }
 
 Invoke-RestMethod `
   -Method Post `
-  -Uri "https://sporty-codes-staging.onrender.com/api/admin/refresh" `
-  -Headers $headers
+  -Uri "https://YOUR-SERVICE.onrender.com/api/admin/collector/run" `
+  -Headers $headers `
+  -Body '{"limit":20}'
 ```
 
-Then reload `/api/source-status` and `/smart-board.html`.
+This run can take several minutes because Chromium must load the Code Hub and expand public codes one by one.
 
-## About public booking codes
+## 6. Inspect the result
 
-The match board can populate from the public SportyBet event feed. Booking-code consensus requires code records with detailed selections. The collector reads embedded public Code Hub JSON when available. A confirmed public booking-detail endpoint can be added later with:
-
-```env
-SPORTYBET_PUBLIC_BOOKING_URL_TEMPLATE=https://PUBLIC-SPORTYBET-ENDPOINT/{code}
+```text
+https://YOUR-SERVICE.onrender.com/api/collector-status
+https://YOUR-SERVICE.onrender.com/api/get_code_hub_codes
+https://YOUR-SERVICE.onrender.com/smart-board.html
 ```
 
-No private account access or protected automation is included.
+A successful collector status should show a recent `last_success_at`, `codes_discovered` greater than zero, and ideally `tips_found` greater than zero.
+
+If `codes_discovered` is positive but `tips_found` is zero, code cards were found but the public load-code page could not be expanded. The status output will show the browser diagnostics.

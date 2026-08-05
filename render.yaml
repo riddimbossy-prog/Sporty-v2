@@ -1,14 +1,11 @@
 services:
   - type: web
     name: sporty-codes-staging
-    runtime: node
-    buildCommand: bash scripts/render-build.sh
-    startCommand: node server/index.mjs
+    runtime: docker
+    dockerfilePath: ./Dockerfile
     healthCheckPath: /api/health
     autoDeploy: true
     envVars:
-      - key: NODE_VERSION
-        value: 20
       - key: CUSTOM_API_ADMIN_TOKEN
         generateValue: true
       - key: UPSTREAM_DAILY_REQUEST_BUDGET
@@ -29,9 +26,31 @@ services:
         value: "https://www.sportybet.com/api/{country}/factsCenter/pcUpcomingEvents?sportId=sr%3Asport%3A1&marketId=1&pageNum={page}&pageSize=100"
       - key: SPORTYBET_PUBLIC_CODEHUB_URL
         value: "https://www.sportybet.com/{country}/m/code-hub/codes"
+      - key: SPORTYBET_BROWSER_COLLECTOR_ENABLED
+        value: true
+      - key: SPORTYBET_BROWSER_CODEHUB_URL
+        value: "https://www.sportybet.com/gh/m/code-hub/codes"
+      - key: SPORTYBET_BROWSER_LOAD_CODE_URL
+        value: "https://www.sportybet.com/gh/m/code-hub/load-code"
+      - key: SPORTYBET_BROWSER_CODE_LIMIT
+        value: 20
+      - key: SPORTYBET_CODE_EXPANSION_LIMIT
+        value: 8
+      - key: SPORTYBET_BROWSER_PAGE_WAIT_MS
+        value: 8000
+      - key: SPORTYBET_BROWSER_AFTER_SUBMIT_MS
+        value: 6500
+      - key: SPORTYBET_BROWSER_EXPANSION_DELAY_MS
+        value: 900
+      - key: SPORTYBET_BROWSER_SCHEDULE_ENABLED
+        value: true
+      - key: SPORTYBET_BROWSER_SCHEDULE_MINUTES
+        value: 60
+      - key: SPORTYBET_BROWSER_START_DELAY_MS
+        value: 45000
+      - key: CHROMIUM_PATH
+        value: /usr/bin/chromium
       - key: SPORTYBET_MAX_PAGES
         value: 3
-      - key: SPORTYBET_CODE_EXPANSION_LIMIT
-        value: 6
       - key: UPSTREAM_TIMEOUT_MS
         value: 16000

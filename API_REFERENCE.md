@@ -1,101 +1,72 @@
-# Sporty.codes custom API reference — v21.4.2
+# Sporty.codes custom API reference — v21.5.0
 
-Base URL on staging:
+## Public routes
 
-`https://YOUR-RENDER-SERVICE.onrender.com`
+### GET `/api/health`
+Service, Supabase, collector, and optional enrichment readiness.
 
-## Health
+### GET `/api/source-status`
+Combined direct-event and browser-agent diagnostics.
 
-`GET /api/health`
+### GET `/api/collector-status`
+Safe browser-agent run status.
 
-Reports Supabase readiness, direct collector presence, and optional-provider flags. API-Football is not required for `ready: true`.
+### GET `/api/get_code_hub_codes?limit=24`
+Returns normalized public codes and expanded selections stored in Supabase.
 
-## Collector diagnostics
+### GET `/api/get_booking?code=ABC123`
+Returns one normalized code and its selections.
 
-`GET /api/source-status`
+### GET `/api/get_upcoming_events?days=3`
+Returns public upcoming football events. This remains separate from the browser-driven Code Hub feed.
 
-Returns sanitized status for the direct public SportyBet event and Code Hub collectors, including last attempt, last success, last error and item count. It never returns secret values or the administrator token.
+## Protected routes
 
-## Upcoming public events
-
-`GET /api/get_upcoming_events?days=3`
-
-- `days` accepts `1` through `7`.
-- Tries the direct public SportyBet collector first.
-- Normalizes fixtures, leagues, kickoff times and 1X2 odds.
-- Uses API-Football only as an optional fallback.
-- Uses The Odds API only as optional fallback enrichment.
-- Returns cached data when available.
-
-Preferred response source:
+Use:
 
 ```text
-sportybet-public-direct
+Authorization: Bearer CUSTOM_API_ADMIN_TOKEN
 ```
 
-## Code Hub
+### POST `/api/admin/collector/run`
 
-`GET /api/get_code_hub_codes?limit=24`
+```json
+{"limit":20}
+```
 
-- Reads published records already stored in Supabase.
-- When the table is empty or an administrator forces refresh, checks the public SportyBet Code Hub source.
-- Stores collected public codes and detailed selections in Supabase.
-- Returns an empty list rather than fabricating codes when no public code data is exposed.
+Starts one browser run. Concurrent calls reuse the active run instead of opening multiple Chromium sessions.
 
-## Booking details
+### GET `/api/admin/collector/status`
+Returns protected collector status.
 
-`GET /api/get_booking?code=ABC123`
+### POST `/api/admin/refresh`
+Refreshes the combined feeds.
 
-Returns one published public booking code and its selections.
+### POST `/api/admin/codes`
+Publishes an administrator-supplied verified public code.
 
-## Match search
-
-`GET /api/search_matches?date=2026-08-04`
-
-Returns normalized fixtures for the requested date.
-
-## Fixture statistics
-
-`GET /api/get_fixture_stats?event_id=api-football:12345`
-
-Optional API-Football statistical enrichment. This route requires `API_FOOTBALL_KEY`; the direct SportyBet event collector does not.
-
-## Administrator refresh
-
-`POST /api/admin/refresh`
-
-Header:
-
-`Authorization: Bearer CUSTOM_API_ADMIN_TOKEN`
-
-Forces the event collector, public Code Hub collector and cache refresh.
-
-## Administrator code publishing
-
-`POST /api/admin/codes`
-
-Header:
-
-`Authorization: Bearer CUSTOM_API_ADMIN_TOKEN`
-
-Example body:
+## Code Hub response
 
 ```json
 {
-  "code": "ABC123",
-  "title": "Weekend goals",
-  "odds": 3.25,
-  "author": "Verified Tipster",
-  "tag": "Goals",
-  "expires_at": "2026-08-10T18:00:00Z",
-  "tips": [
+  "source": "sportybet-browser-agent",
+  "collector": "sportybet-browser-agent",
+  "count": 1,
+  "slips_with_tips": 1,
+  "total_tips": 4,
+  "items": [
     {
-      "fixture": "Home Team vs Away Team",
-      "market": "Total goals",
-      "pick": "Over 1.5",
-      "odds": 1.30,
-      "league": "Example League",
-      "kickoff": "2026-08-10T15:00:00Z"
+      "code": "ABC123",
+      "odds": 5.25,
+      "selections": 4,
+      "tips": [
+        {
+          "fixture": "Home Team vs Away Team",
+          "market": "Total Goals",
+          "pick": "Over 1.5",
+          "odds": 1.30
+        }
+      ]
     }
   ]
 }

@@ -1,16 +1,16 @@
-# Build verification — Sporty.codes v21.4.2
+# Build verification — Sporty.codes v21.5.0
 
-Verified locally:
+Completed in the packaging environment:
 
-- Complete inherited application test suite passed.
-- Direct SportyBet event response normalization passed.
-- Public Code Hub HTML/JSON normalization passed.
-- Render build completed.
-- Node service started successfully.
-- `/api/health` returned v21.4.2.
-- `/api/get_upcoming_events` returned two normalized mock SportyBet events with 1X2 odds.
-- `/api/get_code_hub_codes` returned one mock public code with two detailed selections.
-- `/api/source-status` reported successful event and code collection.
-- Smart Board contains the new market-board UI and responsive rules.
+- Full inherited Sporty.codes test suite passed.
+- New Chromium DevTools browser-agent unit and DOM workflow tests passed.
+- Render build script passed.
+- Browser code discovery parser passed.
+- Public load-code form filling test passed.
+- Booking-selection normalization test passed.
+- Same-domain API and Supabase persistence paths passed.
+- Empty rediscovery no longer erases previously expanded selections.
+- Dockerfile and Render Blueprint are included.
 
-The live SportyBet public route could not be contacted from the build environment. Verify it after Render deployment through `/api/source-status`. If SportyBet changes its public URL, update `SPORTYBET_PUBLIC_EVENTS_URL` without changing the application code.
+Live SportyBet collection was not called from the packaging environment because live web access is unavailable. The first Render manual collector run is the production verification step.
+- Local server smoke test passed for `/api/health`, `/api/collector-status`, and runtime-generated `/config.js`.

@@ -1,40 +1,53 @@
-# Sporty.codes v21.4.2
+# Sporty.codes v21.5.0 — Browser-agent custom API
 
-Sporty.codes now includes a same-domain **direct public SportyBet collector** for upcoming football fixtures and public market prices, plus a public Code Hub collector, Supabase caching, and the existing Ghana/international PWA.
+This release replaces the paid Parse.bot Code Hub workflow with a self-hosted public browser agent.
 
-## Main change
+## What it does
 
-The previous compatibility-only API has been replaced by a real collector module:
+1. Render runs the included Chromium browser inside the Docker service.
+2. The worker opens the logged-out public SportyBet Ghana Code Hub.
+3. It observes public fetch/XHR responses and scans rendered public code cards.
+4. It opens the public load-code page for a limited number of discovered codes.
+5. It extracts public slip selections, normalizes them, and stores them in Supabase.
+6. The website reads the stored records through the same-domain custom API.
+
+The collector does not import private cookies, sign into a customer account, read private account data, or bypass CAPTCHA/access controls.
+
+## Deployment model
+
+- Render: Docker Web Service created from `render.yaml`
+- Supabase: existing migrations 001–007
+- Website and API: one same-origin service
+- Chromium: installed by `Dockerfile`
+- Schedule: first run after 45 seconds, then every 60 minutes by default
+
+## Main routes
 
 ```text
-server/lib/sportybet-public.mjs
+GET  /api/health
+GET  /api/source-status
+GET  /api/collector-status
+GET  /api/get_code_hub_codes
+GET  /api/get_booking?code=ABC123
+GET  /api/get_upcoming_events
+POST /api/admin/collector/run
+GET  /api/admin/collector/status
+POST /api/admin/refresh
 ```
 
-It performs public GET requests only. It does not use user accounts, cookies, CAPTCHA bypasses, customer data, or private authentication.
+Admin routes require `Authorization: Bearer CUSTOM_API_ADMIN_TOKEN`.
 
-## Live API routes
+## Required Render secrets
 
-- `GET /api/health`
-- `GET /api/source-status`
-- `GET /api/get_upcoming_events?days=3`
-- `GET /api/get_code_hub_codes`
-- `GET /api/get_booking?code=...`
-- `GET /api/search_matches?date=YYYY-MM-DD`
-- `GET /api/get_fixture_stats?event_id=...`
-- `POST /api/admin/refresh`
-- `POST /api/admin/codes`
+```text
+SUPABASE_URL
+SUPABASE_PUBLISHABLE_KEY
+SUPABASE_SERVICE_ROLE_KEY
+CUSTOM_API_ADMIN_TOKEN
+```
 
-## Smart Board behavior
+`API_FOOTBALL_KEY` and Odds API settings remain optional enrichment/fallback values.
 
-The Smart Board now has two independent layers:
+## Important live limitation
 
-1. **SportyBet Match Board** — upcoming public fixtures and 1X2 prices from the direct collector.
-2. **Booking-code consensus** — only appears when public or administrator-published booking codes contain detailed selections.
-
-This prevents the entire page from appearing empty while code consensus is still being collected.
-
-## Optional providers
-
-API-Football and The Odds API are optional fallbacks/enrichment sources. They are not required for the direct SportyBet collector or application readiness.
-
-Read `SPORTYBET_COLLECTOR_SETUP.md` and `START_HERE.md` before deploying.
+The browser-agent logic and Chromium flow were tested locally against controlled public-page fixtures. Live SportyBet behavior must be confirmed after deployment because the packaging environment cannot access the live site. If SportyBet changes the public page or blocks headless access, `/api/collector-status` will expose the failure instead of silently returning an empty board.

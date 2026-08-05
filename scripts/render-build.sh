@@ -33,7 +33,7 @@ CORE_REQUIRED=(
   supabase/migrations/005_remove_member_location_data.sql
   supabase/migrations/006_member_personalization.sql
   supabase/migrations/007_custom_api.sql
-  server/index.mjs server/lib/core.mjs server/lib/supabase.mjs server/lib/data-service.mjs server/lib/sportybet-public.mjs
+  server/index.mjs server/lib/core.mjs server/lib/supabase.mjs server/lib/data-service.mjs server/lib/sportybet-public.mjs server/lib/chromium-cdp.mjs server/lib/sportybet-browser.mjs
   supabase/email-templates/confirm-signup.html
   supabase/email-templates/reset-password.html
   supabase/email-templates/password-changed.html
@@ -106,7 +106,7 @@ window.SPORTY_CONFIG = {
 };
 CONFIG
 
-printf 'sporty.codes %s\nproduct: direct-public-sportybet-custom-api\napi: same-domain-direct-public-sportybet-collector\nsetup_pending: %s\n' "$VERSION" "$SETUP_PENDING" > "$OUTPUT_DIR/render-build.txt"
+printf 'sporty.codes %s\nproduct: sportybet-browser-agent-custom-api\napi: same-domain-public-browser-agent-collector\nsetup_pending: %s\n' "$VERSION" "$SETUP_PENDING" > "$OUTPUT_DIR/render-build.txt"
 
 for route in international marketplace free-codes smart-board elite-picks most-added won-codes performance sources control-room login admin-login admin-users privacy account saved deployment-check; do
   mkdir -p "$OUTPUT_DIR/$route"
@@ -135,4 +135,4 @@ done
 
 echo "Render publish directory prepared at $OUTPUT_DIR"
 echo "Build version: $VERSION"
-echo "Product mode: Direct public SportyBet custom API"
+echo "Product mode: Public SportyBet browser-agent custom API"

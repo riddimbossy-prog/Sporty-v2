@@ -1,0 +1,6 @@
+.git
+.github
+.render-site
+node_modules
+*.zip
+.env
