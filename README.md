@@ -1,4 +1,4 @@
-# sporty.codes v21.6.0 — Popular Tips + Prediction Slip
+# sporty.codes v21.6.1 — Popular Tips + Prediction Slip
 
 Phase 1 adds a daily popular-tips list and a simulated prediction-slip builder using practice points only. No real-money staking or wallet is included.
 

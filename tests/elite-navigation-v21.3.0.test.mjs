@@ -19,6 +19,6 @@ assert.match(elite,/setSection\('#eliteLoading',state\.loading\)/,'loader must d
 assert.match(elite,/if\(section\)section\.hidden=!rows\.length/,'empty homepage Elite preview must stay hidden');
 assert.match(home,/href="\/elite-picks\.html"><b>◆<\/b><span>Elite<\/span>/,'mobile home navigation must include Elite');
 assert.match(page,/No qualified Elite Picks right now/,'direct Elite page must explain an empty board');
-assert.match(page,/styles\.css\?v=21\.6\.0/,'Elite page must load fresh styles');
-assert.match(sw,/sporty-codes-v21\.6\.0/,'PWA cache must be bumped');
-console.log('v21.6.0 persistent Elite navigation checks passed');
+assert.match(page,/styles\.css\?v=21\.6\.1/,'Elite page must load fresh styles');
+assert.match(sw,/sporty-codes-v21\.6\.1/,'PWA cache must be bumped');
+console.log('v21.6.1 persistent Elite navigation checks passed');

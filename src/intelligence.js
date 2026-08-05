@@ -251,13 +251,22 @@
 
   function renderSmartBoard(){
     const root=$('#smartBoard');if(!root)return;clear(root);
-    const hasData=model.tips.some(row=>row.tier!=='Avoid');setPopulated(root,hasData);
-    const explainer=$('#smartBoardExplainer');if(explainer)explainer.hidden=!hasData;
-    updatePreferenceState();renderStats();if(!hasData)return;
+    const hasModel=model.tips.length>0;setPopulated(root,hasModel);
+    const explainer=$('#smartBoardExplainer');if(explainer)explainer.hidden=!hasModel;
+    updatePreferenceState();renderStats();if(!hasModel)return;
     const rows=filteredTips().sort((a,b)=>b.appearances-a.appearances||b.rawShare-a.rawShare||b.uniqueSources-a.uniqueSources||b.score-a.score);
     const count=$('#popularBoardCount');if(count)count.textContent=rows.length?`${rows.length} popular tip${rows.length===1?'':'s'}`:'No matching tips';
     const boardDay=$('#popularBoardDay');if(boardDay)boardDay.textContent=ui.day==='today'?'Today':ui.day==='tomorrow'?'Tomorrow':ui.day==='week'?'Next 7 days':ui.day==='undated'?'Date unavailable':'All available';
-    if(!rows.length){root.append(empty('No popular tips match this view','Try another match day or reduce the minimum appearances. Only repeated, non-conflicting tips are shown.'));return}
+    if(!rows.length){
+      const undated=model.tips.filter(row=>!dateValue(row.kickoff)).length;
+      const datedToday=model.tips.filter(row=>dayMatches(row.kickoff,'today')).length;
+      const copy=ui.day==='today'&&undated
+        ? `${undated} repeated tip${undated===1?' is':'s are'} waiting for a verified kickoff date. Deploy the latest collector patch and run the Code Hub workflow once; undated tips are not labelled as Today.`
+        : ui.day==='today'&&datedToday
+          ? `${datedToday} repeated tip${datedToday===1?' was':'s were'} found for today but did not pass the conflict, source-diversity or data-quality gates.`
+          : 'Try another match day or reduce the minimum appearances. Only repeated, non-conflicting tips are shown.';
+      root.append(empty(ui.day==='today'?'No date-confirmed popular tips yet':'No popular tips match this view',copy));return
+    }
     rows.forEach((row,index)=>root.append(popularTipCard(row,index+1)));
   }
 

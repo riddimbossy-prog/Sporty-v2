@@ -19,7 +19,7 @@ assert.match(mvp,/function setPopulated\(/);
 assert.match(mvp,/setPopulated\(root,items\.length>0\)/);
 assert.match(mvp,/const items=displayableCodes\(\);setPopulated\(root,items\.length>0\);clear\(root\);if\(!items\.length\)return/);
 assert.match(mvp,/setPopulated\(homeRoot,preview\.length>0\)/);
-assert.match(intel,/setPopulated\(root,hasData\)/);
+assert.match(intel,/setPopulated\(root,hasModel\)/);
 assert.match(intel,/setPopulated\(root,model\.contradictions\.length>0\)/);
 assert.match(intel,/setPopulated\(root,model\.sourceRows\.length>0\)/);
 assert.match(intel,/setPopulated\(root,model\.performanceRows\.length>0\)/);

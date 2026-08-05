@@ -20,6 +20,8 @@ const state = {
   codes_discovered: 0,
   codes_expanded: 0,
   tips_found: 0,
+  tips_with_kickoff: 0,
+  tips_without_kickoff: 0,
   network_responses: 0,
   page_url: null,
   load_url: null,
@@ -391,55 +393,103 @@ function publicCodeKickoff(value, reference = new Date()) {
   return delta >= -(18 * 60 * 60 * 1000) && delta <= 60 * 86400000 ? date : null;
 }
 
-function tipFromObject(object) {
-  if (!object || typeof object !== 'object' || Array.isArray(object)) return null;
-  const eventName = first(object, [
-    'fixture','eventName','matchName','event_name','match_name','name','displayName','event.description',
+function inheritedTipContext(object, parent = {}) {
+  if (!object || typeof object !== 'object' || Array.isArray(object)) return { ...parent };
+  const home = text(first(object, [
+    'homeTeamName','home_team_name','homeTeam.name','home.name','event.homeTeamName','event.home.name',
+  ]));
+  const away = text(first(object, [
+    'awayTeamName','away_team_name','awayTeam.name','away.name','event.awayTeamName','event.away.name',
+  ]));
+  const explicitFixture = first(object, [
+    'fixture','eventName','matchName','event_name','match_name','displayName','event.description','event.displayName',
   ]);
-  const home = first(object, ['homeTeamName','home_team_name','homeTeam.name','home.name','event.homeTeamName']);
-  const away = first(object, ['awayTeamName','away_team_name','awayTeam.name','away.name','event.awayTeamName']);
-  const fixture = splitFixture(eventName || (home && away ? `${home} vs ${away}` : ''));
-  const market = text(first(object, [
+  const fixture = splitFixture(explicitFixture || (home && away ? `${home} vs ${away}` : '') || parent.fixture || '');
+  let explicitMarket = text(first(object, [
     'market','marketName','market_name','betTypeName','bet_type','marketDesc','marketDescription','betMarket.name','market.name',
   ]));
-  const pick = text(first(object, [
-    'pick','selection','selectionName','selection_name','outcomeName','outcome_name','optionName','option_name','desc','description','label',
-  ]));
-  const odds = plausibleSelectionOdds(first(object, ['odds','odd','price','decimalOdds','currentOdd','currentOdds']));
-  const league = text(first(object, ['league','leagueName','tournamentName','competitionName','categoryName','event.tournamentName']));
-  const kickoff = coerceKickoff(first(object, [
+  if (!explicitMarket) {
+    const hasMarketChildren = ['selections','selectionList','outcomes','options','runners']
+      .some(key => Array.isArray(object?.[key]) && object[key].length);
+    if (hasMarketChildren) explicitMarket = text(first(object, ['name','label','description']));
+  }
+  const market = explicitMarket || parent.market || '';
+  const league = text(first(object, [
+    'league','leagueName','tournamentName','competitionName','categoryName','event.tournamentName','event.leagueName',
+  ])) || parent.league || '';
+  const rawKickoff = first(object, [
     'kickoff','kickOff','startTime','start_time','startDate','start_date','eventDate','event_date','matchDate','match_date',
     'scheduledAt','scheduled_at','estimateStartTime','eventStartTime','event_start_time','eventTimestamp','event_timestamp',
     'startTimestamp','start_timestamp','eventStartTimestamp','event_start_timestamp','eventDateTime','event_date_time',
     'date','time','event.startTime','event.start_time','event.startDate','event.eventDate','event.estimateStartTime','fixture.startTime',
-  ]))?.toISOString() || null;
-  if (!fixture || !market || !pick) return null;
-  if (!/\b(?:vs\.?|v\.?)\b/i.test(fixture) && !(home && away)) return null;
-  return { fixture, market, pick, odds, league: league || null, kickoff, result: 'unavailable' };
+  ]);
+  const kickoff = coerceKickoff(rawKickoff)?.toISOString() || parent.kickoff || null;
+  return { fixture, market, league, kickoff };
+}
+
+function tipFromObject(object, parentContext = {}) {
+  if (!object || typeof object !== 'object' || Array.isArray(object)) return null;
+  const context = inheritedTipContext(object, parentContext);
+  const selectionField = first(object, [
+    'pick','selection','selectionName','selection_name','outcomeName','outcome_name','optionName','option_name',
+    'runnerName','runner_name','betSelectionName','bet_selection_name',
+  ]);
+  let pick = text(selectionField);
+  const odds = plausibleSelectionOdds(first(object, [
+    'odds','odd','price','decimalOdds','currentOdd','currentOdds','displayOdds','display_odds',
+  ]));
+
+  // `desc`, `description`, `label`, and generic `name` are used all over the
+  // SportyBet payload. Treat them as a selection only when this node also
+  // carries a valid price and does not look like an event/market container.
+  if (!pick && odds !== null) {
+    const hasSelectionChildren = ['selections','selectionList','outcomes','options','runners','bets','items']
+      .some(key => Array.isArray(object?.[key]) && object[key].length);
+    if (!hasSelectionChildren) pick = text(first(object, ['desc','description','label','name']));
+  }
+
+  if (!context.fixture || !context.market || !pick) return null;
+  if (!/\b(?:vs\.?|v\.?)\b/i.test(context.fixture)) return null;
+  if (/object object|undefined|null/i.test(`${context.fixture} ${context.market} ${pick}`)) return null;
+  return {
+    fixture: context.fixture,
+    market: context.market,
+    pick,
+    odds,
+    league: context.league || null,
+    kickoff: context.kickoff,
+    result: 'unavailable',
+  };
 }
 
 function scanTips(root, maxNodes = 160000) {
   const tips = [];
-  const stack = [root];
+  const stack = [{ node: root, context: {} }];
   const seen = new Set();
   let visited = 0;
   while (stack.length && visited < maxNodes) {
-    const node = stack.pop();
+    const entry = stack.pop();
+    const node = entry?.node;
+    const parentContext = entry?.context || {};
     visited += 1;
     if (!node || typeof node !== 'object' || seen.has(node)) continue;
     seen.add(node);
+    let context = parentContext;
     if (!Array.isArray(node)) {
-      const tip = tipFromObject(node);
+      context = inheritedTipContext(node, parentContext);
+      const tip = tipFromObject(node, parentContext);
       if (tip) tips.push(tip);
     }
-    for (const value of Object.values(node)) if (value && typeof value === 'object') stack.push(value);
+    for (const value of Object.values(node)) {
+      if (value && typeof value === 'object') stack.push({ node: value, context });
+    }
   }
   const unique = new Map();
   for (const tip of tips) {
     const key = [canonical(tip.fixture), canonical(tip.market), canonical(tip.pick)].join('|');
     if (!key.replace(/\|/g, '')) continue;
     const current = unique.get(key);
-    if (!current || (!current.kickoff && tip.kickoff) || (current.odds == null && tip.odds != null)) unique.set(key, tip);
+    if (!current || (!current.kickoff && tip.kickoff) || (!current.league && tip.league) || (current.odds == null && tip.odds != null)) unique.set(key, tip);
   }
   return [...unique.values()].slice(0, 100);
 }
@@ -699,6 +749,8 @@ async function runInternal({ limit, expandLimit }) {
     state.verified_slips = verified.length;
     state.rejected_unverified = Math.max(0, candidates.length - verified.length);
     state.tips_found = tipCount;
+    state.tips_with_kickoff = verified.reduce((sum,item) => sum + item.tips.filter(tip => Boolean(publicCodeKickoff(tip.kickoff))).length, 0);
+    state.tips_without_kickoff = Math.max(0, tipCount - state.tips_with_kickoff);
     state.last_result_preview = verified.slice(0,5).map(item => ({ code:item.code, odds:item.odds, selections:item.selections, tips:item.tips.length }));
     return verified.map(item => {
       const { expansion, _provenance, ...clean } = item;
@@ -720,6 +772,8 @@ export async function collectSportyBetCodesWithBrowser({ limit = 20, expandLimit
     state.codes_discovered = 0;
     state.codes_expanded = 0;
     state.tips_found = 0;
+    state.tips_with_kickoff = 0;
+    state.tips_without_kickoff = 0;
     state.network_responses = 0;
     state.submissions_attempted = 0;
     state.verified_slips = 0;
