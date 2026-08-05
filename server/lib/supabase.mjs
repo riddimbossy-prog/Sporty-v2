@@ -1,6 +1,20 @@
 import { env, text } from './core.mjs';
 
-const base=()=>env('SUPABASE_URL').replace(/\/+$/,'');
+function normalizeBase(value){
+  const raw=text(value);
+  if(!raw)return'';
+  try{
+    const url=new URL(raw);
+    url.search='';
+    url.hash='';
+    url.pathname=url.pathname.replace(/\/(?:rest|auth)\/v1\/?$/i,'').replace(/\/+$/,'');
+    return url.toString().replace(/\/+$/,'');
+  }catch{
+    return raw.replace(/\/(?:rest|auth)\/v1\/?$/i,'').replace(/\/+$/,'');
+  }
+}
+
+const base=()=>normalizeBase(env('SUPABASE_URL'));
 const key=()=>env('SUPABASE_SERVICE_ROLE_KEY');
 export const configured=()=>Boolean(base()&&key());
 function headers(extra={}){return{apikey:key(),Authorization:`Bearer ${key()}`,'content-type':'application/json',Accept:'application/json',...extra}}
