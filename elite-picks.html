@@ -15,8 +15,8 @@
   <link rel="alternate icon" href="/favicon.ico">
   <link rel="apple-touch-icon" href="/icons/icon-180.png">
   <link rel="stylesheet" href="/styles.css?v=21.7.3">
-  <link rel="stylesheet" href="/responsive.css?v=21.7.3">
-  <link rel="stylesheet" href="/pwa.css?v=21.7.3">
+  <link rel="stylesheet" href="/responsive.css?v=21.7.3-p3">
+  <link rel="stylesheet" href="/pwa.css?v=21.7.3-p3">
   <title>Elite Picks — sporty.codes</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
@@ -35,25 +35,25 @@
   </section>
 
   <section class="stats-grid elite-stats" id="eliteStatsSection" hidden>
-    <div class="stat-card"><span>Elite Verified</span><strong data-elite-stat="verified">0</strong></div>
+    <div class="stat-card"><span>Elite Strong</span><strong data-elite-stat="strong">0</strong></div>
     <div class="stat-card"><span>Elite Supported</span><strong data-elite-stat="supported">0</strong></div>
-    <div class="stat-card"><span>Trending</span><strong data-elite-stat="trending">0</strong></div>
+    <div class="stat-card"><span>Elite Watch</span><strong data-elite-stat="watch">0</strong></div>
     <div class="stat-card"><span>Total candidates</span><strong data-elite-stat="total">0</strong></div>
   </section>
 
   <section class="elite-policy">
     <strong>How Elite works</strong>
-    <p>A selection cannot qualify through popularity alone. It must pass independent-source checks, copied-source protection, opposition checks and market-specific statistical verification. Empty or incomplete categories stay hidden.</p>
+    <p>Most Added supplies the candidate. Elite Strong requires high popularity, several independent booking codes, low opposition and strong statistical backing. Elite Supported passes the core checks. Elite Watch keeps promising candidates visible when evidence is still developing.</p>
   </section>
 
   <section class="section elite-browser" id="eliteContent" hidden>
-    <div class="section-head"><div><div class="eyebrow">Statistically verified repeated tips</div><h2>Today’s Elite board</h2><p>Only candidates that pass the two-stage engine appear here.</p></div></div>
+    <div class="section-head"><div><div class="eyebrow">Statistically verified repeated tips</div><h2>Today’s Elite board</h2><p>Most Added candidates are graded by verified-code consensus, opposition, data quality and available team-stat evidence.</p></div></div>
     <div class="elite-toolbar">
       <div class="elite-tabs" role="tablist" aria-label="Elite classifications">
         <button class="active" type="button" data-elite-filter="all">All</button>
-        <button type="button" data-elite-filter="elite_verified">Elite Verified</button>
+        <button type="button" data-elite-filter="elite_strong">Elite Strong</button>
         <button type="button" data-elite-filter="elite_supported">Elite Supported</button>
-        <button type="button" data-elite-filter="trending">Trending</button>
+        <button type="button" data-elite-filter="elite_watch">Elite Watch</button>
       </div>
       <label class="elite-search">Search<input id="eliteSearch" type="search" placeholder="Fixture, market, selection or league"></label>
     </div>
@@ -61,7 +61,7 @@
   </section>
 
   <section class="section elite-loading" id="eliteLoading"><div class="loading-card"><span class="loading-spinner" aria-hidden="true"></span><strong>Checking Elite candidates…</strong><p>Comparing independent consensus with current team statistics.</p></div></section>
-  <section class="section" id="eliteEmpty" hidden><div class="empty-state"><div class="eyebrow">Elite engine active</div><h2>No qualified Elite Picks right now</h2><p>The Elite page remains available, but no current candidate passes both independent-consensus and statistical-verification gates. Qualified selections will appear here automatically.</p><a class="button secondary" href="/smart-board.html">Review Smart Board</a></div></section>
+  <section class="section" id="eliteEmpty" hidden><div class="empty-state"><div class="eyebrow">Elite engine active</div><h2>No qualified Elite Picks right now</h2><p>Most Added is still being analysed. Strong, Supported and Watch candidates will appear automatically when verified public slips are available.</p><a class="button secondary" href="/smart-board.html">Review Smart Board</a></div></section>
 </main>
 
 <dialog class="elite-evidence-dialog" id="eliteEvidenceDialog">
@@ -74,13 +74,19 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <footer class="footer"><span class="footer-brand"><img src="/assets/logo-mark.webp" width="30" height="30" alt="" loading="lazy" decoding="async" fetchpriority="low">sporty.codes</span><span>Statistical discovery tools for public codes. 18+ only. Use responsibly.</span></footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
-<script src="/config.js?v=21.7.3" defer></script>
-<script src="/src/region.js?v=21.7.3" defer></script>
-<script src="/src/auth.js?v=21.7.3" defer></script>
-<script src="/src/saved.js?v=21.7.3" defer></script>
-<script src="/src/share.js?v=21.7.3" defer></script>
-<script src="/src/elite.js?v=21.7.3" defer></script>
-<script src="/src/pwa.js?v=21.7.3" defer></script>
-<script src="/src/experience.js?v=21.7.3" defer></script>
+<script src="/config.js?v=21.7.3-p3" defer></script>
+<script src="/src/region.js?v=21.7.3-p3" defer></script>
+<script src="/src/auth.js?v=21.7.3-p3" defer></script>
+<script src="/src/saved.js?v=21.7.3-p3" defer></script>
+<script src="/src/handoff.js?v=21.7.3-p3" defer></script>
+<script src="/src/share.js?v=21.7.3-p3" defer></script>
+<script src="/src/mvp.js?v=21.7.3-p3" defer></script>
+<script src="/src/market-board.js?v=21.7.3-p3" defer></script>
+<script src="/src/slip-builder.js?v=21.7.3-p3" defer></script>
+<script src="/src/custom-api-match.js?v=21.7.3-p3" defer></script>
+<script src="/src/intelligence.js?v=21.7.3-p3" defer></script>
+<script src="/src/elite.js?v=21.7.3-p3" defer></script>
+<script src="/src/pwa.js?v=21.7.3-p3" defer></script>
+<script src="/src/experience.js?v=21.7.3-p3" defer></script>
 </body>
 </html>

@@ -807,3 +807,14 @@ img[loading="lazy"]{content-visibility:auto}
 @media(max-width:980px){.popular-board-controls{grid-template-columns:1fr 1fr}.popular-board-controls label:first-child{grid-column:1/-1}.popular-tip-card{grid-template-columns:auto minmax(0,1fr) auto}.popular-tip-meta{grid-column:2/3;min-width:0}.popular-add-button{grid-column:3;grid-row:1/3}.popular-board-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.popular-board-hero{grid-template-columns:1fr}.popular-board-hero-side{display:none}.popular-board-controls{grid-template-columns:1fr}.popular-board-controls label:first-child{grid-column:auto}.popular-tip-card{grid-template-columns:auto minmax(0,1fr) auto;gap:.65rem;padding:.8rem}.popular-tip-rank{width:42px;height:42px;border-radius:14px;font-size:1rem}.popular-tip-main h3{font-size:.92rem}.popular-tip-pick{font-size:.72rem}.popular-tip-meta{grid-column:1/-1;grid-template-columns:repeat(3,1fr);min-width:0}.popular-tip-meta span{padding:.45rem;font-size:.55rem}.popular-tip-meta b{font-size:.76rem}.popular-add-button{width:50px;height:50px}.prediction-slip-fab{width:64px;height:64px;bottom:max(82px,calc(env(safe-area-inset-bottom) + 72px))}.prediction-slip-drawer{top:auto;bottom:0;width:100%;height:min(88dvh,820px);border:1px solid var(--line);border-bottom:0;border-radius:28px 28px 0 0;transform:translateY(104%)}.prediction-slip-shell.is-open .prediction-slip-drawer{transform:translateY(0)}.prediction-slip-handle{display:block;align-self:center;width:44px;height:4px;margin:-.2rem 0 .7rem;border-radius:999px;background:color-mix(in srgb,var(--muted) 40%,transparent)}.prediction-slip-actions{grid-template-columns:1fr}.prediction-slip-actions .prediction-slip-clear{grid-column:auto}.popular-board-stats{gap:.6rem}.popular-board-stats .stat-card{padding:.8rem}}
 @media(prefers-reduced-motion:reduce){.popular-board-hero-side,.popular-board-hero-side:before,.today-orbit,.today-orbit:after,.popular-add-button:before,.prediction-slip-fab,.prediction-slip-fab-ring{animation:none!important}.popular-tip-card,.prediction-slip-drawer,.prediction-slip-backdrop{transition-duration:.01ms!important}}
+
+/* v21.7.4 Most Added → Elite bridge */
+.elite-card.is-strong::before{background:var(--green)}
+.elite-card.is-watch::before{background:#f59e0b}
+.elite-card.is-strong .elite-badge{background:var(--green-soft);color:var(--green)}
+.elite-card.is-watch .elite-badge{background:rgba(245,158,11,.12);color:#d97706}
+.elite-card.is-strong .elite-pick{color:var(--green)}
+.elite-card.is-watch .elite-pick{color:#d97706}
+.elite-actions{grid-template-columns:repeat(4,minmax(0,1fr))}
+.elite-add-button{border-color:color-mix(in srgb,var(--green) 42%,var(--line));color:var(--green)}
+@media (max-width:760px){.elite-actions{grid-template-columns:1fr 1fr}.elite-actions .button:first-child{grid-column:auto}}
