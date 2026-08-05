@@ -30,5 +30,5 @@ assert.match(sync,/previous published feed was preserved/i);
 assert.match(sync,/hidden===true/);
 assert.match(workflow,/npm test/);
 assert.match(server,/\/admin\/refresh/);
-assert.match(sw,/sporty-codes-v21\.5\.2/);
+assert.match(sw,/sporty-codes-v21\.5\.3/);
 console.log('Feed reliability v20.4 checks passed');

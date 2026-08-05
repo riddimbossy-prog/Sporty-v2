@@ -25,6 +25,12 @@ const state = {
   load_url: null,
   chromium: null,
   last_result_preview: [],
+  submissions_attempted: 0,
+  verified_slips: 0,
+  rejected_unverified: 0,
+  dom_candidates: 0,
+  network_candidates: 0,
+  last_expansion_network: [],
 };
 let activeRun = null;
 
@@ -111,7 +117,7 @@ function first(object, keys) {
   return null;
 }
 
-function objectCode(object) {
+function objectCode(object, embeddedTips = []) {
   if (!object || typeof object !== 'object' || Array.isArray(object)) return '';
   const strong = first(object, [
     'booking_code','bookingCode','bet_code','betCode','coupon_code','couponCode','short_code','shortCode',
@@ -120,15 +126,15 @@ function objectCode(object) {
   const strongCode = normalizeCode(strong);
   if (strongCode) return strongCode;
 
-  // A generic `code` key appears throughout application/error payloads. Treat
-  // it as a booking code only when the same object also contains slip evidence.
+  // Generic `code` values are common in API status/error payloads. They are
+  // accepted only when this exact object contains at least one verifiable slip
+  // selection, not merely a nearby number named selectionCount or totalOdds.
   const generic = normalizeCode(first(object, ['code','codeId','code_id']));
   if (!generic) return '';
-  const keys = Object.keys(object).join(' ');
-  const hasSlipKey = /(booking|coupon|betslip|betSlip|share|selection|total.?odds|legCount|betCount)/i.test(keys);
-  const hasSlipArray = ['tips','selections','selectionList','bets','betSelections','legs','items']
-    .some(key => Array.isArray(object?.[key]) && object[key].length > 0);
-  return hasSlipKey || hasSlipArray ? generic : '';
+  const hasEmbeddedSelections = Array.isArray(embeddedTips) && embeddedTips.length > 0;
+  const hasExplicitSlipObject = ['booking','coupon','betslip','betSlip']
+    .some(key => object?.[key] && typeof object[key] === 'object');
+  return hasEmbeddedSelections || hasExplicitSlipObject ? generic : '';
 }
 
 function totalOdds(object) {
@@ -152,14 +158,15 @@ function selectionCount(object) {
 }
 
 function candidateFromObject(object, sourceUrl) {
-  const code = objectCode(object);
+  const embeddedTips = scanTips(object, 24000);
+  const code = objectCode(object, embeddedTips);
   if (!code) return null;
   return {
     id: hashKey(`sporty-browser:${code}`),
     code,
     title: text(first(object, ['title','name','description','label'])) || 'Free public code',
     odds: totalOdds(object),
-    selections: selectionCount(object),
+    selections: embeddedTips.length || selectionCount(object),
     author: text(first(object, ['author','tipster','creator','username'])) || 'SportyBet Code Hub',
     tag: 'Code Hub',
     status: 'upcoming',
@@ -167,8 +174,9 @@ function candidateFromObject(object, sourceUrl) {
     created_at: safeDate(first(object, ['created_at','createdAt','published_at','publishedAt','date']))?.toISOString() || new Date().toISOString(),
     expires_at: safeDate(first(object, ['expires_at','expiresAt','expiry','expiration']))?.toISOString() || null,
     source_url: sourceUrl,
-    tips: [],
-    _confidence: 3,
+    tips: embeddedTips,
+    _confidence: embeddedTips.length ? 6 : 3,
+    _provenance: embeddedTips.length ? 'network-verified' : 'network-strong-code',
   };
 }
 
@@ -210,7 +218,11 @@ function mergeCandidates(items, limit) {
     current.selections = current.selections ?? item.selections ?? null;
     current.source_url = current.source_url || item.source_url || codeHubUrl();
     current._confidence = Math.max(number(current._confidence), number(item._confidence));
-    if (Array.isArray(item.tips) && item.tips.length > (current.tips?.length || 0)) current.tips = item.tips;
+    current._provenance = current._provenance || item._provenance || 'unknown';
+    if (Array.isArray(item.tips) && item.tips.length > (current.tips?.length || 0)) {
+      current.tips = item.tips;
+      current._provenance = item._provenance || current._provenance;
+    }
     map.set(code, current);
   }
   return [...map.values()]
@@ -292,7 +304,8 @@ function domCandidates(dom, sourceUrl) {
     expires_at: null,
     source_url: sourceUrl,
     tips: [],
-    _confidence: 2,
+    _confidence: 4,
+    _provenance: 'dom-labelled-code',
   })).filter(item => item.code);
 }
 
@@ -349,23 +362,46 @@ function scanTips(root, maxNodes = 160000) {
   return [...unique.values()].slice(0, 100);
 }
 
-const LOAD_FORM_SCRIPT = code => String.raw`(() => {
+const LOAD_FORM_SCRIPT = code => String.raw`(async () => {
   const code = ${JSON.stringify(code)};
+  const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
   const visible = el => !!(el && (el.offsetWidth || el.offsetHeight || el.getClientRects().length));
   const inputs = [...document.querySelectorAll('input')].filter(visible);
   let input = inputs.find(el => /code|booking|coupon|load/i.test([el.name, el.id, el.placeholder, el.getAttribute('aria-label')].filter(Boolean).join(' ')));
   input ||= inputs.find(el => ['text','search','tel',''].includes((el.type || '').toLowerCase()));
   if (!input) return { submitted:false, reason:'input_not_found', inputs:inputs.length };
+
+  const oldValue = input.value;
   const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
   if (setter) setter.call(input, code); else input.value = code;
+  if (input._valueTracker?.setValue) input._valueTracker.setValue(oldValue);
   input.focus();
-  for (const type of ['input','change','keyup']) input.dispatchEvent(new Event(type, { bubbles:true }));
+  try { input.dispatchEvent(new InputEvent('input', { bubbles:true, inputType:'insertText', data:code })); }
+  catch { input.dispatchEvent(new Event('input', { bubbles:true })); }
+  input.dispatchEvent(new Event('change', { bubbles:true }));
+  input.dispatchEvent(new KeyboardEvent('keyup', { key:'Unidentified', bubbles:true }));
+  await pause(700);
+
   const buttons = [...document.querySelectorAll('button,[role="button"],input[type="submit"],a')].filter(visible);
-  const button = buttons.find(el => /load|submit|search|continue|apply|use code|confirm/i.test(String(el.innerText || el.value || el.getAttribute('aria-label') || '')));
-  if (button) { button.click(); return { submitted:true, method:'button', label:String(button.innerText || button.value || '').slice(0,80) }; }
-  input.dispatchEvent(new KeyboardEvent('keydown', { key:'Enter', code:'Enter', bubbles:true }));
-  input.dispatchEvent(new KeyboardEvent('keyup', { key:'Enter', code:'Enter', bubbles:true }));
-  return { submitted:true, method:'enter' };
+  const enabled = el => !el.disabled && el.getAttribute('aria-disabled') !== 'true';
+  const label = el => String(el.innerText || el.value || el.getAttribute('aria-label') || '').replace(/\s+/g,' ').trim();
+  const button = buttons.find(el => enabled(el) && /load\s*code|load|submit|search|continue|apply|use\s*code|confirm/i.test(label(el)));
+  if (button) {
+    button.scrollIntoView({ block:'center', inline:'center' });
+    button.dispatchEvent(new MouseEvent('mousedown', { bubbles:true, view:window }));
+    button.dispatchEvent(new MouseEvent('mouseup', { bubbles:true, view:window }));
+    button.click();
+    return { submitted:true, method:'button', label:label(button).slice(0,80), value:input.value };
+  }
+  const form = input.closest('form');
+  if (form?.requestSubmit) {
+    form.requestSubmit();
+    return { submitted:true, method:'requestSubmit', value:input.value };
+  }
+  input.dispatchEvent(new KeyboardEvent('keydown', { key:'Enter', code:'Enter', keyCode:13, which:13, bubbles:true }));
+  input.dispatchEvent(new KeyboardEvent('keypress', { key:'Enter', code:'Enter', keyCode:13, which:13, bubbles:true }));
+  input.dispatchEvent(new KeyboardEvent('keyup', { key:'Enter', code:'Enter', keyCode:13, which:13, bubbles:true }));
+  return { submitted:true, method:'enter', value:input.value };
 })()`;
 
 const DOM_TIPS_SCRIPT = String.raw`(() => {
@@ -448,11 +484,34 @@ function sanitizeCollectedItem(item) {
   };
 }
 
+function verifiedCollectedItems(items, limit = 40) {
+  return (Array.isArray(items) ? items : [])
+    .map(sanitizeCollectedItem)
+    .filter(item => item && item.tips.length > 0)
+    .slice(0, Math.max(1, Math.min(40, number(limit) || 40)));
+}
+
+function safeNetworkSummary(response) {
+  let path = '';
+  try {
+    const url = new URL(response?.url);
+    path = `${url.pathname}${url.search ? `?${[...url.searchParams.keys()].slice(0,12).join(',')}` : ''}`;
+  } catch { path = text(response?.url).slice(0,180); }
+  return {
+    method: text(response?.method) || 'GET',
+    path: path.slice(0,220),
+    status: number(response?.status) || null,
+    type: text(response?.type),
+    mime: text(response?.mimeType),
+    request_keys: Array.isArray(response?.requestKeys) ? response.requestKeys.slice(0,16) : [],
+  };
+}
+
 async function expandCode(session, code, sourceUrl) {
-  const startIndex = session.networkIndex();
   await session.navigate(allowedUrl(loadCodeUrl()), { waitMs: number(env('SPORTYBET_BROWSER_PAGE_WAIT_MS', '6500')) || 6500 });
+  const startIndex = session.networkIndex();
   const form = await session.evaluate(LOAD_FORM_SCRIPT(code)).catch(error => ({ submitted:false, reason:publicError(error) }));
-  await sleep(number(env('SPORTYBET_BROWSER_AFTER_SUBMIT_MS', '6500')) || 6500);
+  await sleep(number(env('SPORTYBET_BROWSER_AFTER_SUBMIT_MS', '8500')) || 8500);
   await session.scroll({ steps:2, delayMs:500 }).catch(() => null);
   const responses = session.networkSince(startIndex);
   let tips = [];
@@ -469,8 +528,22 @@ async function expandCode(session, code, sourceUrl) {
   }
   const dom = await session.evaluate(DOM_TIPS_SCRIPT).catch(() => null);
   if (!tips.length) tips = tipsFromDom(dom);
+  tips = tips.filter(validTip);
   odds ??= plausibleTotalOdds(dom?.total_odds, tips.length || null);
-  return { tips, odds, submitted:form?.submitted || false, method:form?.method || form?.reason || null, network_responses:responses.length };
+  const failureText = !tips.length
+    ? text(dom?.body_text).match(/(?:invalid|expired|not\s+found|unable|failed|try\s+again)[^.]{0,160}/i)?.[0] || null
+    : null;
+  return {
+    tips,
+    odds,
+    verified: tips.length > 0,
+    submitted: form?.submitted || false,
+    method: form?.method || form?.reason || null,
+    entered_value: text(form?.value),
+    failure_text: failureText,
+    network_responses: responses.length,
+    network: responses.slice(-12).map(safeNetworkSummary),
+  };
 }
 
 async function runInternal({ limit, expandLimit }) {
@@ -496,35 +569,49 @@ async function runInternal({ limit, expandLimit }) {
     const network = session.networkSince(0);
     const fromNetwork = networkCodeCandidates(network, sourceUrl);
     const fromDom = domCandidates(dom, sourceUrl);
-    let items = mergeCandidates([...fromNetwork, ...fromDom], limit)
+    state.network_candidates = fromNetwork.length;
+    state.dom_candidates = fromDom.length;
+
+    let candidates = mergeCandidates([...fromNetwork, ...fromDom], limit)
       .map(sanitizeCollectedItem).filter(Boolean).slice(0, limit);
-    state.codes_discovered = items.length;
+    state.codes_discovered = candidates.length;
     state.network_responses = network.length;
     state.chromium = session.diagnostics();
+    state.submissions_attempted = 0;
+    state.last_expansion_network = [];
 
-    let expanded = 0;
-    let tipCount = 0;
-    for (const item of items.slice(0, expandLimit)) {
+    const pending = candidates.filter(item => !item.tips.length).slice(0, expandLimit);
+    for (const item of pending) {
       try {
         const detail = await expandCode(session, item.code, sourceUrl);
+        state.submissions_attempted += detail.submitted ? 1 : 0;
         if (detail.tips.length) item.tips = detail.tips;
         if (item.odds === null || item.odds === undefined) item.odds = detail.odds;
         if (!item.selections) item.selections = item.tips.length;
-        item.expansion = { submitted:detail.submitted, method:detail.method };
-        expanded += detail.submitted ? 1 : 0;
-        tipCount += item.tips.length;
+        item.expansion = {
+          submitted:detail.submitted,
+          verified:detail.verified,
+          method:detail.method,
+          network_responses:detail.network_responses,
+          failure_text:detail.failure_text,
+        };
+        if (!detail.verified && detail.network.length) state.last_expansion_network = detail.network;
       } catch (error) {
-        item.expansion = { submitted:false, error:publicError(error) };
+        item.expansion = { submitted:false, verified:false, error:publicError(error) };
       }
       await sleep(number(env('SPORTYBET_BROWSER_EXPANSION_DELAY_MS', '900')) || 900);
     }
-    items = items.map(sanitizeCollectedItem).filter(Boolean).slice(0, limit);
-    tipCount = items.reduce((sum,item) => sum + item.tips.length, 0);
-    state.codes_expanded = expanded;
+
+    candidates = candidates.map(sanitizeCollectedItem).filter(Boolean).slice(0, limit);
+    const verified = verifiedCollectedItems(candidates, limit);
+    const tipCount = verified.reduce((sum,item) => sum + item.tips.length, 0);
+    state.codes_expanded = verified.length;
+    state.verified_slips = verified.length;
+    state.rejected_unverified = Math.max(0, candidates.length - verified.length);
     state.tips_found = tipCount;
-    state.last_result_preview = items.slice(0,5).map(item => ({ code:item.code, odds:item.odds, selections:item.selections, tips:item.tips.length }));
-    return items.map(item => {
-      const { expansion, ...clean } = item;
+    state.last_result_preview = verified.slice(0,5).map(item => ({ code:item.code, odds:item.odds, selections:item.selections, tips:item.tips.length }));
+    return verified.map(item => {
+      const { expansion, _provenance, ...clean } = item;
       return clean;
     });
   });
@@ -534,18 +621,29 @@ export async function collectSportyBetCodesWithBrowser({ limit = 20, expandLimit
   if (!enabled()) throw new Error('SportyBet browser collector is disabled');
   if (activeRun) return activeRun;
   const safeLimit = Math.max(1, Math.min(40, number(limit) || 20));
-  const safeExpand = Math.max(0, Math.min(safeLimit, number(expandLimit ?? env('SPORTYBET_CODE_EXPANSION_LIMIT', '8')) || 8));
+  const safeExpand = Math.max(0, Math.min(safeLimit, number(expandLimit ?? env('SPORTYBET_CODE_EXPANSION_LIMIT', String(safeLimit))) || safeLimit));
   activeRun = (async () => {
     const started = Date.now();
     state.running = true;
     state.last_started_at = new Date().toISOString();
     state.last_error = null;
+    state.codes_discovered = 0;
+    state.codes_expanded = 0;
+    state.tips_found = 0;
+    state.network_responses = 0;
+    state.submissions_attempted = 0;
+    state.verified_slips = 0;
+    state.rejected_unverified = 0;
+    state.dom_candidates = 0;
+    state.network_candidates = 0;
+    state.last_result_preview = [];
+    state.last_expansion_network = [];
     try {
       const items = await runInternal({ limit:safeLimit, expandLimit:safeExpand });
       state.last_finished_at = new Date().toISOString();
       state.last_duration_ms = Date.now() - started;
       if (items.length) state.last_success_at = state.last_finished_at;
-      else state.last_error = 'The browser opened Code Hub but found no public booking codes.';
+      else state.last_error = 'Code Hub candidates were found, but none returned a verified public slip with selections.';
       return items;
     } catch (error) {
       state.last_finished_at = new Date().toISOString();
@@ -583,6 +681,7 @@ export const __test = Object.freeze({
   tipsFromDom,
   plausibleTotalOdds,
   sanitizeCollectedItem,
+  verifiedCollectedItems,
   DOM_CODE_SCRIPT,
   DOM_TIPS_SCRIPT,
   LOAD_FORM_SCRIPT,

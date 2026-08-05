@@ -10,7 +10,7 @@ const intel=read('src/intelligence.js');
 const pwa=read('src/pwa.js');
 const css=read('styles.css');
 const index=read('index.html');
-assert.match(sw,/sporty-codes-v21\.5\.2/);
+assert.match(sw,/sporty-codes-v21\.5\.3/);
 for(const cache of ['STATIC_CACHE','PAGE_CACHE','DATA_CACHE','IMAGE_CACHE'])assert.match(sw,new RegExp(`const ${cache}=`));
 assert.match(sw,/stableDataRequest/);
 assert.match(sw,/trimCache/);
@@ -30,7 +30,7 @@ assert.match(pwa,/sporty_sw_update_checked_v209/);
 assert.match(pwa,/6\*60\*60\*1000/);
 assert.match(css,/content-visibility:auto/);
 assert.match(css,/contain-intrinsic-size:auto 680px/);
-assert.match(index,/styles\.css\?v=21\.5\.2/);
+assert.match(index,/styles\.css\?v=21\.5\.3/);
 assert.match(build,/logo-wordmark-dark@2x\.png/);
 assert.ok(fs.statSync(new URL('../favicon.svg',import.meta.url)).size<5000,'favicon should stay lightweight');
 for(const file of ['logo-wordmark-dark.webp','logo-wordmark-light.webp','logo-mark.webp']){

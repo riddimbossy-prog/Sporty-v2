@@ -30,9 +30,9 @@ jobs:
       SPORTYBET_BROWSER_CODEHUB_URL: https://www.sportybet.com/gh/m/code-hub/codes
       SPORTYBET_BROWSER_LOAD_CODE_URL: https://www.sportybet.com/gh/m/code-hub/load-code
       SPORTYBET_BROWSER_CODE_LIMIT: ${{ github.event.inputs.code_limit || '20' }}
-      SPORTYBET_CODE_EXPANSION_LIMIT: '8'
+      SPORTYBET_CODE_EXPANSION_LIMIT: ${{ github.event.inputs.code_limit || '20' }}
       SPORTYBET_BROWSER_PAGE_WAIT_MS: '9000'
-      SPORTYBET_BROWSER_AFTER_SUBMIT_MS: '7000'
+      SPORTYBET_BROWSER_AFTER_SUBMIT_MS: '8500'
       SPORTYBET_BROWSER_EXPANSION_DELAY_MS: '1200'
       CODE_CACHE_TTL_SECONDS: '60'
     steps:

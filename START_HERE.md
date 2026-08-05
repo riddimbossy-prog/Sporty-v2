@@ -1,26 +1,18 @@
-# START HERE — Sporty.codes v21.5.2
+# START HERE — Sporty.codes v21.5.3
 
-This hotfix stops Chromium from crashing the Render web service.
-
-## Architecture
-
-- Render: lightweight Node web/API service only.
-- GitHub Actions: public SportyBet Code Hub browser collector.
-- Supabase: persistent booking codes, selections and collector status.
+This release fixes the zero-tip feed shown by v21.5.2. Candidate tokens are no longer published as booking codes.
 
 ## 1. Replace the repository
 
 Replace the current repository files with this package and push:
 
 ```text
-Deploy v21.5.2 external browser collector
+Deploy v21.5.3 verified public-slip gate
 ```
 
-## 2. Apply the Render Blueprint
+## 2. Confirm Render remains lightweight
 
-Open the Render Blueprint and use **Sync Blueprint**. The service must change from Docker to Node.
-
-Confirm these Render values:
+Sync the Render Blueprint only when its settings differ. The web service must show:
 
 ```text
 Runtime: Node
@@ -30,9 +22,9 @@ SPORTYBET_BROWSER_COLLECTOR_ENABLED=false
 SPORTYBET_BROWSER_EXECUTION_MODE=github-actions
 ```
 
-Keep the existing Supabase URL, publishable key and service-role key in Render.
+Keep the existing Supabase variables in Render. No SQL migration is required.
 
-## 3. Add two GitHub Actions secrets
+## 3. Confirm GitHub Actions secrets
 
 Repository → Settings → Secrets and variables → Actions:
 
@@ -41,13 +33,11 @@ SUPABASE_URL
 SUPABASE_SERVICE_ROLE_KEY
 ```
 
-Use the same project values already stored privately in Render. Never put the service-role key in repository files or browser JavaScript.
-
 ## 4. Run the collector
 
 GitHub → Actions → **Sync SportyBet Code Hub** → **Run workflow**.
 
-The workflow also runs hourly.
+The workflow tests up to 20 public candidates through the public load-code page. It stores only candidates that return actual selections.
 
 ## 5. Verify
 
@@ -59,7 +49,14 @@ https://sporty-codes-staging.onrender.com/api/get_code_hub_codes
 https://sporty-codes-staging.onrender.com/smart-board.html
 ```
 
-A successful collector status has a non-null `last_started_at`, `last_finished_at` and `last_success_at`.
+A publishable run has:
 
+```text
+verified_slips > 0
+tips_found > 0
+slips_with_tips = count
+```
 
-After deploying v21.5.2, run **Actions → Sync SportyBet Code Hub → Run workflow** once. This cleans invalid legacy rows and republishes the validated feed.
+A run with `verified_slips: 0` is not a successful code harvest even when `codes_discovered` is greater than zero. In that case the site intentionally shows no automatic codes instead of fake ones.
+
+Old zero-tip auto-collected rows are hidden as soon as Render deploys v21.5.3 and are deleted during the next workflow run.

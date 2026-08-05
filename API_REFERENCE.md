@@ -1,75 +1,59 @@
-# Sporty.codes custom API reference — v21.5.2
-
-The browser collector runs in GitHub Actions; Render serves persisted Supabase results and does not launch Chromium.
+# Sporty.codes custom API reference — v21.5.3
 
 ## Public routes
 
-### GET `/api/health`
-Service, Supabase, collector, and optional enrichment readiness.
+```text
+GET /api/health
+GET /api/source-status
+GET /api/collector-status
+GET /api/get_code_hub_codes
+GET /api/get_booking?code=ABC123
+GET /api/get_upcoming_events
+```
 
-### GET `/api/source-status`
-Combined direct-event and browser-agent diagnostics.
+`/api/get_code_hub_codes` returns only manual rows or verified auto-collected slips with one or more selections. Auto-collected rows with zero selections are filtered out.
 
-### GET `/api/collector-status`
-Safe browser-agent run status.
+Important response fields:
 
-### GET `/api/get_code_hub_codes?limit=24`
-Returns normalized public codes and expanded selections stored in Supabase.
+```text
+count             number of publishable slips
+slips_with_tips   publishable slips containing selections
+total_tips        total normalized selections
+status            ok or empty
+browser_status    persisted collector diagnostics
+```
 
-### GET `/api/get_booking?code=ABC123`
-Returns one normalized code and its selections.
+A trustworthy automatic feed should have `count === slips_with_tips`.
 
-### GET `/api/get_upcoming_events?days=3`
-Returns public upcoming football events. This remains separate from the browser-driven Code Hub feed.
+## Collector status
 
-## Protected routes
+```text
+GET /api/collector-status
+```
 
-Use:
+Important fields:
+
+```text
+codes_discovered       code-like candidates found on the public page
+submissions_attempted  candidates submitted through public load-code
+verified_slips         candidates that returned valid selections
+rejected_unverified    candidates withheld from publication
+tips_found             normalized selections in verified slips
+last_expansion_network safe method/path/key-name diagnostics; no values or cookies
+```
+
+## Admin routes
+
+```text
+POST /api/admin/collector/run
+GET  /api/admin/collector/status
+POST /api/admin/refresh
+```
+
+Admin routes require:
 
 ```text
 Authorization: Bearer CUSTOM_API_ADMIN_TOKEN
 ```
 
-### POST `/api/admin/collector/run`
-
-```json
-{"limit":20}
-```
-
-Starts one browser run. Concurrent calls reuse the active run instead of opening multiple Chromium sessions.
-
-### GET `/api/admin/collector/status`
-Returns protected collector status.
-
-### POST `/api/admin/refresh`
-Refreshes the combined feeds.
-
-### POST `/api/admin/codes`
-Publishes an administrator-supplied verified public code.
-
-## Code Hub response
-
-```json
-{
-  "source": "sportybet-browser-agent",
-  "collector": "sportybet-browser-agent",
-  "count": 1,
-  "slips_with_tips": 1,
-  "total_tips": 4,
-  "items": [
-    {
-      "code": "ABC123",
-      "odds": 5.25,
-      "selections": 4,
-      "tips": [
-        {
-          "fixture": "Home Team vs Away Team",
-          "market": "Total Goals",
-          "pick": "Over 1.5",
-          "odds": 1.30
-        }
-      ]
-    }
-  ]
-}
-```
+The Render web process does not start Chromium. The browser collector runs through the `Sync SportyBet Code Hub` GitHub Actions workflow.

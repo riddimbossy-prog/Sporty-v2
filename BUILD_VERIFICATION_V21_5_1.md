@@ -1,4 +1,4 @@
-# Build verification — Sporty.codes v21.5.2
+# Build verification — Sporty.codes v21.5.1
 
 Validated locally:
 

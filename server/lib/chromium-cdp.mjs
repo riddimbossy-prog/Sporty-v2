@@ -197,6 +197,26 @@ export class ChromiumSession {
 
   #captureNetwork() {
     const requests = new Map();
+    const requestMeta = new Map();
+    this.cdp.on('Network.requestWillBeSent', params => {
+      const request = params.request || {};
+      const url = text(request.url);
+      if (!url) return;
+      let requestKeys = [];
+      const rawBody = text(request.postData);
+      if (rawBody) {
+        try {
+          const parsed = JSON.parse(rawBody);
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) requestKeys = Object.keys(parsed).slice(0, 24);
+        } catch {
+          try { requestKeys = [...new URLSearchParams(rawBody).keys()].slice(0, 24); } catch {}
+        }
+      }
+      requestMeta.set(params.requestId, {
+        method: text(request.method) || 'GET',
+        requestKeys: [...new Set(requestKeys.map(text).filter(Boolean))],
+      });
+    });
     this.cdp.on('Network.responseReceived', params => {
       const response = params.response || {};
       const url = text(response.url);
@@ -208,6 +228,7 @@ export class ChromiumSession {
         mimeType: text(response.mimeType),
         type: text(params.type),
         headers: response.headers || {},
+        ...(requestMeta.get(params.requestId) || { method:'GET', requestKeys:[] }),
       });
     });
     this.cdp.on('Network.loadingFinished', async params => {

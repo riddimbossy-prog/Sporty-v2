@@ -1,28 +1,26 @@
-# Sporty.codes v21.5.2 — External browser-agent custom API
+# Sporty.codes v21.5.3 — Verified public-slip collector
 
-This build runs the public SportyBet browser agent outside the Render web process. GitHub Actions collects public codes and selections, stores them in Supabase, and the lightweight Render API serves those persisted results without launching Chromium.
+Sporty.codes replaces the old Parse.bot Code Hub workflow with a public browser agent. The browser runs in GitHub Actions, writes verified public slips to Supabase, and the lightweight Render service serves those persisted results through the existing same-domain API.
 
+## Verified-only pipeline
 
-This release replaces the paid Parse.bot Code Hub workflow with a self-hosted public browser agent.
+1. GitHub Actions opens the logged-out public SportyBet Ghana Code Hub.
+2. The worker observes public fetch/XHR responses and labelled code cards.
+3. Every candidate is submitted through the public load-code page.
+4. A candidate is accepted only when the expansion returns at least one real fixture, market, pick and valid selection odd.
+5. Only verified slips and their selections are written to Supabase.
+6. The API immediately hides, and the next collector run removes, legacy auto-collected rows with no selections.
 
-## What it does
-
-1. Render runs the included Chromium browser inside the Docker service.
-2. The worker opens the logged-out public SportyBet Ghana Code Hub.
-3. It observes public fetch/XHR responses and scans rendered public code cards.
-4. It opens the public load-code page for a limited number of discovered codes.
-5. It extracts public slip selections, normalizes them, and stores them in Supabase.
-6. The website reads the stored records through the same-domain custom API.
+Code-like page tokens, JavaScript values, IDs and unexpanded candidates are diagnostics only. They are never public codes.
 
 The collector does not import private cookies, sign into a customer account, read private account data, or bypass CAPTCHA/access controls.
 
 ## Deployment model
 
-- Render: Docker Web Service created from `render.yaml`
-- Supabase: existing migrations 001–007
-- Website and API: one same-origin service
-- Chromium: installed by `Dockerfile`
-- Schedule: first run after 45 seconds, then every 60 minutes by default
+- Render: lightweight Node website and API (`npm run build`, `npm start`)
+- GitHub Actions: Chromium browser collector, manual or hourly
+- Supabase: booking codes, booking selections, API cache and persistent collector status
+- Browser runtime on Render: disabled
 
 ## Main routes
 
@@ -38,9 +36,11 @@ GET  /api/admin/collector/status
 POST /api/admin/refresh
 ```
 
-Admin routes require `Authorization: Bearer CUSTOM_API_ADMIN_TOKEN`.
+Admin routes require `Authorization: Bearer CUSTOM_API_ADMIN_TOKEN`. The web-service collector route does not launch Chromium; it reports that collection runs through GitHub Actions.
 
-## Required Render secrets
+## Required secrets
+
+Render:
 
 ```text
 SUPABASE_URL
@@ -49,13 +49,17 @@ SUPABASE_SERVICE_ROLE_KEY
 CUSTOM_API_ADMIN_TOKEN
 ```
 
-`API_FOOTBALL_KEY` and Odds API settings remain optional enrichment/fallback values.
+GitHub Actions:
 
-## Important live limitation
+```text
+SUPABASE_URL
+SUPABASE_SERVICE_ROLE_KEY
+```
 
-The browser-agent logic and Chromium flow were tested locally against controlled public-page fixtures. Live SportyBet behavior must be confirmed after deployment because the packaging environment cannot access the live site. If SportyBet changes the public page or blocks headless access, `/api/collector-status` will expose the failure instead of silently returning an empty board.
+`API_FOOTBALL_KEY` and Odds API settings remain optional enrichment/fallback values and are not the Code Hub collector.
 
+## Data-quality behavior
 
-## v21.5.2 quality gate
+When SportyBet exposes candidate codes but the public load-code flow returns no selections, the public feed stays empty rather than publishing guessed codes. `/api/collector-status` reports `verified_slips`, `rejected_unverified`, `submissions_attempted`, and a safe summary of the last expansion request without cookies, tokens or request values.
 
-Auto-collected booking codes now pass strict code, selection and odds validation before Supabase persistence. Invalid legacy browser rows are filtered immediately and removed on the next collector run.
+Live SportyBet behavior must still be checked on each GitHub Actions run because the public page can change. This build fails closed: unverified rows do not reach Free Codes or Smart Board.
