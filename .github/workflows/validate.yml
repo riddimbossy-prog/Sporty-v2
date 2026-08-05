@@ -9,6 +9,17 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
+      - name: Locate installed Chrome
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          if [ -z "$CHROME" ]; then
+            echo "Chrome/Chromium is not installed on this runner." >&2
+            exit 1
+          fi
+          echo "CHROMIUM_PATH=$CHROME" >> "$GITHUB_ENV"
+          "$CHROME" --version
       - name: Run complete test suite
         run: npm test
