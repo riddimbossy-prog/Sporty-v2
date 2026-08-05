@@ -2,7 +2,7 @@
   'use strict';
 
   const mvp=()=>window.SportyMVP||null;
-  const aux={history:{version:1,tips:[],codes:[]},sources:{version:1,sources:[]},performance:{version:1,groups:[]}};
+  const aux={history:{version:1,tips:[],codes:[]},sources:{version:1,sources:[]},performance:{version:1,groups:[]},events:[]};
   const ui={day:'today',category:'all',search:'',minAppearances:2,odds:'all'};
   let preferences=null;
   let usePreferences=true;
@@ -80,7 +80,7 @@
   function buildSlips(){
     const api=mvp();if(!api)return[];
     const slips=api.displayableCodes().map(item=>{
-      const tips=api.normalizedTips(item).map(tip=>({...tip,category:api.categoryForTip(tip)}));
+      const tips=api.normalizedTips(item).map(tip=>{const recovered=window.SportyCustomApiMatch?.reconcileTip?.(tip,aux.events)||tip;return{...recovered,category:api.categoryForTip(recovered)}});
       return{item,code:text(item.code),source:sourceName(item),sourceKey:sourceKey(item),tips,tipSet:new Set(tips.map(tipKey)),createdAt:dateValue(item.created_at||api.state.feed.generated_at)};
     }).filter(slip=>slip.tips.length);
     clusterSlips(slips);return slips;
@@ -179,7 +179,7 @@
   }
 
   function rebuild(){
-    const slips=buildSlips();const tips=buildTipIntelligence(slips);const contradictions=buildContradictions(tips);const sourceRows=buildCurrentSources(slips);const performanceRows=aux.performance.groups||[];model={slips,tips,contradictions,sourceRows,performanceRows,stats:{strong:tips.filter(row=>row.tier==='Strong').length,supported:tips.filter(row=>row.tier==='Supported').length,watch:tips.filter(row=>row.tier==='Watch').length,avoid:tips.filter(row=>row.tier==='Avoid').length,conflicts:contradictions.length,independentSlips:new Set(slips.map(row=>row.clusterId)).size,rawSlips:slips.length}};renderAll();window.SportySaved?.reconcileTips(tips);document.dispatchEvent(new CustomEvent('sporty:intelligence-updated',{detail:{tips}}));
+    const slips=buildSlips();const tips=buildTipIntelligence(slips);const contradictions=buildContradictions(tips);const sourceRows=buildCurrentSources(slips);const performanceRows=aux.performance.groups||[];model={slips,tips,contradictions,sourceRows,performanceRows,stats:{strong:tips.filter(row=>row.tier==='Strong').length,supported:tips.filter(row=>row.tier==='Supported').length,watch:tips.filter(row=>row.tier==='Watch').length,avoid:tips.filter(row=>row.tier==='Avoid').length,conflicts:contradictions.length,independentSlips:new Set(slips.map(row=>row.clusterId)).size,rawSlips:slips.length,recoveredKickoffs:slips.reduce((sum,slip)=>sum+slip.tips.filter(tip=>tip.kickoff_source==='custom-api-events').length,0),scheduleEvents:aux.events.length}};renderAll();window.SportySaved?.reconcileTips(tips);document.dispatchEvent(new CustomEvent('sporty:intelligence-updated',{detail:{tips}}));
   }
 
   function empty(title,copy){const node=el('div','empty');node.append(el('strong','',title),el('span','',copy));return node}
@@ -190,7 +190,7 @@
   function popularityScore(row){const share=number(row.rawShare);const appearances=Math.min(36,number(row.appearances)*7);const sources=Math.min(18,number(row.uniqueSources)*4);return Math.max(1,Math.min(100,Math.round(share*.52+appearances+sources)))}
 
   function intelligenceCard(row,{compact=false}={}){
-    const card=el('article',`intelligence-card tier-card-${row.tier.toLowerCase()}`);const top=el('div','intelligence-top');const title=el('div');const tags=el('div','pill-row');tags.append(el('span',badgeForTier(row.tier),row.tier),el('span','pill',row.category),el('span','pill day-pill',dayLabel(row.kickoff)));title.append(tags,el('h3','',row.fixture));const score=el('div','strength-score');score.append(el('strong','',Math.round(row.score)),el('span','','/100'));top.append(title,score);card.append(top,el('div','tip-pick',`${row.market}: ${row.pick}`));
+    const card=el('article',`intelligence-card tier-card-${row.tier.toLowerCase()}`);const top=el('div','intelligence-top');const title=el('div');const tags=el('div','pill-row');tags.append(el('span',badgeForTier(row.tier),row.tier),el('span','pill',row.category),el('span','pill day-pill',row.date_pending?'Date pending':dayLabel(row.kickoff)));title.append(tags,el('h3','',row.fixture));const score=el('div','strength-score');score.append(el('strong','',Math.round(row.score)),el('span','','/100'));top.append(title,score);card.append(top,el('div','tip-pick',`${row.market}: ${row.pick}`));
     const metrics=el('div','metric-grid');metrics.append(metric('Independent agreement',`${row.independent} of ${row.totalSlips} slips`),metric('Distinct sources',row.uniqueSources),metric('Opposition',pct(row.oppositionShare)),metric('Average odds',row.averageOdds?row.averageOdds.toFixed(2):'—'));card.append(metrics);
     const decision=el('div',`decision-strip ${row.tier==='Avoid'?'decision-avoid':'decision-review'}`);decision.append(el('strong','',row.tier==='Avoid'?'NO PICK':'REVIEW'),el('span','',row.tier==='Avoid'?(row.noPick[0]||'Signals did not pass the safeguards.'):'Passed the current safeguards; still not a guarantee.'));card.append(decision);
     if(!compact){const details=el('details','why-panel');const summary=el('summary','','Why this rating');details.append(summary);const body=el('div','why-grid');const positive=el('div','why-column');positive.append(el('h4','','Supporting evidence'));const ul=el('ul');row.why.forEach(item=>ul.append(el('li','',item)));positive.append(ul);const risk=el('div','why-column');risk.append(el('h4','','What could go wrong'));const riskList=el('ul');(row.risks.length?row.risks:['No additional risk notes were generated.']).forEach(item=>riskList.append(el('li','',item)));risk.append(riskList);body.append(positive,risk);if(row.noPick.length){const blocked=el('div','no-pick-list');blocked.append(el('h4','','No-pick safeguards'));const list=el('ul');row.noPick.forEach(item=>list.append(el('li','',item)));blocked.append(list);body.append(blocked)}details.append(body);card.append(details);}
@@ -204,14 +204,14 @@
     const rankNode=el('div','popular-tip-rank',String(rank));
     const main=el('div','popular-tip-main');
     const tags=el('div','pill-row');
-    tags.append(el('span',badgeForTier(row.tier),row.tier),el('span','pill',row.category),el('span','pill day-pill',dayLabel(row.kickoff)));
+    tags.append(el('span',badgeForTier(row.tier),row.tier),el('span','pill',row.category),el('span','pill day-pill',row.date_pending?'Date pending':dayLabel(row.kickoff)));
     main.append(tags,el('h3','',row.fixture),el('span','popular-tip-pick',`${row.market}: ${row.pick}`));
     const meta=el('div','popular-tip-meta');
     const popularity=popularityScore(row);
     const rows=[['Popularity',`${popularity}/100`],['Seen in',`${row.appearances} slips`],['Avg. odds',row.averageOdds?row.averageOdds.toFixed(2):'—']];
     rows.forEach(([label,value])=>{const node=el('span','',label);node.append(el('b','',value));meta.append(node)});
     const button=el('button','popular-add-button');button.type='button';
-    const slipItem={id:row.key,fixture:row.fixture,market:row.market,pick:row.pick,odds:row.averageOdds,kickoff:row.kickoff,league:row.league,tier:row.tier,popularity,appearances:row.appearances,sources:row.uniqueSources};
+    const slipItem={id:row.key,fixture:row.fixture,market:row.market,pick:row.pick,odds:row.averageOdds,kickoff:row.kickoff,league:row.league,tier:row.tier,popularity,appearances:row.appearances,sources:row.uniqueSources,date_pending:Boolean(row.date_pending)};
     button.dataset.slipAddKey=row.key;button.setAttribute('aria-label',`Add ${row.fixture} to prediction slip`);button.setAttribute('aria-pressed',String(Boolean(window.SportySlip?.has(slipItem))));
     button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span data-add-label>Add</span>';
     if(window.SportySlip?.has(slipItem)){button.classList.add('is-added');const label=button.querySelector('[data-add-label]');if(label)label.textContent='Added'}
@@ -254,20 +254,24 @@
     const hasModel=model.tips.length>0;setPopulated(root,hasModel);
     const explainer=$('#smartBoardExplainer');if(explainer)explainer.hidden=!hasModel;
     updatePreferenceState();renderStats();if(!hasModel)return;
-    const rows=filteredTips().sort((a,b)=>b.appearances-a.appearances||b.rawShare-a.rawShare||b.uniqueSources-a.uniqueSources||b.score-a.score);
-    const count=$('#popularBoardCount');if(count)count.textContent=rows.length?`${rows.length} popular tip${rows.length===1?'':'s'}`:'No matching tips';
-    const boardDay=$('#popularBoardDay');if(boardDay)boardDay.textContent=ui.day==='today'?'Today':ui.day==='tomorrow'?'Tomorrow':ui.day==='week'?'Next 7 days':ui.day==='undated'?'Date unavailable':'All available';
-    if(!rows.length){
-      const undated=model.tips.filter(row=>!dateValue(row.kickoff)).length;
-      const datedToday=model.tips.filter(row=>dayMatches(row.kickoff,'today')).length;
-      const copy=ui.day==='today'&&undated
-        ? `${undated} repeated tip${undated===1?' is':'s are'} waiting for a verified kickoff date. Deploy the latest collector patch and run the Code Hub workflow once; undated tips are not labelled as Today.`
-        : ui.day==='today'&&datedToday
-          ? `${datedToday} repeated tip${datedToday===1?' was':'s were'} found for today but did not pass the conflict, source-diversity or data-quality gates.`
-          : 'Try another match day or reduce the minimum appearances. Only repeated, non-conflicting tips are shown.';
-      root.append(empty(ui.day==='today'?'No date-confirmed popular tips yet':'No popular tips match this view',copy));return
+    let rows=filteredTips().sort((a,b)=>b.appearances-a.appearances||b.rawShare-a.rawShare||b.uniqueSources-a.uniqueSources||b.score-a.score);
+    const undatedRows=model.tips.filter(row=>row.tier!=='Avoid'&&!dateValue(row.kickoff)&&row.appearances>=ui.minAppearances).sort((a,b)=>b.appearances-a.appearances||b.uniqueSources-a.uniqueSources||b.score-a.score);
+    let usingDatePendingFallback=false;
+    if(!rows.length&&ui.day==='today'&&undatedRows.length){rows=undatedRows;usingDatePendingFallback=true}
+    const count=$('#popularBoardCount');if(count)count.textContent=rows.length?`${rows.length} popular tip${rows.length===1?'':'s'}${usingDatePendingFallback?' · dates pending':''}`:'No matching tips';
+    const boardDay=$('#popularBoardDay');if(boardDay)boardDay.textContent=usingDatePendingFallback?'Dates pending':ui.day==='today'?'Today':ui.day==='tomorrow'?'Tomorrow':ui.day==='week'?'Next 7 days':ui.day==='undated'?'Date unavailable':'All available';
+    if(usingDatePendingFallback){
+      const notice=empty('Kickoff dates are being recovered',`${rows.length} repeated popular tip${rows.length===1?' is':'s are'} shown below without a Today label. The collector now enriches dates before saving and will update these cards after the next successful workflow run.`);
+      notice.classList.add('date-pending-notice');root.append(notice);
     }
-    rows.forEach((row,index)=>root.append(popularTipCard(row,index+1)));
+    if(!rows.length){
+      const datedToday=model.tips.filter(row=>dayMatches(row.kickoff,'today')).length;
+      const copy=ui.day==='today'&&datedToday
+        ? `${datedToday} repeated tip${datedToday===1?' was':'s were'} found for today but did not pass the conflict, source-diversity or data-quality gates.`
+        : 'Try another match day or reduce the minimum appearances. Only repeated, non-conflicting tips are shown.';
+      root.append(empty(ui.day==='today'?'No popular tips passed today’s gates':'No popular tips match this view',copy));return
+    }
+    rows.forEach((row,index)=>root.append(popularTipCard({...row,date_pending:usingDatePendingFallback||!dateValue(row.kickoff)},index+1)));
   }
 
   function renderPreviews(){const strongRoot=$('#strongTipsPreview');if(strongRoot){clear(strongRoot);const rows=model.tips.filter(row=>row.tier==='Strong'||row.tier==='Supported').slice(0,4);setPopulated(strongRoot,rows.length>0);if(rows.length)rows.forEach(row=>strongRoot.append(intelligenceCard(row,{compact:true})))}const conflictRoot=$('#contradictionPreview');if(conflictRoot){clear(conflictRoot);const rows=model.contradictions.slice(0,3);setPopulated(conflictRoot,rows.length>0);if(rows.length)rows.forEach(row=>conflictRoot.append(contradictionCard(row)))}}
@@ -281,7 +285,7 @@
   function renderAll(){renderStats();renderPreviews();renderSmartBoard();renderContradictions();renderSources();renderPerformance()}
 
   async function fetchJson(path,fallback){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),6500);try{const response=await fetch(path,{cache:'no-cache',signal:controller.signal,headers:{Accept:'application/json'}});if(!response.ok)return fallback;return await response.json()}catch{return fallback}finally{clearTimeout(timer)}}
-  async function loadAux(){const [history,sources,performance]=await Promise.all([fetchJson('/data/tip-history.json',aux.history),fetchJson('/data/source-stats.json',aux.sources),fetchJson('/data/performance-summary.json',aux.performance)]);aux.history=history||aux.history;aux.sources=sources||aux.sources;aux.performance=performance||aux.performance;rebuild()}
+  async function loadAux(){const [history,sources,performance,eventFeed]=await Promise.all([fetchJson('/data/tip-history.json',aux.history),fetchJson('/data/source-stats.json',aux.sources),fetchJson('/data/performance-summary.json',aux.performance),fetchJson('/api/get_upcoming_events?days=7',{events:[]})]);aux.history=history||aux.history;aux.sources=sources||aux.sources;aux.performance=performance||aux.performance;aux.events=window.SportyCustomApiMatch?.normalizeEvents?.(eventFeed)||[];rebuild()}
 
   function fillCategoryFilter(){const select=$('#intelCategory');if(!select)return;const current=ui.category;clear(select);const all=el('option','','All markets');all.value='all';select.append(all);[...new Set(model.tips.map(row=>row.category))].sort().forEach(category=>{const option=el('option','',category);option.value=category;select.append(option)});select.value=[...select.options].some(option=>option.value===current)?current:'all';ui.category=select.value}
   function bind(){

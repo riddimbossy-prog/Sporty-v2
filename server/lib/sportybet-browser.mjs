@@ -16,6 +16,8 @@ const state = {
   last_finished_at: null,
   last_success_at: null,
   last_error: null,
+  last_notice: null,
+  last_outcome: null,
   last_duration_ms: null,
   codes_discovered: 0,
   codes_expanded: 0,
@@ -769,6 +771,8 @@ export async function collectSportyBetCodesWithBrowser({ limit = 20, expandLimit
     state.running = true;
     state.last_started_at = new Date().toISOString();
     state.last_error = null;
+    state.last_notice = null;
+    state.last_outcome = 'running';
     state.codes_discovered = 0;
     state.codes_expanded = 0;
     state.tips_found = 0;
@@ -786,13 +790,23 @@ export async function collectSportyBetCodesWithBrowser({ limit = 20, expandLimit
       const items = await runInternal({ limit:safeLimit, expandLimit:safeExpand });
       state.last_finished_at = new Date().toISOString();
       state.last_duration_ms = Date.now() - started;
-      if (items.length) state.last_success_at = state.last_finished_at;
-      else state.last_error = 'Code Hub candidates were found, but none returned a verified public slip with selections.';
+      if (items.length) {
+        state.last_success_at = state.last_finished_at;
+        state.last_error = null;
+        state.last_notice = null;
+        state.last_outcome = 'verified';
+      } else {
+        state.last_error = null;
+        state.last_outcome = 'empty';
+        state.last_notice = 'Code Hub candidates were found, but none returned a verified public slip with selections. Nothing was published.';
+      }
       return items;
     } catch (error) {
       state.last_finished_at = new Date().toISOString();
       state.last_duration_ms = Date.now() - started;
       state.last_error = publicError(error);
+      state.last_notice = null;
+      state.last_outcome = 'error';
       throw error;
     } finally {
       state.running = false;

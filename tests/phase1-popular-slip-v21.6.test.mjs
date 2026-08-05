@@ -5,7 +5,7 @@ import { __test } from '../server/lib/sportybet-browser.mjs';
 const board=await readFile('smart-board.html','utf8');
 assert.match(board,/Popular tips for today/);
 assert.match(board,/id="intelPopularity"/);
-assert.match(board,/src="\/src\/slip-builder\.js\?v=21\.6\.1"/);
+assert.match(board,/src="\/src\/slip-builder\.js\?v=21\.7\.2"/);
 assert.match(board,/Prediction builder only/);
 assert.match(board,/No real-money staking is processed/);
 assert.match(board,/id="eventBoardSection"[^>]*data-mode="disabled"[^>]*hidden/);

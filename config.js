@@ -3,7 +3,7 @@ window.SPORTY_CONFIG = {
   mode: 'auto',
   allowDemoFallback: false,
   configSource: 'fresh-start-placeholder',
-  buildVersion: '21.6.1',
+  buildVersion: '21.7.2',
   supabaseUrl: '',
   supabaseAnonKey: '',
   currency: 'GHS',

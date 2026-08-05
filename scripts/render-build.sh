@@ -135,4 +135,4 @@ done
 
 echo "Render publish directory prepared at $OUTPUT_DIR"
 echo "Build version: $VERSION"
-echo "Product mode: Popular tips and simulated prediction-slip builder"
+echo "Product mode: Custom API popular tips and simulated prediction-slip builder"

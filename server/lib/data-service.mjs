@@ -84,6 +84,32 @@ function normalizeCodeRow(row){
   };
 }
 
+
+function compactFixture(value){return canonical(value).replace(/\b(fc|cf|sc|afc|club|women|reserves?|reserve|ii|u\d{2})\b/g,' ').replace(/\s+/g,' ').trim()}
+function splitFixtureName(value){const raw=text(value).replace(/\s+/g,' ').trim();const parts=raw.split(/\s+(?:vs\.?|v\.?|versus|@|—|–|-)\s+/i).map(text).filter(Boolean);return parts.length>=2?[parts[0],parts.slice(1).join(' ')]:[raw,'']}
+function tokenOverlap(a,b){const left=new Set(compactFixture(a).split(' ').filter(x=>x.length>1));const right=new Set(compactFixture(b).split(' ').filter(x=>x.length>1));if(!left.size||!right.size)return 0;let shared=0;for(const t of left)if(right.has(t))shared++;return shared/Math.max(left.size,right.size)}
+function eventMatchScore(tip,event){
+  const tipFixture=text(tip?.fixture),eventFixture=text(event?.fixture)||`${text(event?.home_team)} vs ${text(event?.away_team)}`;
+  if(!tipFixture||!eventFixture)return 0;
+  const a=compactFixture(tipFixture),b=compactFixture(eventFixture);if(a&&a===b)return 1;
+  const [th,ta]=splitFixtureName(tipFixture),[eh,ea]=[text(event?.home_team),text(event?.away_team)];
+  let score=tokenOverlap(tipFixture,eventFixture)*.58;
+  if(th&&eh)score+=tokenOverlap(th,eh)*.21;if(ta&&ea)score+=tokenOverlap(ta,ea)*.21;
+  if(a&&b&&(a.replace(/\s/g,'').includes(b.replace(/\s/g,''))||b.replace(/\s/g,'').includes(a.replace(/\s/g,''))))score=Math.max(score,.91);
+  if(tip?.league&&event?.league)score+=tokenOverlap(tip.league,event.league)*.04;
+  return Math.min(1,score);
+}
+function eventKickoff(event){return safeDate(event?.kickoff||event?.start_time||event?.startTime||event?.estimateStartTime)?.toISOString()||null}
+export function enrichCollectedItemsWithEvents(items,events){
+  let recovered=0;
+  const output=(Array.isArray(items)?items:[]).map(item=>({...item,tips:(Array.isArray(item?.tips)?item.tips:[]).map(tip=>{
+    if(safeDate(tip?.kickoff))return tip;let best=null,bestScore=0;
+    for(const event of Array.isArray(events)?events:[]){const kickoff=eventKickoff(event);if(!kickoff)continue;const score=eventMatchScore(tip,event);if(score>bestScore){best=event;bestScore=score}}
+    if(!best||bestScore<.76)return tip;recovered++;return{...tip,kickoff:eventKickoff(best),league:text(tip.league)||text(best.league)||null,event_id:text(tip.event_id)||text(best.event_id)||null,kickoff_source:'custom-api-events',kickoff_match_score:Number(bestScore.toFixed(3))};
+  })}));
+  return{items:output,recovered};
+}
+
 async function persistCollectedCodes(items){
   if(!db.configured()||!Array.isArray(items)||!items.length)return 0;
   let stored=0;
@@ -146,6 +172,8 @@ export async function getSystemStatus(){
       sportybet_codes_last_error:sportyStatus.codes.last_error,
       api_football_configured:apiFootballConfigured,
       api_football_optional:true,
+      api_football_fallback_enabled:enabled('ALLOW_API_FOOTBALL_FALLBACK'),
+      primary_event_source:'sportybet-custom-api',
       odds_api_configured:oddsApiConfigured,
       odds_api_optional:true,
       daily_upstream_budget:number(env('UPSTREAM_DAILY_REQUEST_BUDGET','30'))||30
@@ -244,7 +272,15 @@ export async function runBrowserCollector({limit=20}={}){
   });
   try{
     const removed_before=await purgeUnverifiedAutoCollectedRows();
-    const items=await collectSportyBetCodesWithBrowser({limit});
+    let items=await collectSportyBetCodesWithBrowser({limit});
+    let kickoffRecovery={items,recovered:0};
+    try{
+      const events=await collectSportyBetEvents({days:7});
+      kickoffRecovery=enrichCollectedItemsWithEvents(items,events);
+      items=kickoffRecovery.items;
+    }catch(error){
+      console.warn('[collector] kickoff enrichment unavailable:',publicError(error));
+    }
     const stored=await persistCollectedCodes(items);
     const removed_after=await purgeUnverifiedAutoCollectedRows();
     const removed_invalid=removed_before+removed_after;
@@ -256,10 +292,11 @@ export async function runBrowserCollector({limit=20}={}){
       running:false,
       execution_mode:collectorExecutionMode(),
       stored_codes:stored,
+      kickoffs_recovered:kickoffRecovery.recovered,
       last_success_at:items.length?(local.last_success_at||nowIso()):local.last_success_at,
     };
     await writeCollectorStatus(summary);
-    return{ok:true,collector:'sportybet-browser-agent',generated_at:nowIso(),count:items.length,stored,removed_invalid,slips_with_tips:items.filter(item=>Array.isArray(item.tips)&&item.tips.length).length,total_tips:items.reduce((sum,item)=>sum+(item.tips?.length||0),0),status:summary,items:items.slice(0,Math.min(10,items.length)).map(normalizeCodeRow)};
+    return{ok:true,collector:'sportybet-browser-agent',generated_at:nowIso(),count:items.length,stored,removed_invalid,kickoffs_recovered:kickoffRecovery.recovered,slips_with_tips:items.filter(item=>Array.isArray(item.tips)&&item.tips.length).length,total_tips:items.reduce((sum,item)=>sum+(item.tips?.length||0),0),status:summary,items:items.slice(0,Math.min(10,items.length)).map(normalizeCodeRow)};
   }catch(error){
     const local=getSportyBetBrowserStatus();
     await writeCollectorStatus({...local,running:false,last_error:publicError(error),execution_mode:collectorExecutionMode()});
@@ -311,7 +348,7 @@ export async function getUpcomingEvents({force=false,days=3}={}){
     try{
       if(await budgetAvailable('sportybet-public-events',1)){events=await collectSportyBetEvents({days:safeDays});if(events.length)source='sportybet-public-direct'}
     }catch(error){errors.push(`sportybet: ${publicError(error)}`);console.warn('[custom-api] SportyBet event refresh failed:',publicError(error))}
-    if(!events.length){
+    if(!events.length&&enabled('ALLOW_API_FOOTBALL_FALLBACK')){
       try{const fixtures=await fetchFootballFixtures(safeDays);if(fixtures.length){events=fixtures;source='api-football-fallback';const odds=await fetchOdds().catch(()=>[]);if(odds.length){events=mergeOdds(events,odds);source='api-football+odds-api-fallback'}}}catch(error){errors.push(`api-football: ${publicError(error)}`);console.warn('[custom-api] fallback event refresh failed:',publicError(error))}
     }
     if(!events.length){const fallback=await readJson(`${root}/sportybet-events.json`,{events:[]});events=(fallback.events||[]).map(row=>({...row,event_id:text(row.event_id||`fallback:${row.game_id}`)}));if(events.length)source='cached-fallback'}

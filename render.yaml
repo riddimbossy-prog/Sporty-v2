@@ -21,6 +21,8 @@ services:
         value: 120
       - key: EVENT_DAYS_AHEAD
         value: 3
+      - key: ALLOW_API_FOOTBALL_FALLBACK
+        value: false
       - key: SPORTYBET_COUNTRY
         value: gh
       - key: SPORTYBET_PUBLIC_EVENTS_URL
