@@ -1,4 +1,4 @@
-# Sporty.codes custom API reference — v21.5.3
+# Sporty.codes custom API reference — v21.5.4
 
 ## Public routes
 

@@ -1,5 +1,5 @@
-const VERSION='sporty-codes-v21.5.3';
-const ASSET_VERSION='21.5.3';
+const VERSION='sporty-codes-v21.5.4';
+const ASSET_VERSION='21.5.4';
 const STATIC_CACHE=`${VERSION}-static`;
 const PAGE_CACHE=`${VERSION}-pages`;
 const DATA_CACHE=`${VERSION}-data`;

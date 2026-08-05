@@ -1,4 +1,4 @@
-# START HERE — Sporty.codes v21.5.3
+# START HERE — Sporty.codes v21.5.4
 
 This release fixes the zero-tip feed shown by v21.5.2. Candidate tokens are no longer published as booking codes.
 
@@ -7,7 +7,7 @@ This release fixes the zero-tip feed shown by v21.5.2. Candidate tokens are no l
 Replace the current repository files with this package and push:
 
 ```text
-Deploy v21.5.3 verified public-slip gate
+Deploy v21.5.4 verified public-slip gate
 ```
 
 ## 2. Confirm Render remains lightweight
@@ -59,4 +59,4 @@ slips_with_tips = count
 
 A run with `verified_slips: 0` is not a successful code harvest even when `codes_discovered` is greater than zero. In that case the site intentionally shows no automatic codes instead of fake ones.
 
-Old zero-tip auto-collected rows are hidden as soon as Render deploys v21.5.3 and are deleted during the next workflow run.
+Old zero-tip auto-collected rows are hidden as soon as Render deploys v21.5.4 and are deleted during the next workflow run.

@@ -6,7 +6,7 @@ import {fileURLToPath} from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=file=>fs.readFileSync(path.join(root,file),'utf8');
 
-assert.equal(read('VERSION').trim(),'21.5.3','version should be 21.5.3');
+assert.equal(read('VERSION').trim(),'21.5.4','version should be 21.5.4');
 assert.ok(fs.existsSync(path.join(root,'international.html')),'international page must exist');
 assert.ok(fs.existsSync(path.join(root,'src/region.js')),'region controller must exist');
 assert.ok(fs.existsSync(path.join(root,'src/international.js')),'international feed controller must exist');
@@ -22,7 +22,7 @@ const render=read('render.yaml');
 const worker=read('service-worker.js');
 const server=read('server/index.mjs');
 
-assert.match(index,/src\/region\.js\?v=21\.5\.3/,'Ghana home should load the shared region controller');
+assert.match(index,/src\/region\.js\?v=21\.5\.4/,'Ghana home should load the shared region controller');
 assert.match(config,/sportybet\.com\/gh\/m\/code-hub\/load-code/,'original Ghana load-code URL must remain');
 assert.match(config,/sportyOfficialUrl:\s*'https:\/\/www\.sportybet\.com\/'/,'international flow should use the official generic destination');
 assert.match(international,/data-region="international"/,'international page should identify its region');
