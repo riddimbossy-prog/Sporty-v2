@@ -10,6 +10,6 @@ assert.match(js,/hidden:!isHidden/);
 assert.match(js,/escape=value/);
 assert.match(css,/feed-health-banner/);
 assert.match(css,/visibility-row/);
-assert.match(render,/product: sportybet-browser-agent-custom-api/);
+assert.match(render,/product: sportybet-external-browser-agent-custom-api/);
 assert.match(render,/\"version\":2,\"state\":\"preparing\"/);
 console.log('Admin feed control v20.4 checks passed');

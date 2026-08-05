@@ -1,4 +1,7 @@
-# Sporty.codes v21.5.0 — Browser-agent custom API
+# Sporty.codes v21.5.1 — External browser-agent custom API
+
+This build runs the public SportyBet browser agent outside the Render web process. GitHub Actions collects public codes and selections, stores them in Supabase, and the lightweight Render API serves those persisted results without launching Chromium.
+
 
 This release replaces the paid Parse.bot Code Hub workflow with a self-hosted public browser agent.
 

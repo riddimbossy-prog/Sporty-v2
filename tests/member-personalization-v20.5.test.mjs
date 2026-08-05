@@ -31,9 +31,9 @@ assert.match(migration,/create table if not exists public\.recent_items/i);
 assert.match(migration,/digest_frequency/);
 assert.match(styles,/\.member-preferences-dialog/);
 assert.match(styles,/\.member-menu/);
-assert.match(sw,/sporty-codes-v21\.5\.0/);
+assert.match(sw,/sporty-codes-v21\.5\.1/);
 assert.match(sw,/\/src\/member-home\.js/);
 assert.match(render,/006_member_personalization\.sql/);
-assert.match(render,/sportybet-browser-agent-custom-api/);
+assert.match(render,/sportybet-external-browser-agent-custom-api/);
 
 console.log('v20.5 member personalization checks passed');

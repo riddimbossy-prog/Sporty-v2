@@ -28,7 +28,7 @@ const state = {
 let activeRun = null;
 
 function enabled() {
-  return !/^(0|false|no|off)$/i.test(env('SPORTYBET_BROWSER_COLLECTOR_ENABLED', 'true'));
+  return !/^(0|false|no|off)$/i.test(env('SPORTYBET_BROWSER_COLLECTOR_ENABLED', 'false'));
 }
 
 function country() {

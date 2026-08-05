@@ -9,6 +9,8 @@ const usage={day:'',count:0};
 const root=process.cwd();
 const ttlSeconds=name=>Math.max(30,number(env(name,'900'))||900);
 const dayKey=()=>new Date().toISOString().slice(0,10);
+const COLLECTOR_STATUS_KEY='sportybet-browser-agent-status-v2151';
+const collectorExecutionMode=()=>text(env('SPORTYBET_BROWSER_EXECUTION_MODE','github-actions'))||'github-actions';
 
 async function budgetAvailable(provider,cost=1){
   const cap=Math.max(1,number(env('UPSTREAM_DAILY_REQUEST_BUDGET','100'))||100);
@@ -106,7 +108,9 @@ export async function getSystemStatus(){
       supabase_status:supabaseStatus,
       migration_ready:migrationReady,
       sportybet_public_collector_configured:sportyBetPublicConfigured(),
-      sportybet_browser_collector_configured:browserCollectorConfigured(),
+      sportybet_browser_collector_configured:browserCollectorConfigured()||collectorExecutionMode()==='github-actions',
+      sportybet_browser_web_runtime_enabled:browserCollectorConfigured(),
+      sportybet_browser_execution_mode:collectorExecutionMode(),
       sportybet_events_last_success_at:sportyStatus.events.last_success_at,
       sportybet_events_last_error:sportyStatus.events.last_error,
       sportybet_codes_last_success_at:sportyStatus.codes.last_success_at,
@@ -120,14 +124,46 @@ export async function getSystemStatus(){
   };
 }
 
+async function writeCollectorStatus(payload){
+  if(!db.configured())return;
+  const now=nowIso();
+  const expires=new Date(Date.now()+30*86400000).toISOString();
+  await db.upsert('api_cache',{cache_key:COLLECTOR_STATUS_KEY,payload,source:'sportybet-browser-agent',updated_at:now,expires_at:expires},{onConflict:'cache_key'}).catch(()=>null);
+}
+
+async function readCollectorStatus(){
+  if(!db.configured())return null;
+  const rows=await db.select('api_cache',{select:'payload,updated_at',cache_key:`eq.${COLLECTOR_STATUS_KEY}`,limit:'1'}).catch(()=>[]);
+  const row=rows?.[0];
+  if(!row?.payload||typeof row.payload!=='object')return null;
+  return{...row.payload,persisted_at:row.updated_at||null};
+}
+
+export async function getBrowserCollectorStatus(){
+  const local=getSportyBetBrowserStatus();
+  const persisted=await readCollectorStatus();
+  return{
+    ...local,
+    ...(persisted||{}),
+    running:Boolean(local.running),
+    configured:browserCollectorConfigured()||collectorExecutionMode()==='github-actions',
+    web_runtime_enabled:browserCollectorConfigured(),
+    external_runner:collectorExecutionMode()==='github-actions',
+    execution_mode:collectorExecutionMode(),
+    public_only:true,
+    imports_private_cookies:false,
+    uses_account_login:false,
+  };
+}
+
 export async function getSourceStatus(){
   const status=getSportyBetPublicStatus();
-  return{ok:true,generated_at:nowIso(),collector:'sportybet-browser-agent',public_only:true,uses_private_cookies:false,uses_account_access:false,sportybet:status,browser_agent:getSportyBetBrowserStatus(),api_football:{configured:Boolean(env('API_FOOTBALL_KEY')),role:'optional fallback and statistics enrichment'},odds_api:{configured:Boolean(env('ODDS_API_KEY')&&env('ODDS_API_SPORT_KEYS')),role:'optional odds enrichment'}};
+  return{ok:true,generated_at:nowIso(),collector:'sportybet-browser-agent',public_only:true,uses_private_cookies:false,uses_account_access:false,sportybet:status,browser_agent:await getBrowserCollectorStatus(),api_football:{configured:Boolean(env('API_FOOTBALL_KEY')),role:'optional fallback and statistics enrichment'},odds_api:{configured:Boolean(env('ODDS_API_KEY')&&env('ODDS_API_SPORT_KEYS')),role:'optional odds enrichment'}};
 }
 
 export async function getCodeHubCodes({limit=24,force=false}={}){
   const safeLimit=Math.max(1,Math.min(100,number(limit)||24));
-  return cached(`v2150:codehub:${safeLimit}`,ttlSeconds('CODE_CACHE_TTL_SECONDS'),async()=>{
+  return cached(`v2151:codehub:${safeLimit}`,ttlSeconds('CODE_CACHE_TTL_SECONDS'),async()=>{
     let rows=[];let collected=[];let source='none';const errors=[];
     if(db.configured()){
       rows=await db.select('booking_codes',{select:'*,booking_code_selections(*)',status:'eq.published',order:'published_at.desc.nullslast,created_at.desc',limit:String(safeLimit)}).catch(()=>[]);
@@ -163,18 +199,40 @@ export async function getCodeHubCodes({limit=24,force=false}={}){
       items=(fallback.items||[]).map(normalizeCodeRow).filter(item=>item.code).slice(0,safeLimit);
       if(items.length)source='local-fallback';
     }
-    return{version:10,source,collector:'sportybet-browser-agent',source_url:'https://www.sportybet.com/gh/m/code-hub/codes',generated_at:nowIso(),status:items.length?'ok':'empty',count:items.length,slips_with_tips:items.filter(item=>item.tips.length).length,total_tips:items.reduce((sum,item)=>sum+item.tips.length,0),errors:errors.slice(0,4),browser_status:getSportyBetBrowserStatus(),items};
-  },{source:'booking_codes-v2150',force});
+    return{version:10,source,collector:'sportybet-browser-agent',source_url:'https://www.sportybet.com/gh/m/code-hub/codes',generated_at:nowIso(),status:items.length?'ok':'empty',count:items.length,slips_with_tips:items.filter(item=>item.tips.length).length,total_tips:items.reduce((sum,item)=>sum+item.tips.length,0),errors:errors.slice(0,4),browser_status:await getBrowserCollectorStatus(),items};
+  },{source:'booking_codes-v2151',force});
 }
 
 export async function runBrowserCollector({limit=20}={}){
-  const items=await collectSportyBetCodesWithBrowser({limit});
-  await persistCollectedCodes(items);
-  memory.clear();
-  return{ok:true,collector:'sportybet-browser-agent',generated_at:nowIso(),count:items.length,slips_with_tips:items.filter(item=>Array.isArray(item.tips)&&item.tips.length).length,total_tips:items.reduce((sum,item)=>sum+(item.tips?.length||0),0),status:getSportyBetBrowserStatus(),items:items.slice(0,Math.min(10,items.length)).map(normalizeCodeRow)};
+  const startedAt=nowIso();
+  await writeCollectorStatus({
+    ...getSportyBetBrowserStatus(),
+    running:true,
+    last_started_at:startedAt,
+    last_error:null,
+    execution_mode:collectorExecutionMode(),
+  });
+  try{
+    const items=await collectSportyBetCodesWithBrowser({limit});
+    const stored=await persistCollectedCodes(items);
+    memory.clear();
+    if(db.configured())await db.remove('api_cache',{cache_key:'like.*codehub*'}).catch(()=>null);
+    const local=getSportyBetBrowserStatus();
+    const summary={
+      ...local,
+      running:false,
+      execution_mode:collectorExecutionMode(),
+      stored_codes:stored,
+      last_success_at:items.length?(local.last_success_at||nowIso()):local.last_success_at,
+    };
+    await writeCollectorStatus(summary);
+    return{ok:true,collector:'sportybet-browser-agent',generated_at:nowIso(),count:items.length,stored,slips_with_tips:items.filter(item=>Array.isArray(item.tips)&&item.tips.length).length,total_tips:items.reduce((sum,item)=>sum+(item.tips?.length||0),0),status:summary,items:items.slice(0,Math.min(10,items.length)).map(normalizeCodeRow)};
+  }catch(error){
+    const local=getSportyBetBrowserStatus();
+    await writeCollectorStatus({...local,running:false,last_error:publicError(error),execution_mode:collectorExecutionMode()});
+    throw error;
+  }
 }
-
-export function getBrowserCollectorStatus(){return getSportyBetBrowserStatus()}
 
 export async function getBooking(code){
   const wanted=text(code).toUpperCase();if(!wanted)return null;

@@ -40,7 +40,7 @@ assert.match(loginJs,/friendlyError/);
 assert.match(loginJs,/recovery=1/);
 
 const sw=read('service-worker.js');
-assert.match(sw,/sporty-codes-v21\.5\.0/);
+assert.match(sw,/sporty-codes-v21\.5\.1/);
 assert.match(sw,/logo-wordmark-dark\.webp/);
 
 console.log('v19.8 branded auth email checks passed');

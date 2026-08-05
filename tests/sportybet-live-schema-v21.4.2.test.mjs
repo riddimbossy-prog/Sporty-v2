@@ -13,4 +13,4 @@ assert.equal(rows[0].oddsHome, 1.72);
 assert.equal(rows[0].oddsDraw, 3.55);
 assert.equal(rows[0].oddsAway, 4.60);
 assert.equal(rows[0].provider_fixture_id, 'sr:match:998877');
-console.log('sportybet live schema v21.5.0 test passed');
+console.log('sportybet live schema v21.5.1 test passed');

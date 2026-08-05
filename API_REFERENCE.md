@@ -1,4 +1,6 @@
-# Sporty.codes custom API reference — v21.5.0
+# Sporty.codes custom API reference — v21.5.1
+
+The browser collector runs in GitHub Actions; Render serves persisted Supabase results and does not launch Chromium.
 
 ## Public routes
 

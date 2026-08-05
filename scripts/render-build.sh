@@ -106,7 +106,7 @@ window.SPORTY_CONFIG = {
 };
 CONFIG
 
-printf 'sporty.codes %s\nproduct: sportybet-browser-agent-custom-api\napi: same-domain-public-browser-agent-collector\nsetup_pending: %s\n' "$VERSION" "$SETUP_PENDING" > "$OUTPUT_DIR/render-build.txt"
+printf 'sporty.codes %s\nproduct: sportybet-external-browser-agent-custom-api\napi: same-domain-api-with-external-browser-agent\nsetup_pending: %s\n' "$VERSION" "$SETUP_PENDING" > "$OUTPUT_DIR/render-build.txt"
 
 for route in international marketplace free-codes smart-board elite-picks most-added won-codes performance sources control-room login admin-login admin-users privacy account saved deployment-check; do
   mkdir -p "$OUTPUT_DIR/$route"

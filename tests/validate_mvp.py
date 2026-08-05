@@ -41,8 +41,9 @@ assert manifest['name'].startswith('sporty.codes')
 assert any(x['url'].startswith('/smart-board') for x in manifest['shortcuts'])
 render=(root/'render.yaml').read_text()
 server=(root/'server/index.mjs').read_text()
-assert 'runtime: docker' in render
-assert 'dockerfilePath: ./Dockerfile' in render
+assert 'runtime: node' in render
+assert 'buildCommand: npm run build' in render
+assert 'startCommand: npm start' in render
 docker=(root/'Dockerfile').read_text()
 assert 'CMD ["node", "server/index.mjs"]' in docker
 for route in ['/smart-board','/control-room','/login','/admin-login','/admin-users','/privacy','/account','/saved']:

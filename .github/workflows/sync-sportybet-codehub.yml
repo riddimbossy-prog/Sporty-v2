@@ -1,0 +1,66 @@
+name: Sync SportyBet Code Hub
+
+on:
+  workflow_dispatch:
+    inputs:
+      code_limit:
+        description: Maximum public codes to collect
+        required: false
+        default: '20'
+  schedule:
+    - cron: '17 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sportybet-codehub-browser-sync
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SPORTYBET_BROWSER_COLLECTOR_ENABLED: 'true'
+      SPORTYBET_BROWSER_EXECUTION_MODE: github-actions
+      SPORTYBET_COUNTRY: gh
+      SPORTYBET_BROWSER_CODEHUB_URL: https://www.sportybet.com/gh/m/code-hub/codes
+      SPORTYBET_BROWSER_LOAD_CODE_URL: https://www.sportybet.com/gh/m/code-hub/load-code
+      SPORTYBET_BROWSER_CODE_LIMIT: ${{ github.event.inputs.code_limit || '20' }}
+      SPORTYBET_CODE_EXPANSION_LIMIT: '8'
+      SPORTYBET_BROWSER_PAGE_WAIT_MS: '9000'
+      SPORTYBET_BROWSER_AFTER_SUBMIT_MS: '7000'
+      SPORTYBET_BROWSER_EXPANSION_DELAY_MS: '1200'
+      CODE_CACHE_TTL_SECONDS: '60'
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Locate installed Chrome
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          if [ -z "$CHROME" ]; then
+            echo "Chrome/Chromium is not installed on this runner." >&2
+            exit 1
+          fi
+          echo "CHROMIUM_PATH=$CHROME" >> "$GITHUB_ENV"
+          "$CHROME" --version
+
+      - name: Validate required secrets
+        shell: bash
+        run: |
+          test -n "$SUPABASE_URL" || (echo "Missing GitHub secret SUPABASE_URL" >&2; exit 1)
+          test -n "$SUPABASE_SERVICE_ROLE_KEY" || (echo "Missing GitHub secret SUPABASE_SERVICE_ROLE_KEY" >&2; exit 1)
+
+      - name: Collect and store public codes
+        run: node scripts/sync-codehub-browser.mjs

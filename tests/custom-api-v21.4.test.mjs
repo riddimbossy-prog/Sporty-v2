@@ -9,8 +9,9 @@ for(const file of ['server/index.mjs','server/lib/data-service.mjs','server/lib/
   for(const token of forbidden)assert.equal(source.toLowerCase().includes(token.toLowerCase()),false,`${file} still contains a retired paid pass-through dependency`);
 }
 const render=await readFile('render.yaml','utf8');
-assert.match(render,/runtime:\s*docker/);
-assert.match(render,/dockerfilePath:\s*\.\/Dockerfile/);
+assert.match(render,/runtime:\s*node/);
+assert.match(render,/buildCommand:\s*npm run build/);
+assert.match(render,/startCommand:\s*npm start/);
 assert.match(render,/healthCheckPath:\s*\/api\/health/);
 assert.match(render,/SPORTYBET_PUBLIC_EVENTS_URL/);
 assert.match(render,/SPORTYBET_PUBLIC_CODEHUB_URL/);

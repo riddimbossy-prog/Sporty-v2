@@ -1,8 +1,9 @@
 services:
   - type: web
     name: sporty-codes-staging
-    runtime: docker
-    dockerfilePath: ./Dockerfile
+    runtime: node
+    buildCommand: npm run build
+    startCommand: npm start
     healthCheckPath: /api/health
     autoDeploy: true
     envVars:
@@ -13,7 +14,7 @@ services:
       - key: EVENT_CACHE_TTL_SECONDS
         value: 1800
       - key: CODE_CACHE_TTL_SECONDS
-        value: 300
+        value: 60
       - key: STATS_CACHE_TTL_SECONDS
         value: 28800
       - key: API_RATE_LIMIT_PER_MINUTE
@@ -27,29 +28,9 @@ services:
       - key: SPORTYBET_PUBLIC_CODEHUB_URL
         value: "https://www.sportybet.com/{country}/m/code-hub/codes"
       - key: SPORTYBET_BROWSER_COLLECTOR_ENABLED
-        value: true
-      - key: SPORTYBET_BROWSER_CODEHUB_URL
-        value: "https://www.sportybet.com/gh/m/code-hub/codes"
-      - key: SPORTYBET_BROWSER_LOAD_CODE_URL
-        value: "https://www.sportybet.com/gh/m/code-hub/load-code"
-      - key: SPORTYBET_BROWSER_CODE_LIMIT
-        value: 20
-      - key: SPORTYBET_CODE_EXPANSION_LIMIT
-        value: 8
-      - key: SPORTYBET_BROWSER_PAGE_WAIT_MS
-        value: 8000
-      - key: SPORTYBET_BROWSER_AFTER_SUBMIT_MS
-        value: 6500
-      - key: SPORTYBET_BROWSER_EXPANSION_DELAY_MS
-        value: 900
-      - key: SPORTYBET_BROWSER_SCHEDULE_ENABLED
-        value: true
-      - key: SPORTYBET_BROWSER_SCHEDULE_MINUTES
-        value: 60
-      - key: SPORTYBET_BROWSER_START_DELAY_MS
-        value: 45000
-      - key: CHROMIUM_PATH
-        value: /usr/bin/chromium
+        value: false
+      - key: SPORTYBET_BROWSER_EXECUTION_MODE
+        value: github-actions
       - key: SPORTYBET_MAX_PAGES
         value: 3
       - key: UPSTREAM_TIMEOUT_MS
