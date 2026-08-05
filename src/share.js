@@ -166,7 +166,7 @@
     ctx.fillText('I found this free on sporty.codes',96,h-150);
     ctx.fillStyle='rgba(255,255,255,.66)';
     ctx.font='700 22px Arial, Helvetica, sans-serif';
-    ctx.fillText('Free public-code discovery • 18+ • Verify before use',96,h-112);
+    ctx.fillText('Prediction planning • No real-money stake is processed',96,h-112);
   }
 
   async function renderCodeCard(payload={}){
@@ -245,6 +245,53 @@
     return canvas;
   }
 
+  async function renderSlipCard(payload={}){
+    const canvas=document.createElement('canvas');
+    canvas.width=1080;canvas.height=1350;
+    const ctx=canvas.getContext('2d');
+    drawBackdrop(ctx,canvas.width,canvas.height);
+    await drawBrand(ctx);
+    drawBadge(ctx,'MY PREDICTION SLIP',74,174);
+
+    ctx.fillStyle='#ffffff';
+    ctx.font='900 60px Arial, Helvetica, sans-serif';
+    let y=286;
+    y=wrapText(ctx,clean(payload.title)||'My sporty.codes prediction slip',74,y,930,70,2)+18;
+
+    const items=(Array.isArray(payload.items)?payload.items:[]).slice(0,4);
+    const rowH=92;
+    const listY=y;
+    const listH=Math.max(170,items.length*rowH+34+(Array.isArray(payload.items)&&payload.items.length>4?42:0));
+    fillRounded(ctx,66,listY,948,listH,30,'rgba(4,5,8,.72)','rgba(255,255,255,.11)',2);
+    let rowY=listY+28;
+    items.forEach((item,index)=>{
+      if(index>0){ctx.strokeStyle='rgba(255,255,255,.09)';ctx.beginPath();ctx.moveTo(94,rowY-12);ctx.lineTo(986,rowY-12);ctx.stroke()}
+      ctx.fillStyle='#ff5b68';ctx.font='900 24px Arial, Helvetica, sans-serif';ctx.fillText(String(index+1).padStart(2,'0'),94,rowY+22);
+      ctx.fillStyle='#ffffff';ctx.font='900 27px Arial, Helvetica, sans-serif';
+      const fixture=clean(item.fixture)||'Match';
+      const size=fitText(ctx,fixture,650,27,20,900);ctx.font=`900 ${size}px Arial, Helvetica, sans-serif`;ctx.fillText(fixture,148,rowY+20);
+      ctx.fillStyle='rgba(255,255,255,.62)';ctx.font='700 21px Arial, Helvetica, sans-serif';
+      const direction=`${clean(item.market)||'Market'}: ${clean(item.pick)||'Selection'}`;
+      const clipped=direction.length>72?`${direction.slice(0,69)}…`:direction;ctx.fillText(clipped,148,rowY+54);
+      ctx.fillStyle='#ffffff';ctx.font='900 27px Arial, Helvetica, sans-serif';ctx.textAlign='right';ctx.fillText(num(item.odds)>1?num(item.odds).toFixed(2):'—',970,rowY+33);ctx.textAlign='left';
+      ctx.fillStyle='rgba(255,255,255,.48)';ctx.font='700 18px Arial, Helvetica, sans-serif';ctx.fillText(clean(item.day)||clean(payload.day)||'See site',148,rowY+82);
+      rowY+=rowH;
+    });
+    if(Array.isArray(payload.items)&&payload.items.length>4){ctx.fillStyle='rgba(255,255,255,.62)';ctx.font='800 20px Arial, Helvetica, sans-serif';ctx.fillText(`+ ${payload.items.length-4} more selections on sporty.codes`,94,listY+listH-20)}
+
+    const metricsY=listY+listH+26;
+    const gap=18,boxW=(948-gap)/2;
+    drawMetric(ctx,66,metricsY,boxW,'Combined odds',num(payload.totalOdds)>0?num(payload.totalOdds).toFixed(2):'—');
+    drawMetric(ctx,66+boxW+gap,metricsY,boxW,'Selections',String(Array.isArray(payload.items)?payload.items.length:0));
+    drawMetric(ctx,66,metricsY+134,boxW,'Practice points',num(payload.practicePoints).toFixed(2));
+    drawMetric(ctx,66+boxW+gap,metricsY+134,boxW,'Projected points',num(payload.projectedPoints).toFixed(2));
+
+    ctx.fillStyle='rgba(255,255,255,.65)';ctx.font='700 22px Arial, Helvetica, sans-serif';
+    wrapText(ctx,'Prediction planning only. No deposit, wallet, payment or real-money wager is processed by sporty.codes.',74,metricsY+300,920,32,3);
+    drawFooter(ctx,canvas.width,canvas.height);
+    return canvas;
+  }
+
   function canvasBlob(canvas){
     return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Image export failed')),'image/png',.95));
   }
@@ -284,6 +331,7 @@
   }
 
   function getCaption(payload,type,url){
+    if(type==='slip')return `My sporty.codes prediction slip — ${Array.isArray(payload.items)?payload.items.length:0} selections\nPrediction planning only\n${url}`;
     return type==='tip'
       ?`${clean(payload.fixture)} — ${clean(payload.market)}: ${clean(payload.pick)}\nFound free on sporty.codes\n${url}`
       :`Free SportyBet code: ${clean(payload.code)}\nFound free on sporty.codes\n${url}`;
@@ -301,7 +349,7 @@
         <div class="share-dialog-head">
           <div class="eyebrow">Share from sporty.codes</div>
           <h2 id="shareDialogTitle">Ready to share</h2>
-          <p>Your branded image keeps the code clear and credits sporty.codes.</p>
+          <p>Your branded image keeps the prediction clear and credits sporty.codes.</p>
         </div>
         <div class="share-dialog-body">
           <div class="share-dialog-preview-wrap">
@@ -370,11 +418,11 @@
   }
 
   function openModal(payload={}){
-    const type=payload.type==='tip'?'tip':'code';
+    const type=payload.type==='slip'?'slip':payload.type==='tip'?'tip':'code';
     const url=clean(payload.url)||currentShareUrl();
     const caption=getCaption(payload,type,url);
-    const title=type==='tip'?'sporty.codes tip snapshot':'Free code from sporty.codes';
-    const fileName=`${safeName(type==='tip'?payload.fixture:payload.code)}-sporty-codes.png`;
+    const title=type==='slip'?'sporty.codes prediction slip':type==='tip'?'sporty.codes tip snapshot':'Free code from sporty.codes';
+    const fileName=`${safeName(type==='slip'?(payload.title||'prediction-slip'):type==='tip'?payload.fixture:payload.code)}-sporty-codes.png`;
     const shell=ensureModal();
     if(activeSession?.previewUrl)URL.revokeObjectURL(activeSession.previewUrl);
     activeSession={payload,type,url,caption,title,fileName,blob:null,file:null,previewUrl:null};
@@ -412,7 +460,7 @@
   }
 
   async function buildSessionImage(session){
-    const canvas=session.type==='tip'?await renderTipCard(session.payload):await renderCodeCard(session.payload);
+    const canvas=session.type==='slip'?await renderSlipCard(session.payload):session.type==='tip'?await renderTipCard(session.payload):await renderCodeCard(session.payload);
     if(activeSession!==session)return;
     const blob=await canvasBlob(canvas);
     if(activeSession!==session)return;
@@ -469,6 +517,6 @@
     return node;
   }
 
-  window.SportyShare={share,button,renderCodeCard,renderTipCard,close:closeModal};
+  window.SportyShare={share,button,renderCodeCard,renderTipCard,renderSlipCard,close:closeModal};
   document.addEventListener('DOMContentLoaded',()=>{loadLogo();ensureModal()});
 })();

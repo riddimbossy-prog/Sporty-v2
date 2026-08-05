@@ -29,4 +29,4 @@ assert.match(formScript,/_valueTracker/,'React-controlled input tracker must be 
 assert.match(formScript,/requestSubmit/,'form submission fallback must be present');
 assert.match(formScript,/InputEvent/,'native input event must be dispatched');
 
-console.log('browser verified-slip gate v21.5.3.1 test passed');
+console.log('browser verified-slip gate v21.6.0 test passed');

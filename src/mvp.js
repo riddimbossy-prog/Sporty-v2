@@ -124,16 +124,24 @@
       return {
         fixture:displayFixture,market,pick,odds,
         league:text(raw.league||raw.competition||raw.tournament),
-        kickoff:raw.kickoff||raw.start_time||raw.startTime||raw.event_time||null,
+        kickoff:raw.kickoff||raw.kickOff||raw.start_time||raw.startTime||raw.start_date||raw.startDate||raw.event_time||raw.eventTime||raw.event_date||raw.eventDate||raw.match_date||raw.matchDate||raw.scheduled_at||raw.scheduledAt||raw.estimateStartTime||raw.eventStartTime||raw.date||null,
         result:text(raw.result||raw.status||raw.settlement),
         category:categoryForTip({market,pick})
       };
     }).filter(tip=>tip.fixture&&tip.market&&tip.pick).slice(0,80);
   }
 
+  function plausibleCodeKickoff(value){
+    const date=dateValue(value);if(!date)return null;
+    const delta=date.getTime()-Date.now();
+    // Public Code Hub slips are near-term. Reject ancient no-year parses such
+    // as 2001-02-13 and unrelated calendar text captured from the page shell.
+    if(delta<-(18*60*60*1000)||delta>(60*86400000))return null;
+    return date;
+  }
   function codeKickoffs(item){
-    const tipDates=normalizedTips(item).map(tip=>dateValue(tip.kickoff)).filter(Boolean);
-    const direct=[item?.kickoff,item?.earliest_kickoff,item?.match_date,item?.matchDay,item?.match_day,item?.start_time,item?.startTime].map(dateValue).filter(Boolean);
+    const tipDates=normalizedTips(item).map(tip=>plausibleCodeKickoff(tip.kickoff)).filter(Boolean);
+    const direct=[item?.kickoff,item?.earliest_kickoff,item?.match_date,item?.matchDay,item?.match_day,item?.start_time,item?.startTime,item?.eventDate,item?.scheduled_at].map(plausibleCodeKickoff).filter(Boolean);
     const unique=new Map();
     [...tipDates,...direct].forEach(date=>unique.set(date.getTime(),date));
     return [...unique.values()].sort((a,b)=>a-b);

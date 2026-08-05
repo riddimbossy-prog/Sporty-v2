@@ -10,7 +10,7 @@ cp -R "$ROOT"/. "$TMP"/
   SUPABASE_PUBLISHABLE_KEY='sb_publishable_example_key_abcdefghijklmnopqrstuvwxyz123456' \
   bash scripts/render-build.sh >/tmp/sporty_mvp_build.log
 )
-grep -q 'sporty.codes 21.5.3.1' "$TMP/.render-site/render-build.txt"
+grep -q 'sporty.codes 21.6.0' "$TMP/.render-site/render-build.txt"
 grep -q 'sportybet-external-browser-agent-custom-api' "$TMP/.render-site/render-build.txt"
 grep -q 'https://example.supabase.co' "$TMP/.render-site/config.js"
 grep -q 'sb_publishable_example_key' "$TMP/.render-site/config.js"

@@ -1,3 +1,7 @@
+# sporty.codes v21.6.0 — Popular Tips + Prediction Slip
+
+Phase 1 adds a daily popular-tips list and a simulated prediction-slip builder using practice points only. No real-money staking or wallet is included.
+
 # Sporty.codes v21.5.3 — Verified public-slip collector
 
 Sporty.codes replaces the old Parse.bot Code Hub workflow with a public browser agent. The browser runs in GitHub Actions, writes verified public slips to Supabase, and the lightweight Render service serves those persisted results through the existing same-domain API.

@@ -1,4 +1,4 @@
-# v21.5.3.1 verification
+# v21.6.0 verification
 
 - Base: working v21.5.3 verified-slip collector
 - Added kickoff/date parsing regression tests

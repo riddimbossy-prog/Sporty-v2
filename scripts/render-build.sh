@@ -23,7 +23,7 @@ CORE_REQUIRED=(
   privacy.html admin-login.html account.html saved.html deployment-check.html 404.html offline.html manifest.json service-worker.js styles.css responsive.css pwa.css
   favicon.svg
   src/mvp.js src/market-board.js src/intelligence.js src/elite.js src/stability.js src/control-room.js src/region.js src/international.js
-  src/handoff.js src/share.js src/auth.js src/member-home.js src/login.js src/admin-login.js src/admin-users.js src/saved.js src/account.js src/saved-page.js src/pwa.js src/experience.js
+  src/handoff.js src/share.js src/slip-builder.js src/auth.js src/member-home.js src/login.js src/admin-login.js src/admin-users.js src/saved.js src/account.js src/saved-page.js src/pwa.js src/experience.js
   assets/logo-mark.png assets/logo-wordmark-dark.png assets/logo-wordmark-light.png assets/logo-mark.webp assets/logo-wordmark-dark.webp assets/logo-wordmark-light.webp
   assets/logo-email.png assets/share-card-default.png
   icons/icon-192.png icons/icon-512.png icons/maskable-512.png
@@ -120,7 +120,7 @@ OUTPUT_REQUIRED=(
   performance.html sources.html control-room.html login.html admin-users.html
   privacy.html admin-login.html account.html saved.html deployment-check.html config.js render-build.txt service-worker.js manifest.json offline.html responsive.css
   src/mvp.js src/market-board.js src/intelligence.js src/elite.js src/stability.js src/control-room.js src/region.js src/international.js
-  src/handoff.js src/share.js src/auth.js src/member-home.js src/login.js src/admin-login.js src/admin-users.js src/saved.js src/account.js src/saved-page.js src/pwa.js src/experience.js
+  src/handoff.js src/share.js src/slip-builder.js src/auth.js src/member-home.js src/login.js src/admin-login.js src/admin-users.js src/saved.js src/account.js src/saved-page.js src/pwa.js src/experience.js
   data/codehub-banner.json data/tip-history.json data/source-stats.json
   data/performance-summary.json data/feed-health.json data/manual-overrides.json data/settlement-ledger.json data/results-summary.json data/elite-picks.json data/elite-feed-health.json data/elite-performance.json
   assets/logo-email.png assets/share-card-default.png assets/logo-mark.webp assets/logo-wordmark-dark.webp assets/logo-wordmark-light.webp icons/icon-192.png icons/icon-512.png icons/maskable-512.png
@@ -135,4 +135,4 @@ done
 
 echo "Render publish directory prepared at $OUTPUT_DIR"
 echo "Build version: $VERSION"
-echo "Product mode: Public SportyBet browser-agent custom API"
+echo "Product mode: Popular tips and simulated prediction-slip builder"

@@ -19,4 +19,4 @@ assert.match(server,/execution mode:/);
 assert.doesNotMatch(server,/setInterval\(run/);
 assert.match(server,/runs in GitHub Actions/);
 
-console.log('v21.5.3.1 external browser-runner checks passed');
+console.log('v21.6.0 external browser-runner checks passed');

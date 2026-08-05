@@ -329,10 +329,7 @@ function coerceKickoff(value, reference = new Date()) {
   const raw = text(value).replace(/\s+/g, ' ').trim();
   if (!raw) return null;
   const ref = safeDate(reference) || new Date();
-  if (/^\d{4}-\d{2}-\d{2}(?:T|\s)/.test(raw) || /[A-Za-z]{3,}/.test(raw) && !/\b(?:today|tomorrow)\b/i.test(raw)) {
-    const direct = safeDate(raw);
-    if (direct) return direct;
-  }
+
   const relative = raw.match(/\b(today|tomorrow)\b/i);
   if (relative) {
     const time = raw.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/i);
@@ -344,6 +341,7 @@ function coerceKickoff(value, reference = new Date()) {
     const date = new Date(Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth(), ref.getUTCDate() + (relative[1].toLowerCase() === 'tomorrow' ? 1 : 0), hour, minute));
     return Number.isFinite(date.getTime()) ? date : null;
   }
+
   const numericDate = raw.match(/\b(\d{1,2})[\/.-](\d{1,2})(?:[\/.-](\d{2,4}))?(?:[^\d]+(\d{1,2}):(\d{2})(?:\s*(am|pm))?)?/i);
   if (numericDate) {
     let year = numericDate[3] ? Number(numericDate[3]) : ref.getUTCFullYear();
@@ -354,13 +352,43 @@ function coerceKickoff(value, reference = new Date()) {
     if (ampm === 'pm' && hour < 12) hour += 12;
     if (ampm === 'am' && hour === 12) hour = 0;
     let date = new Date(Date.UTC(year, Number(numericDate[2]) - 1, Number(numericDate[1]), hour, minute));
-    if (!numericDate[3] && date.getTime() < ref.getTime() - 180 * 86400000) {
-      date = new Date(Date.UTC(year + 1, Number(numericDate[2]) - 1, Number(numericDate[1]), hour, minute));
-    }
+    if (!numericDate[3] && date.getTime() < ref.getTime() - 2 * 86400000) date = new Date(Date.UTC(year + 1, Number(numericDate[2]) - 1, Number(numericDate[1]), hour, minute));
     return Number.isFinite(date.getTime()) ? date : null;
   }
-  const direct = safeDate(raw);
-  return direct || null;
+
+  const months={jan:0,january:0,feb:1,february:1,mar:2,march:2,apr:3,april:3,may:4,jun:5,june:5,jul:6,july:6,aug:7,august:7,sep:8,sept:8,september:8,oct:9,october:9,nov:10,november:10,dec:11,december:11};
+  const textual = raw.match(/(?:\b(?:mon|tue|wed|thu|fri|sat|sun)(?:day)?\b[,\s]*)?(?:(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]{3,9})|([A-Za-z]{3,9})\s+(\d{1,2})(?:st|nd|rd|th)?)(?:[,\s]+(\d{4}))?(?:[^\d]+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?)?/i);
+  if (textual) {
+    const day = Number(textual[1] || textual[4]);
+    const monthName = String(textual[2] || textual[3] || '').toLowerCase();
+    const month = months[monthName];
+    if (Number.isInteger(month) && day >= 1 && day <= 31) {
+      let year = textual[5] ? Number(textual[5]) : ref.getUTCFullYear();
+      let hour = textual[6] ? Number(textual[6]) : 12;
+      const minute = textual[7] ? Number(textual[7]) : 0;
+      const ampm = textual[8]?.toLowerCase();
+      if (ampm === 'pm' && hour < 12) hour += 12;
+      if (ampm === 'am' && hour === 12) hour = 0;
+      let date = new Date(Date.UTC(year, month, day, hour, minute));
+      if (!textual[5] && date.getTime() < ref.getTime() - 2 * 86400000) date = new Date(Date.UTC(year + 1, month, day, hour, minute));
+      return Number.isFinite(date.getTime()) ? date : null;
+    }
+  }
+
+  // Only let the platform parser handle values that contain an explicit year.
+  // Without this guard, strings such as "Wed 13 Feb" become February 2001.
+  if (/\b\d{4}\b/.test(raw)) {
+    const direct = safeDate(raw);
+    if (direct) return direct;
+  }
+  return null;
+}
+
+function publicCodeKickoff(value, reference = new Date()) {
+  const date = coerceKickoff(value, reference);
+  if (!date) return null;
+  const delta = date.getTime() - (safeDate(reference) || new Date()).getTime();
+  return delta >= -(18 * 60 * 60 * 1000) && delta <= 60 * 86400000 ? date : null;
 }
 
 function tipFromObject(object) {
@@ -465,7 +493,7 @@ const DOM_TIPS_SCRIPT = String.raw`(() => {
   ];
   const blocks = [...new Set(selectors.flatMap(s => [...document.querySelectorAll(s)]))];
   const rows = [];
-  const dateHint = value => String(value || '').match(/\b(?:today|tomorrow)\b(?:\s*(?:at)?\s*\d{1,2}(?::\d{2})?\s*(?:am|pm)?)?|\b\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?(?:\s+\d{1,2}:\d{2}\s*(?:am|pm)?)?/i)?.[0] || null;
+  const dateHint = value => String(value || '').match(/\b(?:today|tomorrow)\b(?:\s*(?:at)?\s*\d{1,2}(?::\d{2})?\s*(?:am|pm)?)?|\b\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?(?:\s+\d{1,2}:\d{2}\s*(?:am|pm)?)?|(?:\b(?:mon|tue|wed|thu|fri|sat|sun)(?:day)?\b[,\s]*)?\b\d{1,2}(?:st|nd|rd|th)?\s+(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)(?:\s+\d{4})?(?:\s+\d{1,2}:\d{2}\s*(?:am|pm)?)?/i)?.[0] || null;
   for (const el of blocks) {
     const text = String(el.innerText || el.textContent || '').replace(/\s+/g,' ').trim();
     if (text.length < 15 || text.length > 900) continue;
@@ -522,7 +550,7 @@ function sanitizeCollectedItem(item) {
   const tips = (Array.isArray(item?.tips) ? item.tips : []).filter(validTip).map(tip => ({
     ...tip,
     odds: plausibleSelectionOdds(tip.odds),
-    kickoff: coerceKickoff(tip.kickoff || tip.start_time || tip.startTime || tip.eventDate || tip.matchDate)?.toISOString() || null,
+    kickoff: publicCodeKickoff(tip.kickoff || tip.start_time || tip.startTime || tip.eventDate || tip.matchDate)?.toISOString() || null,
   }));
   let selections = numeric(item?.selections);
   selections = selections !== null && selections >= 0 && selections <= 100 ? Math.floor(selections) : null;
@@ -748,4 +776,5 @@ export const __test = Object.freeze({
   DOM_TIPS_SCRIPT,
   LOAD_FORM_SCRIPT,
   coerceKickoff,
+  publicCodeKickoff,
 });

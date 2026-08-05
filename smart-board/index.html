@@ -1,9 +1,11 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="dark" data-auth-required="member" data-auth-gate="pending">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#08090d">
+  <meta name="color-scheme" content="light dark">
+  <script>try{const t=localStorage.getItem('sporty_theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t;const m=document.querySelector('meta[name=\"theme-color\"]');if(m)m.content=t==='dark'?'#07090d':'#f2f4f8'}catch{}</script>
   <meta name="description" content="Daily Strong, Supported, Watch and Avoid tips with transparent safeguards.">
   <link rel="manifest" href="/manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -20,25 +22,77 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="alternate icon" href="/favicon.ico">
   <link rel="apple-touch-icon" href="/icons/icon-180.png">
-  <link rel="stylesheet" href="/styles.css?v=19.8.2">
-  <link rel="stylesheet" href="/pwa.css?v=19.8.2">
-<title>Smart Board — sporty.codes</title></head><body data-page="board"><header class="topbar">
-  <a class="brand" href="/" aria-label="sporty.codes home"><img class="brand-logo brand-logo-dark" src="/assets/logo-wordmark-dark.png" alt="sporty.codes"><img class="brand-logo brand-logo-light" src="/assets/logo-wordmark-light.png" alt="sporty.codes"></a>
-  <nav class="desktop-nav" aria-label="Main navigation"><a class="nav-link" href="/">Discover</a><a class="nav-link" href="/marketplace.html">Free Codes</a><a class="nav-link active" href="/smart-board.html">Smart Board</a><a class="nav-link" href="/most-added.html">Most Added</a><a class="nav-link" href="/won-codes.html">Results</a></nav>
+  <link rel="stylesheet" href="/styles.css?v=21.6.0">
+  <link rel="stylesheet" href="/pwa.css?v=21.6.0">
+<title>Smart Board — sporty.codes</title>  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+  <link rel="stylesheet" href="/responsive.css?v=21.6.0">
+</head><body data-page="board"><header class="topbar">
+  <a class="brand" href="/" aria-label="sporty.codes home"><img class="brand-logo brand-logo-dark" src="/assets/logo-wordmark-dark.webp" width="180" height="40" alt="sporty.codes" decoding="async" fetchpriority="high"><img class="brand-logo brand-logo-light" src="/assets/logo-wordmark-light.webp" width="180" height="40" alt="sporty.codes" decoding="async" fetchpriority="high"></a>
+  <nav class="desktop-nav" aria-label="Main navigation"><a class="nav-link" href="/">Discover</a><a class="nav-link" href="/marketplace.html">Free Codes</a><a class="nav-link active" href="/smart-board.html">Smart Board</a><a class="nav-link" href="/elite-picks.html">Elite Picks</a><a class="nav-link" href="/saved.html">Saved</a><a class="nav-link" href="/performance.html">Performance</a><a class="nav-link" href="/won-codes.html">Results</a></nav>
   <div class="top-actions"><a class="account-button" data-auth-link href="/login.html">Sign in</a><button class="install-button" id="installButton" type="button">Install</button><button class="icon-button" id="themeButton" type="button" aria-label="Change theme">☾</button></div>
 </header>
-<nav class="mobile-nav" aria-label="Mobile navigation"><a class="" href="/"><b>⌂</b><span>Discover</span></a><a class="" href="/marketplace.html"><b>▦</b><span>Free Codes</span></a><a class="active" href="/smart-board.html"><b>◆</b><span>Smart Board</span></a><a class="" href="/most-added.html"><b>≋</b><span>Most Added</span></a><a class="" href="/won-codes.html"><b>✓</b><span>Results</span></a></nav><main class="shell">
-<section class="page-intro"><div><div class="eyebrow">Decision-support engine</div><h1>Daily Smart Board.</h1><p class="lead">Tip Strength combines independent consensus, source diversity, settled history, odds stability, optional team-stat support, market agreement and data completeness. It is a ranking score—not a win probability.</p></div><div class="hero-actions"><a class="button secondary" href="/performance.html">Performance</a><a class="button secondary" href="/sources.html">Sources</a></div></section>
-<section class="stats-grid intelligence-stats"><div class="stat-card"><span>Strong</span><strong data-intel-stat="strong">0</strong></div><div class="stat-card"><span>Supported</span><strong data-intel-stat="supported">0</strong></div><div class="stat-card"><span>Watch</span><strong data-intel-stat="watch">0</strong></div><div class="stat-card"><span>Avoid / No Pick</span><strong data-intel-stat="avoid">0</strong></div><div class="stat-card"><span>Conflicts</span><strong data-intel-stat="conflicts">0</strong></div><div class="stat-card"><span>Independent slips</span><strong data-intel-stat="independent">0</strong></div></section>
-<div class="tip-explainer"><strong>Important:</strong> 82/100 means the tip scored 82 on the sporty.codes ranking rules. It does not mean an 82% chance of winning.</div>
-<section class="section"><div class="controls intelligence-controls"><label>Search<input id="intelSearch" type="search" placeholder="Fixture, market, selection or league"></label><label>Day<select id="intelDay"><option value="all">All days</option><option value="today">Today</option><option value="tomorrow">Tomorrow</option><option value="week">Next 7 days</option><option value="undated">Date unavailable</option></select></label><label>Tier<select id="intelTier"><option value="all">All tiers</option><option value="Strong">Strong</option><option value="Supported">Supported</option><option value="Watch">Watch</option><option value="Avoid">Avoid / No Pick</option></select></label><label>Market<select id="intelCategory"><option value="all">All markets</option></select></label><label>Minimum sources<select id="intelSources"><option value="1">1+</option><option value="2" selected>2+</option><option value="3">3+</option><option value="4">4+</option></select></label><label>Average odds<select id="intelOdds"><option value="all">All odds</option><option value="low">Up to 1.60</option><option value="mid">1.61–2.50</option><option value="high">Above 2.50</option></select></label></div><div id="smartBoard"></div></section>
-<section class="section" id="contradictions"><div class="section-head"><div><div class="eyebrow">Conflict radar</div><h2>Contradiction detector</h2><p>Opposing directions on the same fixture and market family are downgraded automatically.</p></div></div><div class="contradiction-grid" id="contradictionGrid"></div></section></main><div class="toast" id="toast" role="status" aria-live="polite"></div>
-<footer class="footer"><span class="footer-brand"><img src="/assets/logo-mark.png" alt="">sporty.codes</span><span>Free public-code intelligence. Ratings are decision support, not guarantees. 18+ only. Bet responsibly.</span></footer>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="/config.js?v=19.8.2"></script>
-<script src="/src/auth.js?v=19.8.2"></script>
-<script src="/src/mvp.js?v=19.8.2"></script>
-<script src="/src/intelligence.js?v=19.8.2"></script>
-<script src="/src/stability.js?v=19.8.2"></script>
-<script src="/src/pwa.js?v=19.8.2"></script>
+<nav class="mobile-nav" aria-label="Mobile navigation"><a class="" href="/"><b>⌂</b><span>Discover</span></a><a class="" href="/marketplace.html"><b>▦</b><span>Codes</span></a><a class="active" href="/smart-board.html"><b>◆</b><span>Board</span></a><a href="/elite-picks.html"><b>◆</b><span>Elite</span></a><a class="" href="/account.html"><b>●</b><span>Account</span></a></nav><main class="shell board-shell">
+<section class="page-intro popular-board-hero">
+  <div>
+    <div class="eyebrow">Today’s community consensus</div>
+    <h1>Popular tips for today.</h1>
+    <p class="lead">See the selections appearing most often across verified public slips, then build and share your own sporty.codes prediction slip.</p>
+  </div>
+  <div class="popular-board-hero-side">
+    <span class="today-orbit" aria-hidden="true"></span>
+    <strong id="popularBoardDay">Today</strong>
+    <small>Prediction planning only</small>
+  </div>
+</section>
+
+<section class="section event-board-section" id="eventBoardSection" data-mode="disabled" hidden><div class="section-head"><div><div class="eyebrow">Direct public SportyBet collector</div><h2>SportyBet Match Board</h2><p>Upcoming public fixtures and prices from the custom collector.</p></div><span class="pill" id="eventBoardStatus">Disabled on Smart Board</span></div><div class="market-board-grid" id="eventBoardGrid"></div></section>
+
+<section class="stats-grid popular-board-stats" id="intelligenceStatsSection" data-population-section hidden>
+  <div class="stat-card"><span>Popular today</span><strong data-popular-stat="tips">0</strong></div>
+  <div class="stat-card"><span>Fixtures</span><strong data-popular-stat="fixtures">0</strong></div>
+  <div class="stat-card"><span>Source slips</span><strong data-popular-stat="slips">0</strong></div>
+  <div class="stat-card"><span>My prediction slip</span><strong data-popular-stat="my-slip">0</strong></div>
+</section>
+
+<div class="prediction-only-banner" id="smartBoardExplainer" hidden>
+  <span class="prediction-only-icon" aria-hidden="true">✓</span>
+  <div><strong>Prediction builder only.</strong><span>Practice points calculate a simulated return. sporty.codes does not accept deposits, payments, wagers or withdrawals.</span></div>
+</div>
+
+<section class="personal-filter-bar" id="personalFilterState" hidden><label class="check-row"><input id="usePreferences" type="checkbox" checked><span>Use my saved account filters</span></label><small id="personalFilterCopy">Loading your preferences…</small><a href="/account.html">Edit preferences</a></section>
+
+<section class="section popular-board-section" id="smartBoardSection" data-population-section hidden>
+  <div class="section-head popular-board-head">
+    <div><div class="eyebrow">Daily consensus list</div><h2>Today’s popular tips</h2><p>Ranked by repeated appearances across verified public slips. Popularity is not a guarantee.</p></div>
+    <span class="pill green" id="popularBoardCount">Waiting for tips</span>
+  </div>
+  <div class="controls popular-board-controls">
+    <label>Search<input id="intelSearch" type="search" placeholder="Match, market, selection or league"></label>
+    <label>Match day<select id="intelDay"><option value="today" selected>Today</option><option value="tomorrow">Tomorrow</option><option value="week">Next 7 days</option><option value="all">All available</option><option value="undated">Date unavailable</option></select></label>
+    <label>Market<select id="intelCategory"><option value="all">All markets</option></select></label>
+    <label>Minimum appearances<select id="intelPopularity"><option value="2" selected>2+ slips</option><option value="3">3+ slips</option><option value="4">4+ slips</option><option value="5">5+ slips</option></select></label>
+    <label>Average odds<select id="intelOdds"><option value="all">All odds</option><option value="low">Up to 1.60</option><option value="mid">1.61–2.50</option><option value="high">Above 2.50</option></select></label>
+  </div>
+  <div class="popular-tip-list" id="smartBoard"></div>
+</section>
+
+<section class="section" id="contradictions" data-population-section hidden><div class="section-head"><div><div class="eyebrow">Conflict radar</div><h2>Contradiction detector</h2><p>Opposing directions are still checked internally before tips are shown.</p></div></div><div class="contradiction-grid" id="contradictionGrid"></div></section>
+</main><div class="toast" id="toast" role="status" aria-live="polite"></div>
+<footer class="footer"><span class="footer-brand"><img src="/assets/logo-mark.webp" width="30" height="30" alt="" loading="lazy" decoding="async" fetchpriority="low">sporty.codes</span><span>Build and share prediction slips. No real-money staking is processed.</span></footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
+<script src="/config.js?v=21.6.0" defer></script>
+<script src="/src/region.js?v=21.6.0" defer></script>
+<script src="/src/auth.js?v=21.6.0" defer></script>
+<script src="/src/saved.js?v=21.6.0" defer></script>
+<script src="/src/handoff.js?v=21.6.0" defer></script>
+<script src="/src/share.js?v=21.6.0" defer></script>
+<script src="/src/mvp.js?v=21.6.0" defer></script>
+<script src="/src/market-board.js?v=21.6.0" defer></script>
+<script src="/src/slip-builder.js?v=21.6.0" defer></script>
+<script src="/src/intelligence.js?v=21.6.0" defer></script>
+<script src="/src/stability.js?v=21.6.0" defer></script>
+<script src="/src/member-home.js?v=21.6.0" defer></script>
+<script src="/src/pwa.js?v=21.6.0" defer></script>
+<script src="/src/experience.js?v=21.6.0" defer></script>
 </body></html>
