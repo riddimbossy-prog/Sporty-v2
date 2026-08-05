@@ -30,7 +30,7 @@
     window.addEventListener('load',async()=>{
       try{
         const registration=await navigator.serviceWorker.register('/service-worker.js?v='+RELEASE,{scope:'/'});
-        const updateKey='sporty_sw_update_checked_v2173p4';
+        const updateKey='sporty_sw_update_checked_v209';
         const lastUpdate=Number(localStorage.getItem(updateKey)||0);
         if(Date.now()-lastUpdate>6*60*60*1000){localStorage.setItem(updateKey,String(Date.now()));registration.update().catch(()=>{})}
         if(registration.waiting)update.classList.add('show');
