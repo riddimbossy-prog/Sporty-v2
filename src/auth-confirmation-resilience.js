@@ -29,20 +29,22 @@
   function classify(error){
     const detail=errorDetails(error);
     const raw=detail.raw;
-    if(raw.includes('already registered')||raw.includes('user_already_exists')||raw.includes('already exists'))return 'exists';
-    if(raw.includes('over_email_send_rate_limit')||raw.includes('email rate')||raw.includes('rate limit'))return 'rate';
-    if(raw.includes('smtp')||raw.includes('confirmation email')||raw.includes('sending email')||raw.includes('email delivery')||raw.includes('mailer'))return 'delivery';
-    if(raw.includes('database error')||raw.includes('saving new user')||raw.includes('unexpected_failure'))return 'database';
-    if(raw.includes('captcha'))return 'captcha';
-    return 'unknown';
+    if(raw.includes('already registered')||raw.includes('user_already_exists')||raw.includes('already exists'))return'exists';
+    if(raw.includes('over_email_send_rate_limit')||raw.includes('email rate')||raw.includes('rate limit'))return'rate';
+    if(raw.includes('smtp')||raw.includes('confirmation email')||raw.includes('sending email')||raw.includes('email delivery')||raw.includes('mailer'))return'delivery';
+    if(raw.includes('database error')||raw.includes('saving new user')||raw.includes('unexpected_failure'))return'database';
+    if(raw.includes('captcha'))return'captcha';
+    if(raw==='{}'||raw==='[object object]')return'pending';
+    return'unknown';
   }
 
   function messageFor(error){
     const detail=errorDetails(error);
     switch(classify(error)){
-      case'exists':return'An account already exists for this email. Sign in or reset the password.';
-      case'rate':return'Your account may already exist, but confirmation email sending is temporarily rate-limited. Use Resend confirmation later, or sign in if email confirmation is disabled.';
-      case'delivery':return'Your account may already exist, but the confirmation email service could not send the message. Use Resend confirmation after email delivery is restored.';
+      case'exists':return'An account already exists for this email. Sign in, or resend confirmation if it has not been verified yet.';
+      case'rate':return'Your account was created, but confirmation email sending is temporarily rate-limited. Use Resend confirmation in a few minutes.';
+      case'delivery':return'Your account was created, but the first confirmation email could not be delivered. Use Resend confirmation below.';
+      case'pending':return'Your account may already be created, but confirmation is still pending. Use Resend confirmation below.';
       case'database':return'The authentication account was not completed because the profile database rejected the signup. Run the latest auth repair migration and retry.';
       case'captcha':return'The signup security check failed. Refresh the page and try again.';
       default:{
@@ -130,15 +132,11 @@
       const lower=text.toLowerCase();
       if(!text){hideActions();return}
       if(text==='{}'||text==='[object Object]'){
-        const error=window.__sportyLastSignupError||{};
-        setStatus(messageFor(error),'error');
+        setStatus('Your account may already be created, but confirmation is still pending. Use Resend confirmation below.','error');
         showActions({resend:true,signin:true});
         return;
       }
-      if(lower.includes('check your email')||lower.includes('confirmation email')){
-        rememberEmail(pendingEmail());
-        showActions({resend:true,signin:true});
-      }else if(lower.includes('already exists')||lower.includes('already registered')){
+      if(lower.includes('check your email')||lower.includes('confirmation email')||lower.includes('already exists')||lower.includes('already registered')){
         rememberEmail(pendingEmail());
         showActions({resend:true,signin:true});
       }
@@ -168,7 +166,7 @@
     client.auth.signUp=wrapped;
   }
 
-  document.addEventListener('DOMContentLoaded',()=>{
+  function boot(){
     ensureActions();
     observeStatus();
     $('#resendConfirmation')?.addEventListener('click',resendConfirmation);
@@ -180,5 +178,8 @@
       hideActions();
     }
     instrumentSignup().catch(()=>{});
-  });
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});
+  else boot();
 })();
