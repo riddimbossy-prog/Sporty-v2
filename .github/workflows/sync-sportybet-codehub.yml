@@ -62,14 +62,5 @@ jobs:
           test -n "$SUPABASE_URL" || (echo "Missing GitHub secret SUPABASE_URL" >&2; exit 1)
           test -n "$SUPABASE_SERVICE_ROLE_KEY" || (echo "Missing GitHub secret SUPABASE_SERVICE_ROLE_KEY" >&2; exit 1)
 
-      - name: Collect and store verified public codes
+      - name: Collect and store public codes
         run: node scripts/sync-codehub-browser.mjs
-
-      - name: Upload safe collector diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: sportybet-codehub-diagnostics-${{ github.run_number }}
-          path: collector-result.json
-          if-no-files-found: warn
-          retention-days: 7

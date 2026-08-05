@@ -1,4 +1,4 @@
-# Sporty.codes v21.5.4 — Verified public-slip collector
+# Sporty.codes v21.5.3 — Verified public-slip collector
 
 Sporty.codes replaces the old Parse.bot Code Hub workflow with a public browser agent. The browser runs in GitHub Actions, writes verified public slips to Supabase, and the lightweight Render service serves those persisted results through the existing same-domain API.
 

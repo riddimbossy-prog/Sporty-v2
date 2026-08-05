@@ -9,8 +9,8 @@ const pages=['index.html','marketplace.html','smart-board.html','saved.html','ac
 for(const page of pages){
   const html=fs.readFileSync(path.join(root,page),'utf8');
   assert.match(html,/viewport-fit=cover/,page+' must support safe areas');
-  assert.match(html,/responsive\.css\?v=21\.5\.4/,page+' must load responsive CSS');
-  assert.match(html,/experience\.js\?v=21\.5\.4/,page+' must load experience runtime');
+  assert.match(html,/responsive\.css\?v=21\.5\.3\.1/,page+' must load responsive CSS');
+  assert.match(html,/experience\.js\?v=21\.5\.3\.1/,page+' must load experience runtime');
   assert.match(html,/color-scheme/,page+' must declare color scheme');
 }
 assert.match(css,/max-width:390px/);

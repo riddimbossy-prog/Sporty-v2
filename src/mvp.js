@@ -131,11 +131,33 @@
     }).filter(tip=>tip.fixture&&tip.market&&tip.pick).slice(0,80);
   }
 
+  function codeKickoffs(item){
+    const tipDates=normalizedTips(item).map(tip=>dateValue(tip.kickoff)).filter(Boolean);
+    const direct=[item?.kickoff,item?.earliest_kickoff,item?.match_date,item?.matchDay,item?.match_day,item?.start_time,item?.startTime].map(dateValue).filter(Boolean);
+    const unique=new Map();
+    [...tipDates,...direct].forEach(date=>unique.set(date.getTime(),date));
+    return [...unique.values()].sort((a,b)=>a-b);
+  }
   function kickoffForCode(item){
-    const dates=normalizedTips(item).map(tip=>dateValue(tip.kickoff)).filter(Boolean).sort((a,b)=>a-b);
+    const dates=codeKickoffs(item);
     if(!dates.length)return null;
     const upcoming=dates.find(d=>d.getTime()>=Date.now()-6*60*60*1000);
     return upcoming||dates[0];
+  }
+  function matchDaySummary(item){
+    const dates=codeKickoffs(item);
+    if(!dates.length)return 'Date unavailable';
+    const diffs=[...new Set(dates.map(day=>dayDiff(day)).filter(value=>value!==null))].sort((a,b)=>a-b);
+    if(diffs.includes(0)&&diffs.includes(1))return 'Today + Tomorrow';
+    if(diffs.length===1)return dayLabel(dates[0]);
+    if(diffs.every(value=>value>=0&&value<=6))return 'Multiple days';
+    return dayLabel(dates[0]);
+  }
+  function dayFilterMatchesCode(item,filter){
+    if(filter==='all')return true;
+    const dates=codeKickoffs(item);
+    if(filter==='undated')return dates.length===0;
+    return dates.some(date=>dayFilterMatches(date,filter));
   }
 
   function consensusTips(){
@@ -286,7 +308,7 @@
     identity.append(codePanel);
 
     const meta=el('div','codehub-meta-v203');
-    if(kickoff)meta.append(el('span','codehub-meta-chip day',dayLabel(kickoff)));
+    meta.append(el('span','codehub-meta-chip day',matchDaySummary(item)));
     if(selections)meta.append(el('span','codehub-meta-chip',`${selections} selection${selections===1?'':'s'}`));
     if(chance>0)meta.append(el('span','codehub-meta-chip chance',`${formatPct(chance)} implied`));
 
@@ -299,7 +321,7 @@
     copy.type='button';
     copy.addEventListener('click',async()=>{await copyCode(code);copy.classList.add('is-done');copy.querySelector('span').textContent='Copied';setTimeout(()=>{copy.classList.remove('is-done');const label=copy.querySelector('span');if(label)label.textContent='Copy'},1600)});
     support.append(copy);
-    if(window.SportyShare)support.append(window.SportyShare.button({type:'code',code,title:item.title,odds:item.odds,selections:item.selections,category:categoryForCode(item),day:kickoff?dayLabel(kickoff):'Current feed'},{className:'codehub-support-button codehub-share-v203',label:`Share code ${code}`}));
+    if(window.SportyShare)support.append(window.SportyShare.button({type:'code',code,title:item.title,odds:item.odds,selections:item.selections,category:categoryForCode(item),day:matchDaySummary(item)},{className:'codehub-support-button codehub-share-v203',label:`Share code ${code}`}));
     if(window.SportySaved&&savedItem)support.append(window.SportySaved.button(savedItem,{className:'codehub-support-button codehub-save-v203'}));
     actions.append(load,support);
 
@@ -339,7 +361,7 @@
     identity.append(codePanel);
 
     const stats=el('div','code-card-stats-v203');
-    const statRows=[['Match day',kickoff?dayLabel(kickoff):'Date unavailable'],['Selections',selections||'—'],['Implied',chance?formatPct(chance):'—']];
+    const statRows=[['Match day',matchDaySummary(item)],['Selections',selections||'—'],['Implied',chance?formatPct(chance):'—']];
     statRows.forEach(([label,value])=>{const node=el('div','code-card-stat-v203');node.append(el('span','',label),el('strong','',value));stats.append(node)});
 
     const actions=el('div','codehub-actions-v203 code-card-actions-v203');
@@ -350,7 +372,7 @@
     const copy=setButtonContent(el('button','codehub-support-button'),'copy','Copy');
     copy.type='button';copy.addEventListener('click',async()=>{await copyCode(code);copy.classList.add('is-done');const label=copy.querySelector('span');if(label)label.textContent='Copied';setTimeout(()=>{copy.classList.remove('is-done');const next=copy.querySelector('span');if(next)next.textContent='Copy'},1600)});
     support.append(copy);
-    if(window.SportyShare)support.append(window.SportyShare.button({type:'code',code,title:item.title,odds:item.odds,selections:item.selections,category:categoryForCode(item),day:kickoff?dayLabel(kickoff):'Current feed'},{className:'codehub-support-button codehub-share-v203',label:`Share code ${code}`}));
+    if(window.SportyShare)support.append(window.SportyShare.button({type:'code',code,title:item.title,odds:item.odds,selections:item.selections,category:categoryForCode(item),day:matchDaySummary(item)},{className:'codehub-support-button codehub-share-v203',label:`Share code ${code}`}));
     if(window.SportySaved&&savedItem)support.append(window.SportySaved.button(savedItem,{className:'codehub-support-button codehub-save-v203'}));
     actions.append(load,support);
 
@@ -374,7 +396,7 @@
       const odds=number(item.odds);const selections=number(item.selections);const kickoff=kickoffForCode(item);
       const oddsOk=state.codeFilters.odds==='all'||(state.codeFilters.odds==='low'&&odds>0&&odds<=5)||(state.codeFilters.odds==='mid'&&odds>5&&odds<=25)||(state.codeFilters.odds==='high'&&odds>25);
       const sizeOk=state.codeFilters.size==='all'||(state.codeFilters.size==='small'&&selections<=5)||(state.codeFilters.size==='medium'&&selections>=6&&selections<=15)||(state.codeFilters.size==='large'&&selections>=16);
-      return (!search||haystack.includes(search))&&(state.codeFilters.category==='all'||categoryForCode(item)===state.codeFilters.category)&&oddsOk&&sizeOk&&dayFilterMatches(kickoff,state.codeFilters.day);
+      return (!search||haystack.includes(search))&&(state.codeFilters.category==='all'||categoryForCode(item)===state.codeFilters.category)&&oddsOk&&sizeOk&&dayFilterMatchesCode(item,state.codeFilters.day);
     });
     const latest=(a,b)=>daySortValue(kickoffForCode(a))-daySortValue(kickoffForCode(b))||(dateValue(b.created_at)?.getTime()||0)-(dateValue(a.created_at)?.getTime()||0)||number(a.odds)-number(b.odds);
     const sorters={

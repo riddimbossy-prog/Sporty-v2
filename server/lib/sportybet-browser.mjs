@@ -16,8 +16,6 @@ const state = {
   last_finished_at: null,
   last_success_at: null,
   last_error: null,
-  last_notice: null,
-  last_outcome: null,
   last_duration_ms: null,
   codes_discovered: 0,
   codes_expanded: 0,
@@ -318,6 +316,53 @@ function splitFixture(value) {
   return parts.length === 2 ? `${parts[0]} vs ${parts[1]}` : raw;
 }
 
+function coerceKickoff(value, reference = new Date()) {
+  if (value === null || value === undefined || value === '') return null;
+  if (typeof value === 'number' || /^\d{10,13}$/.test(text(value))) {
+    const n = Number(value);
+    const millis = n > 1e12 ? n : n > 1e9 ? n * 1000 : NaN;
+    if (Number.isFinite(millis)) {
+      const date = new Date(millis);
+      if (Number.isFinite(date.getTime())) return date;
+    }
+  }
+  const raw = text(value).replace(/\s+/g, ' ').trim();
+  if (!raw) return null;
+  const ref = safeDate(reference) || new Date();
+  if (/^\d{4}-\d{2}-\d{2}(?:T|\s)/.test(raw) || /[A-Za-z]{3,}/.test(raw) && !/\b(?:today|tomorrow)\b/i.test(raw)) {
+    const direct = safeDate(raw);
+    if (direct) return direct;
+  }
+  const relative = raw.match(/\b(today|tomorrow)\b/i);
+  if (relative) {
+    const time = raw.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/i);
+    let hour = time ? Number(time[1]) : 12;
+    const minute = time?.[2] ? Number(time[2]) : 0;
+    const ampm = time?.[3]?.toLowerCase();
+    if (ampm === 'pm' && hour < 12) hour += 12;
+    if (ampm === 'am' && hour === 12) hour = 0;
+    const date = new Date(Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth(), ref.getUTCDate() + (relative[1].toLowerCase() === 'tomorrow' ? 1 : 0), hour, minute));
+    return Number.isFinite(date.getTime()) ? date : null;
+  }
+  const numericDate = raw.match(/\b(\d{1,2})[\/.-](\d{1,2})(?:[\/.-](\d{2,4}))?(?:[^\d]+(\d{1,2}):(\d{2})(?:\s*(am|pm))?)?/i);
+  if (numericDate) {
+    let year = numericDate[3] ? Number(numericDate[3]) : ref.getUTCFullYear();
+    if (year < 100) year += 2000;
+    let hour = numericDate[4] ? Number(numericDate[4]) : 12;
+    const minute = numericDate[5] ? Number(numericDate[5]) : 0;
+    const ampm = numericDate[6]?.toLowerCase();
+    if (ampm === 'pm' && hour < 12) hour += 12;
+    if (ampm === 'am' && hour === 12) hour = 0;
+    let date = new Date(Date.UTC(year, Number(numericDate[2]) - 1, Number(numericDate[1]), hour, minute));
+    if (!numericDate[3] && date.getTime() < ref.getTime() - 180 * 86400000) {
+      date = new Date(Date.UTC(year + 1, Number(numericDate[2]) - 1, Number(numericDate[1]), hour, minute));
+    }
+    return Number.isFinite(date.getTime()) ? date : null;
+  }
+  const direct = safeDate(raw);
+  return direct || null;
+}
+
 function tipFromObject(object) {
   if (!object || typeof object !== 'object' || Array.isArray(object)) return null;
   const eventName = first(object, [
@@ -334,7 +379,12 @@ function tipFromObject(object) {
   ]));
   const odds = plausibleSelectionOdds(first(object, ['odds','odd','price','decimalOdds','currentOdd','currentOdds']));
   const league = text(first(object, ['league','leagueName','tournamentName','competitionName','categoryName','event.tournamentName']));
-  const kickoff = safeDate(first(object, ['kickoff','startTime','start_time','estimateStartTime','eventStartTime','event.startTime']))?.toISOString() || null;
+  const kickoff = coerceKickoff(first(object, [
+    'kickoff','kickOff','startTime','start_time','startDate','start_date','eventDate','event_date','matchDate','match_date',
+    'scheduledAt','scheduled_at','estimateStartTime','eventStartTime','event_start_time','eventTimestamp','event_timestamp',
+    'startTimestamp','start_timestamp','eventStartTimestamp','event_start_timestamp','eventDateTime','event_date_time',
+    'date','time','event.startTime','event.start_time','event.startDate','event.eventDate','event.estimateStartTime','fixture.startTime',
+  ]))?.toISOString() || null;
   if (!fixture || !market || !pick) return null;
   if (!/\b(?:vs\.?|v\.?)\b/i.test(fixture) && !(home && away)) return null;
   return { fixture, market, pick, odds, league: league || null, kickoff, result: 'unavailable' };
@@ -359,7 +409,9 @@ function scanTips(root, maxNodes = 160000) {
   const unique = new Map();
   for (const tip of tips) {
     const key = [canonical(tip.fixture), canonical(tip.market), canonical(tip.pick)].join('|');
-    if (key.replace(/\|/g, '')) unique.set(key, tip);
+    if (!key.replace(/\|/g, '')) continue;
+    const current = unique.get(key);
+    if (!current || (!current.kickoff && tip.kickoff) || (current.odds == null && tip.odds != null)) unique.set(key, tip);
   }
   return [...unique.values()].slice(0, 100);
 }
@@ -413,21 +465,27 @@ const DOM_TIPS_SCRIPT = String.raw`(() => {
   ];
   const blocks = [...new Set(selectors.flatMap(s => [...document.querySelectorAll(s)]))];
   const rows = [];
+  const dateHint = value => String(value || '').match(/\b(?:today|tomorrow)\b(?:\s*(?:at)?\s*\d{1,2}(?::\d{2})?\s*(?:am|pm)?)?|\b\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?(?:\s+\d{1,2}:\d{2}\s*(?:am|pm)?)?/i)?.[0] || null;
   for (const el of blocks) {
     const text = String(el.innerText || el.textContent || '').replace(/\s+/g,' ').trim();
     if (text.length < 15 || text.length > 900) continue;
     if (!/(\bvs\.?\b|\bv\.?\b)/i.test(text)) continue;
     if (!/\b\d+\.\d+\b/.test(text)) continue;
-    rows.push(text);
+    const parentText = String(el.parentElement?.innerText || '').replace(/\s+/g,' ').trim().slice(0,1400);
+    const previousText = String(el.previousElementSibling?.innerText || el.previousElementSibling?.textContent || '').replace(/\s+/g,' ').trim().slice(0,300);
+    const attrs = [...el.attributes].map(attr => String(attr.name) + '=' + String(attr.value)).join(' ');
+    rows.push({ text, date_text:dateHint([text,parentText,previousText,attrs].join(' ')) });
   }
   const body = String(document.body?.innerText || '').replace(/\s+/g,' ').trim();
   const totalOdds = body.match(/(?:total\s*)?odds?\s*[:\-]?\s*([0-9][0-9,.]*(?:\.[0-9]+)?)/i)?.[1] || null;
   return { url:location.href, title:document.title, total_odds:totalOdds, rows:rows.slice(0,120), body_text:body.slice(0,16000) };
-})()`;
+})()`
 
 function tipsFromDom(dom) {
   const out = [];
-  for (const raw of dom?.rows || []) {
+  for (const row of dom?.rows || []) {
+    const raw = text(typeof row === 'string' ? row : row?.text);
+    if (!raw) continue;
     const fixtureMatch = raw.match(/([^|;]{2,80}\s+(?:vs\.?|v\.?)\s+[^|;]{2,80})/i);
     const oddsMatch = raw.match(/\b(\d+\.\d+)\b/g);
     if (!fixtureMatch || !oddsMatch?.length) continue;
@@ -438,7 +496,8 @@ function tipsFromDom(dom) {
     const segments = remainder.split(/\s{2,}|\||;/).map(text).filter(Boolean);
     const market = segments[0] || 'Market';
     const pick = segments[1] || segments[0] || 'Selection';
-    if (fixture && market && pick) out.push({ fixture, market, pick, odds, league:null, kickoff:null, result:'unavailable' });
+    const kickoff = coerceKickoff(typeof row === 'string' ? raw : (row?.date_text || raw))?.toISOString() || null;
+    if (fixture && market && pick) out.push({ fixture, market, pick, odds, league:null, kickoff, result:'unavailable' });
   }
   const unique = new Map();
   for (const tip of out) unique.set(`${canonical(tip.fixture)}|${canonical(tip.market)}|${canonical(tip.pick)}`, tip);
@@ -463,6 +522,7 @@ function sanitizeCollectedItem(item) {
   const tips = (Array.isArray(item?.tips) ? item.tips : []).filter(validTip).map(tip => ({
     ...tip,
     odds: plausibleSelectionOdds(tip.odds),
+    kickoff: coerceKickoff(tip.kickoff || tip.start_time || tip.startTime || tip.eventDate || tip.matchDate)?.toISOString() || null,
   }));
   let selections = numeric(item?.selections);
   selections = selections !== null && selections >= 0 && selections <= 100 ? Math.floor(selections) : null;
@@ -629,8 +689,6 @@ export async function collectSportyBetCodesWithBrowser({ limit = 20, expandLimit
     state.running = true;
     state.last_started_at = new Date().toISOString();
     state.last_error = null;
-    state.last_notice = null;
-    state.last_outcome = 'running';
     state.codes_discovered = 0;
     state.codes_expanded = 0;
     state.tips_found = 0;
@@ -646,22 +704,13 @@ export async function collectSportyBetCodesWithBrowser({ limit = 20, expandLimit
       const items = await runInternal({ limit:safeLimit, expandLimit:safeExpand });
       state.last_finished_at = new Date().toISOString();
       state.last_duration_ms = Date.now() - started;
-      if (items.length) {
-        state.last_success_at = state.last_finished_at;
-        state.last_outcome = 'verified';
-        state.last_notice = null;
-      } else {
-        state.last_error = null;
-        state.last_outcome = 'empty';
-        state.last_notice = 'Code Hub candidates were found, but none returned a verified public slip with selections. Nothing was published.';
-      }
+      if (items.length) state.last_success_at = state.last_finished_at;
+      else state.last_error = 'Code Hub candidates were found, but none returned a verified public slip with selections.';
       return items;
     } catch (error) {
       state.last_finished_at = new Date().toISOString();
       state.last_duration_ms = Date.now() - started;
       state.last_error = publicError(error);
-      state.last_notice = null;
-      state.last_outcome = 'error';
       throw error;
     } finally {
       state.running = false;
@@ -698,4 +747,5 @@ export const __test = Object.freeze({
   DOM_CODE_SCRIPT,
   DOM_TIPS_SCRIPT,
   LOAD_FORM_SCRIPT,
+  coerceKickoff,
 });

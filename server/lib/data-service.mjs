@@ -9,7 +9,7 @@ const usage={day:'',count:0};
 const root=process.cwd();
 const ttlSeconds=name=>Math.max(30,number(env(name,'900'))||900);
 const dayKey=()=>new Date().toISOString().slice(0,10);
-const COLLECTOR_STATUS_KEY='sportybet-browser-agent-status-v2154';
+const COLLECTOR_STATUS_KEY='sportybet-browser-agent-status-v2153';
 const collectorExecutionMode=()=>text(env('SPORTYBET_BROWSER_EXECUTION_MODE','github-actions'))||'github-actions';
 
 const AUTO_COLLECTED_CODE_RE=/^(?=.*[A-Z])(?=.*\d)[A-Z0-9]{5,8}$/;
@@ -192,7 +192,7 @@ export async function getSourceStatus(){
 
 export async function getCodeHubCodes({limit=24,force=false}={}){
   const safeLimit=Math.max(1,Math.min(100,number(limit)||24));
-  return cached(`v2154:codehub:${safeLimit}`,ttlSeconds('CODE_CACHE_TTL_SECONDS'),async()=>{
+  return cached(`v2153:codehub:${safeLimit}`,ttlSeconds('CODE_CACHE_TTL_SECONDS'),async()=>{
     let rows=[];let collected=[];let source='none';const errors=[];
     if(db.configured()){
       rows=await db.select('booking_codes',{select:'*,booking_code_selections(*)',status:'eq.published',order:'published_at.desc.nullslast,created_at.desc',limit:'100'}).catch(()=>[]);
@@ -230,7 +230,7 @@ export async function getCodeHubCodes({limit=24,force=false}={}){
     }
     if(!items.length)source='none';
     return{version:11,source,collector:'sportybet-browser-agent',source_url:'https://www.sportybet.com/gh/m/code-hub/codes',generated_at:nowIso(),status:items.length?'ok':'empty',count:items.length,slips_with_tips:items.filter(item=>item.tips.length).length,total_tips:items.reduce((sum,item)=>sum+item.tips.length,0),errors:errors.slice(0,4),browser_status:await getBrowserCollectorStatus(),items};
-  },{source:'booking_codes-v2154',force});
+  },{source:'booking_codes-v2153',force});
 }
 
 export async function runBrowserCollector({limit=20}={}){

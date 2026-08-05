@@ -1,4 +1,4 @@
-sporty.codes 21.5.4
+sporty.codes 21.5.3.1
 product: sportybet-external-browser-agent-custom-api
 api: same-domain-api-with-external-browser-agent
 setup_pending: false

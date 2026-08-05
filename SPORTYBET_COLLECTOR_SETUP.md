@@ -1,4 +1,4 @@
-# SportyBet browser collector — v21.5.4
+# SportyBet browser collector — v21.5.3
 
 ## Architecture
 

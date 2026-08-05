@@ -43,4 +43,4 @@ assert.equal(cleaned.odds,2.7,'valid leg product should replace unrelated scrape
 assert.equal(cleaned.tips.length,2);
 
 assert.equal(__test.sanitizeCollectedItem({code:'OBJECTOBJECT',odds:2.2,selections:2,tips:[]}),null);
-console.log('browser parser quality v21.5.3 test passed');
+console.log('browser parser quality v21.5.3.1 test passed');
