@@ -1,7 +1,7 @@
 
 (()=>{
   'use strict';
-  const RELEASE='20.9.0';
+  const RELEASE='21.7.3-p4';
   const isStandalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
   const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
   let deferredPrompt=null;
@@ -30,7 +30,7 @@
     window.addEventListener('load',async()=>{
       try{
         const registration=await navigator.serviceWorker.register('/service-worker.js?v='+RELEASE,{scope:'/'});
-        const updateKey='sporty_sw_update_checked_v209';
+        const updateKey='sporty_sw_update_checked_v2173p4';
         const lastUpdate=Number(localStorage.getItem(updateKey)||0);
         if(Date.now()-lastUpdate>6*60*60*1000){localStorage.setItem(updateKey,String(Date.now()));registration.update().catch(()=>{})}
         if(registration.waiting)update.classList.add('show');
@@ -39,5 +39,13 @@
         navigator.serviceWorker.addEventListener('controllerchange',()=>location.reload());
       }catch(error){console.warn('PWA registration unavailable',error)}
     });
+  }
+
+  if(document.body?.dataset.page==='login'&&!document.querySelector('script[data-confirmation-recovery]')){
+    const recovery=document.createElement('script');
+    recovery.src='/src/auth-confirmation-resilience.js?v=21.7.3-p4';
+    recovery.defer=true;
+    recovery.dataset.confirmationRecovery='true';
+    document.head.append(recovery);
   }
 })();
