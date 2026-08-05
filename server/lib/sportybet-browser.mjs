@@ -1,10 +1,11 @@
 import { env, text, number, safeDate, canonical, hashKey, publicError } from './core.mjs';
 import { withChromium } from './chromium-cdp.mjs';
 
-const CODE_RE = /^[A-Z0-9]{4,12}$/;
+const CODE_RE = /^(?=.*[A-Z])(?=.*\d)[A-Z0-9]{5,8}$/;
 const COMMON_WORDS = new Set([
   'SPORTY','SPORTYBET','FOOTBALL','BOOKING','PUBLIC','POPULAR','LATEST','MARKET','SELECTION','LOADCODE',
   'CONTINUE','SUBMIT','SEARCH','UPCOMING','FEATURED','BETSLIP','BETCODE','CODEHUB','GHANA','LOGIN','SIGNUP',
+  'OBJECT','OBJECTOBJECT','UNDEFINED','NULL','TRUE','FALSE','SUCCESS','ERROR','RESPONSE','REQUEST',
 ]);
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -56,16 +57,41 @@ function allowedUrl(raw) {
   return String(url);
 }
 
+function primitive(value) {
+  return (typeof value === 'string' || typeof value === 'number') ? value : null;
+}
+
 function normalizeCode(value) {
-  const code = text(value).toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const raw = primitive(value);
+  if (raw === null) return '';
+  const code = String(raw).trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (!CODE_RE.test(code) || COMMON_WORDS.has(code)) return '';
   return code;
 }
 
 function numeric(value) {
-  if (value === null || value === undefined || value === '') return null;
-  const parsed = Number(String(value).replace(/,/g, '').match(/\d+(?:\.\d+)?/)?.[0]);
+  const raw = primitive(value);
+  if (raw === null || raw === '') return null;
+  const match = String(raw).replace(/,/g, '').trim().match(/^-?\d+(?:\.\d+)?$/);
+  if (!match) return null;
+  const parsed = Number(match[0]);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function plausibleSelectionOdds(value) {
+  const parsed = numeric(value);
+  return parsed !== null && parsed >= 1.001 && parsed <= 1000 ? parsed : null;
+}
+
+function plausibleTotalOdds(value, selections = null) {
+  const parsed = numeric(value);
+  if (parsed === null || parsed < 1.001 || parsed > 1_000_000) return null;
+  const count = numeric(selections);
+  // These bounds reject concatenated timestamps/IDs while still allowing
+  // genuinely high multi-leg coupons.
+  if (count !== null && count <= 2 && parsed > 10_000) return null;
+  if (count !== null && count <= 4 && parsed > 100_000) return null;
+  return parsed;
 }
 
 function getPath(object, path) {
@@ -87,18 +113,30 @@ function first(object, keys) {
 
 function objectCode(object) {
   if (!object || typeof object !== 'object' || Array.isArray(object)) return '';
-  const direct = first(object, [
-    'code','booking_code','bookingCode','bet_code','betCode','coupon_code','couponCode','short_code','shortCode',
-    'booking.code','shareCode','share_code','codeId','code_id',
+  const strong = first(object, [
+    'booking_code','bookingCode','bet_code','betCode','coupon_code','couponCode','short_code','shortCode',
+    'booking.code','shareCode','share_code',
   ]);
-  return normalizeCode(direct);
+  const strongCode = normalizeCode(strong);
+  if (strongCode) return strongCode;
+
+  // A generic `code` key appears throughout application/error payloads. Treat
+  // it as a booking code only when the same object also contains slip evidence.
+  const generic = normalizeCode(first(object, ['code','codeId','code_id']));
+  if (!generic) return '';
+  const keys = Object.keys(object).join(' ');
+  const hasSlipKey = /(booking|coupon|betslip|betSlip|share|selection|total.?odds|legCount|betCount)/i.test(keys);
+  const hasSlipArray = ['tips','selections','selectionList','bets','betSelections','legs','items']
+    .some(key => Array.isArray(object?.[key]) && object[key].length > 0);
+  return hasSlipKey || hasSlipArray ? generic : '';
 }
 
 function totalOdds(object) {
-  return numeric(first(object, [
-    'total_odds','totalOdds','odds','total_odd','totalOdd','combinedOdds','totalPrice','betTotalOdds',
+  const selections = selectionCount(object);
+  return plausibleTotalOdds(first(object, [
+    'total_odds','totalOdds','total_odd','totalOdd','combinedOdds','totalPrice','betTotalOdds',
     'summary.totalOdds','booking.totalOdds','betslip.totalOdds',
-  ]));
+  ]), selections);
 }
 
 function selectionCount(object) {
@@ -106,7 +144,7 @@ function selectionCount(object) {
     'selections_count','selectionCount','selectionsCount','numberOfSelections','betCount','betsCount','legs','legCount',
     'summary.selectionCount','booking.selectionCount',
   ]));
-  if (direct !== null) return Math.floor(direct);
+  if (direct !== null && direct >= 0 && direct <= 100) return Math.floor(direct);
   for (const key of ['tips','selections','selectionList','bets','betSelections','legs','items']) {
     if (Array.isArray(object?.[key])) return object[key].length;
   }
@@ -196,11 +234,11 @@ function networkCodeCandidates(responses, sourceUrl) {
 }
 
 const DOM_CODE_SCRIPT = String.raw`(() => {
-  const common = new Set(['SPORTY','SPORTYBET','FOOTBALL','BOOKING','PUBLIC','POPULAR','LATEST','MARKET','SELECTION','SELECTIONS','LOADCODE','CONTINUE','SUBMIT','SEARCH','UPCOMING','FEATURED','BETSLIP','BETCODE','CODEHUB','GHANA','LOGIN','SIGNUP','CODE','TOTAL','ODDS','FREE','COPY','SHARE']);
+  const common = new Set(['SPORTY','SPORTYBET','FOOTBALL','BOOKING','PUBLIC','POPULAR','LATEST','MARKET','SELECTION','SELECTIONS','LOADCODE','CONTINUE','SUBMIT','SEARCH','UPCOMING','FEATURED','BETSLIP','BETCODE','CODEHUB','GHANA','LOGIN','SIGNUP','CODE','TOTAL','ODDS','FREE','COPY','SHARE','OBJECT','OBJECTOBJECT','UNDEFINED','NULL','TRUE','FALSE','SUCCESS','ERROR','RESPONSE','REQUEST']);
   const rows = [];
   const cleanCode = value => {
     const code=String(value || '').trim().toUpperCase();
-    return /^[A-Z0-9]{4,12}$/.test(code) && !common.has(code) ? code : '';
+    return /^(?=.*[A-Z])(?=.*\d)[A-Z0-9]{5,8}$/.test(code) && !common.has(code) ? code : '';
   };
   const add = (code, context, attrs = {}) => {
     code=cleanCode(code); if(!code) return;
@@ -244,8 +282,8 @@ function domCandidates(dom, sourceUrl) {
     id: hashKey(`sporty-browser:${row.code}`),
     code: normalizeCode(row.code),
     title: 'Free public code',
-    odds: numeric(row.odds),
-    selections: numeric(row.selections),
+    odds: plausibleTotalOdds(row.odds, row.selections),
+    selections: (() => { const value=numeric(row.selections); return value !== null && value >= 0 && value <= 100 ? Math.floor(value) : null; })(),
     author: 'SportyBet Code Hub',
     tag: 'Code Hub',
     status: 'upcoming',
@@ -279,7 +317,7 @@ function tipFromObject(object) {
   const pick = text(first(object, [
     'pick','selection','selectionName','selection_name','outcomeName','outcome_name','optionName','option_name','desc','description','label',
   ]));
-  const odds = numeric(first(object, ['odds','odd','price','decimalOdds','currentOdd','currentOdds']));
+  const odds = plausibleSelectionOdds(first(object, ['odds','odd','price','decimalOdds','currentOdd','currentOdds']));
   const league = text(first(object, ['league','leagueName','tournamentName','competitionName','categoryName','event.tournamentName']));
   const kickoff = safeDate(first(object, ['kickoff','startTime','start_time','estimateStartTime','eventStartTime','event.startTime']))?.toISOString() || null;
   if (!fixture || !market || !pick) return null;
@@ -356,7 +394,8 @@ function tipsFromDom(dom) {
     const oddsMatch = raw.match(/\b(\d+\.\d+)\b/g);
     if (!fixtureMatch || !oddsMatch?.length) continue;
     const fixture = splitFixture(fixtureMatch[1]);
-    const odds = numeric(oddsMatch[oddsMatch.length - 1]);
+    const odds = plausibleSelectionOdds(oddsMatch[oddsMatch.length - 1]);
+    if (odds === null) continue;
     const remainder = raw.replace(fixtureMatch[0], '').replace(oddsMatch[oddsMatch.length - 1], '').trim();
     const segments = remainder.split(/\s{2,}|\||;/).map(text).filter(Boolean);
     const market = segments[0] || 'Market';
@@ -366,6 +405,47 @@ function tipsFromDom(dom) {
   const unique = new Map();
   for (const tip of out) unique.set(`${canonical(tip.fixture)}|${canonical(tip.market)}|${canonical(tip.pick)}`, tip);
   return [...unique.values()].slice(0,100);
+}
+
+
+function validTip(tip) {
+  if (!tip || typeof tip !== 'object') return false;
+  const fixture = text(tip.fixture);
+  const market = text(tip.market);
+  const pick = text(tip.pick);
+  if (!fixture || !market || !pick) return false;
+  if (!/\b(?:vs\.?|v\.?)\b/i.test(fixture)) return false;
+  if (/object object|undefined|null/i.test(`${fixture} ${market} ${pick}`)) return false;
+  return tip.odds === null || tip.odds === undefined || plausibleSelectionOdds(tip.odds) !== null;
+}
+
+function sanitizeCollectedItem(item) {
+  const code = normalizeCode(item?.code);
+  if (!code) return null;
+  const tips = (Array.isArray(item?.tips) ? item.tips : []).filter(validTip).map(tip => ({
+    ...tip,
+    odds: plausibleSelectionOdds(tip.odds),
+  }));
+  let selections = numeric(item?.selections);
+  selections = selections !== null && selections >= 0 && selections <= 100 ? Math.floor(selections) : null;
+  if (tips.length) selections = tips.length;
+  let odds = plausibleTotalOdds(item?.odds, selections);
+  const tipOdds = tips.map(tip => plausibleSelectionOdds(tip.odds));
+  if (tipOdds.length && tipOdds.every(value => value !== null)) {
+    const product = tipOdds.reduce((total, value) => total * value, 1);
+    if (Number.isFinite(product) && product >= 1.001 && product <= 1_000_000) {
+      // Prefer the leg product when the scraped total is clearly an unrelated
+      // ID/timestamp or differs by more than a factor of 25.
+      if (odds === null || Math.max(odds / product, product / odds) > 25) odds = product;
+    }
+  }
+  return {
+    ...item,
+    code,
+    odds: odds === null ? null : Number(odds.toFixed(4)),
+    selections: selections ?? 0,
+    tips,
+  };
 }
 
 async function expandCode(session, code, sourceUrl) {
@@ -389,7 +469,7 @@ async function expandCode(session, code, sourceUrl) {
   }
   const dom = await session.evaluate(DOM_TIPS_SCRIPT).catch(() => null);
   if (!tips.length) tips = tipsFromDom(dom);
-  odds ??= numeric(dom?.total_odds);
+  odds ??= plausibleTotalOdds(dom?.total_odds, tips.length || null);
   return { tips, odds, submitted:form?.submitted || false, method:form?.method || form?.reason || null, network_responses:responses.length };
 }
 
@@ -416,7 +496,8 @@ async function runInternal({ limit, expandLimit }) {
     const network = session.networkSince(0);
     const fromNetwork = networkCodeCandidates(network, sourceUrl);
     const fromDom = domCandidates(dom, sourceUrl);
-    let items = mergeCandidates([...fromNetwork, ...fromDom], limit);
+    let items = mergeCandidates([...fromNetwork, ...fromDom], limit)
+      .map(sanitizeCollectedItem).filter(Boolean).slice(0, limit);
     state.codes_discovered = items.length;
     state.network_responses = network.length;
     state.chromium = session.diagnostics();
@@ -437,6 +518,8 @@ async function runInternal({ limit, expandLimit }) {
       }
       await sleep(number(env('SPORTYBET_BROWSER_EXPANSION_DELAY_MS', '900')) || 900);
     }
+    items = items.map(sanitizeCollectedItem).filter(Boolean).slice(0, limit);
+    tipCount = items.reduce((sum,item) => sum + item.tips.length, 0);
     state.codes_expanded = expanded;
     state.tips_found = tipCount;
     state.last_result_preview = items.slice(0,5).map(item => ({ code:item.code, odds:item.odds, selections:item.selections, tips:item.tips.length }));
@@ -498,6 +581,8 @@ export const __test = Object.freeze({
   mergeCandidates,
   domCandidates,
   tipsFromDom,
+  plausibleTotalOdds,
+  sanitizeCollectedItem,
   DOM_CODE_SCRIPT,
   DOM_TIPS_SCRIPT,
   LOAD_FORM_SCRIPT,

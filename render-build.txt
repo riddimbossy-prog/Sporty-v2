@@ -1,4 +1,4 @@
-sporty.codes 21.4.2
-product: direct-public-sportybet-custom-api
-api: same-domain-direct-public-sportybet-collector
+sporty.codes 21.5.2
+product: sportybet-external-browser-agent-custom-api
+api: same-domain-api-with-external-browser-agent
 state: repository-source

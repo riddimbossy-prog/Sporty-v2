@@ -9,8 +9,30 @@ const usage={day:'',count:0};
 const root=process.cwd();
 const ttlSeconds=name=>Math.max(30,number(env(name,'900'))||900);
 const dayKey=()=>new Date().toISOString().slice(0,10);
-const COLLECTOR_STATUS_KEY='sportybet-browser-agent-status-v2151';
+const COLLECTOR_STATUS_KEY='sportybet-browser-agent-status-v2152';
 const collectorExecutionMode=()=>text(env('SPORTYBET_BROWSER_EXECUTION_MODE','github-actions'))||'github-actions';
+
+const AUTO_COLLECTED_CODE_RE=/^(?=.*[A-Z])(?=.*\d)[A-Z0-9]{5,8}$/;
+const INVALID_AUTO_CODES=new Set(['OBJECT','OBJECTOBJECT','UNDEFINED','NULL','TRUE','FALSE','SUCCESS','ERROR','RESPONSE','REQUEST']);
+function validAutoCollectedCode(value){const code=text(value).toUpperCase().replace(/[^A-Z0-9]/g,'');return AUTO_COLLECTED_CODE_RE.test(code)&&!INVALID_AUTO_CODES.has(code)}
+function validManualCode(value){return/^[A-Z0-9]{4,20}$/.test(text(value).toUpperCase())}
+function isAutoCollectedRow(row){return/sportybet\.com/i.test(text(row?.source_url))||/SportyBet Code Hub/i.test(text(row?.author))}
+function strictNumber(value){const raw=text(value).replace(/,/g,'');if(!raw||!/^-?\d+(?:\.\d+)?$/.test(raw))return null;const parsed=Number(raw);return Number.isFinite(parsed)?parsed:null}
+function safeSelectionOdds(value){const parsed=strictNumber(value);return parsed!==null&&parsed>=1.001&&parsed<=1000?parsed:null}
+function safeTotalOdds(value,selections){const parsed=strictNumber(value);if(parsed===null||parsed<1.001||parsed>1_000_000)return null;const count=strictNumber(selections);if(count!==null&&count<=2&&parsed>10_000)return null;if(count!==null&&count<=4&&parsed>100_000)return null;return parsed}
+function validFeedItem(item){return isAutoCollectedRow(item)?validAutoCollectedCode(item.code):validManualCode(item.code)}
+
+async function purgeInvalidAutoCollectedRows(){
+  if(!db.configured())return 0;
+  const rows=await db.select('booking_codes',{select:'id,code,author,source_url,category',limit:'500'}).catch(()=>[]);
+  let removed=0;
+  for(const row of rows||[]){
+    if(!isAutoCollectedRow(row)||validAutoCollectedCode(row.code))continue;
+    await db.remove('booking_codes',{id:`eq.${row.id}`}).catch(()=>null);
+    removed++;
+  }
+  return removed;
+}
 
 async function budgetAvailable(provider,cost=1){
   const cap=Math.max(1,number(env('UPSTREAM_DAILY_REQUEST_BUDGET','100'))||100);
@@ -50,10 +72,10 @@ async function cached(key,ttl,loader,{source='custom-api',force=false}={}){
 
 function normalizeCodeRow(row){
   const tips=(row.booking_code_selections||row.selections_detail||row.tips||[]).map(tip=>({
-    fixture:text(tip.fixture||`${tip.home_team||''} vs ${tip.away_team||''}`),market:text(tip.market),pick:text(tip.pick||tip.selection),odds:number(tip.odds)||null,league:text(tip.league)||null,kickoff:safeDate(tip.kickoff)?.toISOString()||null,result:text(tip.result)||'unavailable'
+    fixture:text(tip.fixture||`${tip.home_team||''} vs ${tip.away_team||''}`),market:text(tip.market),pick:text(tip.pick||tip.selection),odds:safeSelectionOdds(tip.odds),league:text(tip.league)||null,kickoff:safeDate(tip.kickoff)?.toISOString()||null,result:text(tip.result)||'unavailable'
   })).filter(tip=>tip.fixture&&tip.market&&tip.pick);
   return{
-    id:text(row.id)||hashKey(row.code),code:text(row.code).toUpperCase(),title:text(row.title)||'Public code',odds:number(row.total_odds||row.odds)||null,selections:number(row.selections_count||row.selections)||tips.length,author:text(row.author||row.tipster)||'sporty.codes',tag:text(row.tag||row.category)||'Code Hub',status:text(row.status)||'upcoming',result:row.result||null,created_at:safeDate(row.created_at)?.toISOString()||null,expires_at:safeDate(row.expires_at)?.toISOString()||null,source_url:/^https:\/\//i.test(text(row.source_url))?text(row.source_url):null,tips
+    id:text(row.id)||hashKey(row.code),code:text(row.code).toUpperCase(),title:text(row.title)||'Public code',odds:safeTotalOdds(row.total_odds||row.odds,row.selections_count||row.selections||tips.length),selections:number(row.selections_count||row.selections)||tips.length,author:text(row.author||row.tipster)||'sporty.codes',tag:text(row.tag||row.category)||'Code Hub',status:text(row.status)||'upcoming',result:row.result||null,created_at:safeDate(row.created_at)?.toISOString()||null,expires_at:safeDate(row.expires_at)?.toISOString()||null,source_url:/^https:\/\//i.test(text(row.source_url))?text(row.source_url):null,tips
   };
 }
 
@@ -61,15 +83,19 @@ async function persistCollectedCodes(items){
   if(!db.configured()||!Array.isArray(items)||!items.length)return 0;
   let stored=0;
   for(const item of items){
-    const code=text(item.code).toUpperCase();if(!/^[A-Z0-9]{4,20}$/.test(code))continue;
-    const tips=Array.isArray(item.tips)?item.tips:[];
-    const rows=await db.upsert('booking_codes',{code,title:text(item.title)||'Public SportyBet code',total_odds:number(item.odds)||null,selections_count:number(item.selections)||tips.length,author:text(item.author)||'SportyBet Code Hub',category:text(item.tag)||'Code Hub',status:'published',result:['won','lost','void','pending'].includes(text(item.result).toLowerCase())?text(item.result).toLowerCase():null,published_at:safeDate(item.created_at)?.toISOString()||nowIso(),expires_at:safeDate(item.expires_at)?.toISOString()||null,source_url:/^https:\/\//i.test(text(item.source_url))?text(item.source_url):null},{onConflict:'code',returning:'representation'}).catch(()=>null);
+    const code=text(item.code).toUpperCase();if(!validAutoCollectedCode(code))continue;
+    const tips=(Array.isArray(item.tips)?item.tips:[]).map(tip=>({...tip,odds:safeSelectionOdds(tip.odds)})).filter(tip=>text(tip.fixture)&&text(tip.market)&&text(tip.pick)&&!/object object|undefined|null/i.test(`${tip.fixture} ${tip.market} ${tip.pick}`));
+    const selections=tips.length||Math.max(0,Math.min(100,Math.floor(number(item.selections)||0)));
+    let totalOdds=safeTotalOdds(item.odds,selections);
+    const allTipOdds=tips.length&&tips.every(tip=>tip.odds!==null);
+    if(allTipOdds){const product=tips.reduce((value,tip)=>value*tip.odds,1);if(Number.isFinite(product)&&product>=1.001&&product<=1_000_000&&(totalOdds===null||Math.max(totalOdds/product,product/totalOdds)>25))totalOdds=product}
+    const rows=await db.upsert('booking_codes',{code,title:text(item.title)||'Public SportyBet code',total_odds:totalOdds===null?null:Number(totalOdds.toFixed(4)),selections_count:selections,author:text(item.author)||'SportyBet Code Hub',category:text(item.tag)||'Code Hub',status:'published',result:['won','lost','void','pending'].includes(text(item.result).toLowerCase())?text(item.result).toLowerCase():null,published_at:safeDate(item.created_at)?.toISOString()||nowIso(),expires_at:safeDate(item.expires_at)?.toISOString()||null,source_url:/^https:\/\//i.test(text(item.source_url))?text(item.source_url):null},{onConflict:'code',returning:'representation'}).catch(()=>null);
     const id=rows?.[0]?.id;if(!id)continue;
     // Preserve previously expanded selections when a later public-page run finds
     // the code but cannot expand its slip. Replace selections only after a
     // successful expansion produced at least one valid tip.
     if(tips.length){
-      const selectionRows=tips.slice(0,100).map((tip,index)=>({booking_code_id:id,position:index+1,fixture:text(tip.fixture),market:text(tip.market),pick:text(tip.pick),odds:number(tip.odds)||null,league:text(tip.league)||null,kickoff:safeDate(tip.kickoff)?.toISOString()||null,result:['won','lost','void','pending'].includes(text(tip.result).toLowerCase())?text(tip.result).toLowerCase():null})).filter(row=>row.fixture&&row.market&&row.pick);
+      const selectionRows=tips.slice(0,100).map((tip,index)=>({booking_code_id:id,position:index+1,fixture:text(tip.fixture),market:text(tip.market),pick:text(tip.pick),odds:safeSelectionOdds(tip.odds),league:text(tip.league)||null,kickoff:safeDate(tip.kickoff)?.toISOString()||null,result:['won','lost','void','pending'].includes(text(tip.result).toLowerCase())?text(tip.result).toLowerCase():null})).filter(row=>row.fixture&&row.market&&row.pick);
       if(selectionRows.length){
         await db.remove('booking_code_selections',{booking_code_id:`eq.${id}`}).catch(()=>null);
         await db.insert('booking_code_selections',selectionRows,{returning:'minimal'}).catch(()=>null);
@@ -163,7 +189,7 @@ export async function getSourceStatus(){
 
 export async function getCodeHubCodes({limit=24,force=false}={}){
   const safeLimit=Math.max(1,Math.min(100,number(limit)||24));
-  return cached(`v2151:codehub:${safeLimit}`,ttlSeconds('CODE_CACHE_TTL_SECONDS'),async()=>{
+  return cached(`v2152:codehub:${safeLimit}`,ttlSeconds('CODE_CACHE_TTL_SECONDS'),async()=>{
     let rows=[];let collected=[];let source='none';const errors=[];
     if(db.configured()){
       rows=await db.select('booking_codes',{select:'*,booking_code_selections(*)',status:'eq.published',order:'published_at.desc.nullslast,created_at.desc',limit:String(safeLimit)}).catch(()=>[]);
@@ -192,15 +218,15 @@ export async function getCodeHubCodes({limit=24,force=false}={}){
         if(db.configured())rows=await db.select('booking_codes',{select:'*,booking_code_selections(*)',status:'eq.published',order:'published_at.desc.nullslast,created_at.desc',limit:String(safeLimit)}).catch(()=>[]);
       }
     }
-    let items=rows.map(normalizeCodeRow).filter(item=>item.code);
-    if(!items.length&&collected.length)items=collected.map(normalizeCodeRow).filter(item=>item.code).slice(0,safeLimit);
+    let items=rows.map(normalizeCodeRow).filter(item=>item.code&&validFeedItem(item));
+    if(!items.length&&collected.length)items=collected.map(normalizeCodeRow).filter(item=>item.code&&validFeedItem(item)).slice(0,safeLimit);
     if(!items.length){
       const fallback=await readJson(`${root}/data/codehub-banner.json`,{items:[]});
-      items=(fallback.items||[]).map(normalizeCodeRow).filter(item=>item.code).slice(0,safeLimit);
+      items=(fallback.items||[]).map(normalizeCodeRow).filter(item=>item.code&&validFeedItem(item)).slice(0,safeLimit);
       if(items.length)source='local-fallback';
     }
     return{version:10,source,collector:'sportybet-browser-agent',source_url:'https://www.sportybet.com/gh/m/code-hub/codes',generated_at:nowIso(),status:items.length?'ok':'empty',count:items.length,slips_with_tips:items.filter(item=>item.tips.length).length,total_tips:items.reduce((sum,item)=>sum+item.tips.length,0),errors:errors.slice(0,4),browser_status:await getBrowserCollectorStatus(),items};
-  },{source:'booking_codes-v2151',force});
+  },{source:'booking_codes-v2152',force});
 }
 
 export async function runBrowserCollector({limit=20}={}){
@@ -214,6 +240,7 @@ export async function runBrowserCollector({limit=20}={}){
   });
   try{
     const items=await collectSportyBetCodesWithBrowser({limit});
+    const removed_invalid=await purgeInvalidAutoCollectedRows();
     const stored=await persistCollectedCodes(items);
     memory.clear();
     if(db.configured())await db.remove('api_cache',{cache_key:'like.*codehub*'}).catch(()=>null);
@@ -226,7 +253,7 @@ export async function runBrowserCollector({limit=20}={}){
       last_success_at:items.length?(local.last_success_at||nowIso()):local.last_success_at,
     };
     await writeCollectorStatus(summary);
-    return{ok:true,collector:'sportybet-browser-agent',generated_at:nowIso(),count:items.length,stored,slips_with_tips:items.filter(item=>Array.isArray(item.tips)&&item.tips.length).length,total_tips:items.reduce((sum,item)=>sum+(item.tips?.length||0),0),status:summary,items:items.slice(0,Math.min(10,items.length)).map(normalizeCodeRow)};
+    return{ok:true,collector:'sportybet-browser-agent',generated_at:nowIso(),count:items.length,stored,removed_invalid,slips_with_tips:items.filter(item=>Array.isArray(item.tips)&&item.tips.length).length,total_tips:items.reduce((sum,item)=>sum+(item.tips?.length||0),0),status:summary,items:items.slice(0,Math.min(10,items.length)).map(normalizeCodeRow)};
   }catch(error){
     const local=getSportyBetBrowserStatus();
     await writeCollectorStatus({...local,running:false,last_error:publicError(error),execution_mode:collectorExecutionMode()});
@@ -303,5 +330,5 @@ export async function getFixtureStats(eventId,{force=false}={}){
 export async function refreshAll(){const events=await getUpcomingEvents({force:true,days:number(env('EVENT_DAYS_AHEAD','3'))||3});const codes=await getCodeHubCodes({force:true,limit:100});return{ok:true,collector:'sportybet-browser-agent',refreshed_at:nowIso(),events:events.count,event_source:events.source,codes:codes.count,code_source:codes.source,source_status:getSportyBetPublicStatus(),upstream_requests_today:usage.count,daily_budget:number(env('UPSTREAM_DAILY_REQUEST_BUDGET','100'))||100}}
 
 export async function publishCode(payload){
-  if(!db.configured())throw new Error('Supabase service connection is not configured');const code=text(payload.code).toUpperCase();if(!/^[A-Z0-9]{4,20}$/.test(code))throw new Error('Code must contain 4–20 letters or numbers');const tips=Array.isArray(payload.tips)?payload.tips:[];const rows=await db.upsert('booking_codes',{code,title:text(payload.title)||'Public code',total_odds:number(payload.odds)||null,selections_count:number(payload.selections)||tips.length,author:text(payload.author)||'sporty.codes',category:text(payload.tag)||'Code Hub',status:'published',published_at:nowIso(),expires_at:safeDate(payload.expires_at)?.toISOString()||null,source_url:/^https:\/\//i.test(text(payload.source_url))?text(payload.source_url):null},{onConflict:'code',returning:'representation'});const id=rows?.[0]?.id;if(id&&tips.length){await db.insert('booking_code_selections',tips.map((tip,index)=>({booking_code_id:id,position:index+1,fixture:text(tip.fixture),market:text(tip.market),pick:text(tip.pick),odds:number(tip.odds)||null,league:text(tip.league)||null,kickoff:safeDate(tip.kickoff)?.toISOString()||null})),{returning:'minimal'})}memory.clear();return normalizeCodeRow({...rows?.[0],booking_code_selections:tips});
+  if(!db.configured())throw new Error('Supabase service connection is not configured');const code=text(payload.code).toUpperCase();if(!/^[A-Z0-9]{4,20}$/.test(code))throw new Error('Code must contain 4–20 letters or numbers');const tips=Array.isArray(payload.tips)?payload.tips:[];const rows=await db.upsert('booking_codes',{code,title:text(payload.title)||'Public code',total_odds:number(payload.odds)||null,selections_count:number(payload.selections)||tips.length,author:text(payload.author)||'sporty.codes',category:text(payload.tag)||'Code Hub',status:'published',published_at:nowIso(),expires_at:safeDate(payload.expires_at)?.toISOString()||null,source_url:/^https:\/\//i.test(text(payload.source_url))?text(payload.source_url):null},{onConflict:'code',returning:'representation'});const id=rows?.[0]?.id;if(id&&tips.length){await db.insert('booking_code_selections',tips.map((tip,index)=>({booking_code_id:id,position:index+1,fixture:text(tip.fixture),market:text(tip.market),pick:text(tip.pick),odds:safeSelectionOdds(tip.odds),league:text(tip.league)||null,kickoff:safeDate(tip.kickoff)?.toISOString()||null})),{returning:'minimal'})}memory.clear();return normalizeCodeRow({...rows?.[0],booking_code_selections:tips});
 }

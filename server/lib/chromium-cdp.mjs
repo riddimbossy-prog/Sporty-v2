@@ -296,10 +296,13 @@ export class ChromiumSession {
   }
 
   diagnostics() {
+    const noisy = /(DBus|PHONE_REGISTRATION_ERROR|google_apis\/gcm|TensorFlow Lite|XNNPACK|freedesktop)/i;
+    const warnings = this.stderr.filter(line => !noisy.test(line));
     return {
       chromium_started_at: this.startedAt,
       captured_responses: this.network.length,
-      stderr_tail: this.stderr.slice(-5).map(line => line.slice(0, 240)),
+      stderr_tail: warnings.slice(-5).map(line => line.slice(0, 240)),
+      ignored_runtime_noise: this.stderr.length - warnings.length,
     };
   }
 

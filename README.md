@@ -1,4 +1,4 @@
-# Sporty.codes v21.5.1 — External browser-agent custom API
+# Sporty.codes v21.5.2 — External browser-agent custom API
 
 This build runs the public SportyBet browser agent outside the Render web process. GitHub Actions collects public codes and selections, stores them in Supabase, and the lightweight Render API serves those persisted results without launching Chromium.
 
@@ -54,3 +54,8 @@ CUSTOM_API_ADMIN_TOKEN
 ## Important live limitation
 
 The browser-agent logic and Chromium flow were tested locally against controlled public-page fixtures. Live SportyBet behavior must be confirmed after deployment because the packaging environment cannot access the live site. If SportyBet changes the public page or blocks headless access, `/api/collector-status` will expose the failure instead of silently returning an empty board.
+
+
+## v21.5.2 quality gate
+
+Auto-collected booking codes now pass strict code, selection and odds validation before Supabase persistence. Invalid legacy browser rows are filtered immediately and removed on the next collector run.

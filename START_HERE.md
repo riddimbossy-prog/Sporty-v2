@@ -1,4 +1,4 @@
-# START HERE — Sporty.codes v21.5.1
+# START HERE — Sporty.codes v21.5.2
 
 This hotfix stops Chromium from crashing the Render web service.
 
@@ -13,7 +13,7 @@ This hotfix stops Chromium from crashing the Render web service.
 Replace the current repository files with this package and push:
 
 ```text
-Deploy v21.5.1 external browser collector
+Deploy v21.5.2 external browser collector
 ```
 
 ## 2. Apply the Render Blueprint
@@ -60,3 +60,6 @@ https://sporty-codes-staging.onrender.com/smart-board.html
 ```
 
 A successful collector status has a non-null `last_started_at`, `last_finished_at` and `last_success_at`.
+
+
+After deploying v21.5.2, run **Actions → Sync SportyBet Code Hub → Run workflow** once. This cleans invalid legacy rows and republishes the validated feed.

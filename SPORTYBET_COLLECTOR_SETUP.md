@@ -1,4 +1,4 @@
-# SportyBet browser collector — v21.5.1
+# SportyBet browser collector — v21.5.2
 
 ## Why the collector is external
 
