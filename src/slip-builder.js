@@ -10,6 +10,15 @@
   const text=value=>String(value??'').replace(/\s+/g,' ').trim();
   const number=value=>{const n=Number(String(value??'').replace(/,/g,''));return Number.isFinite(n)?n:0};
   const safeOdds=value=>{const n=number(value);return n>1&&n<=1000?n:0};
+  const matchCount=(value,pattern)=>(text(value).match(pattern)||[]).length;
+  function isAtomicItem(item={}){
+    if(window.SportyMVP?.isAtomicTip)return window.SportyMVP.isAtomicTip(item);
+    const fixture=text(item.fixture),market=text(item.market),pick=text(item.pick);
+    if(!fixture||!market||!pick||fixture.length>180||market.length>90||pick.length>120)return false;
+    if(matchCount(fixture,/\b(?:vs?|versus)\b|\s[-–—]\s/gi)>1)return false;
+    if(matchCount(fixture,/\b(?:over\/under|double chance|draw no bet|match winner|both teams to score|team total|1x2)\b/gi)>1)return false;
+    return true;
+  }
   const keyFor=item=>text(item.id)||[text(item.kickoff).slice(0,10),text(item.fixture).toLowerCase(),text(item.market).toLowerCase(),text(item.pick).toLowerCase()].join('|');
   const combinedOdds=()=>state.items.reduce((total,item)=>total*(safeOdds(item.odds)||1),1);
   const projectedPoints=()=>state.practicePoints*combinedOdds();
@@ -24,7 +33,7 @@
 
   function normalize(item={}){
     const fixture=text(item.fixture),market=text(item.market),pick=text(item.pick),odds=safeOdds(item.odds);
-    if(!fixture||!market||!pick)return null;
+    if(!isAtomicItem({fixture,market,pick}))return null;
     return{
       id:keyFor(item),fixture,market,pick,odds,
       kickoff:item.kickoff||null,league:text(item.league),tier:text(item.tier)||'Popular',
@@ -37,8 +46,10 @@
   function load(){
     try{
       const raw=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');
-      state.items=(Array.isArray(raw.items)?raw.items:[]).map(normalize).filter(Boolean).slice(0,MAX_SELECTIONS);
+      const original=Array.isArray(raw.items)?raw.items:[];
+      state.items=original.map(normalize).filter(Boolean).slice(0,MAX_SELECTIONS);
       const points=number(raw.practicePoints);state.practicePoints=points>=0&&points<=100000?points:10;
+      if(state.items.length!==original.length)persist();
     }catch{state.items=[];state.practicePoints=10}
   }
 

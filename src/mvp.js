@@ -111,6 +111,22 @@
     return 'Other';
   }
 
+  function matchCount(value,pattern){return (text(value).match(pattern)||[]).length}
+  function isAtomicTip(tip={}){
+    const fixture=text(tip.fixture),market=text(tip.market),pick=text(tip.pick);
+    if(!fixture||!market||!pick)return false;
+    if(fixture.length>180||market.length>90||pick.length>120)return false;
+    const fixtureSeparators=matchCount(fixture,/\b(?:vs?|versus)\b|\s[-–—]\s/gi);
+    if(fixtureSeparators>1)return false;
+    const embeddedMarkets=matchCount(fixture,/\b(?:over\/under|double chance|draw no bet|match winner|both teams to score|team total|1x2)\b/gi);
+    if(embeddedMarkets>1)return false;
+    if(matchCount(fixture,/\b(?:over|under)\s+\d+(?:\.\d+)?\b/gi)>1)return false;
+    if(matchCount(fixture,/\b\d+(?:\.\d+)?\b/g)>6)return false;
+    if(matchCount(`${market} ${pick}`,/\b(?:vs?|versus)\b/gi)>0)return false;
+    if(matchCount(market,/\b(?:over\/under|double chance|draw no bet|match winner|both teams to score|team total|1x2)\b/gi)>2)return false;
+    return true;
+  }
+
   function normalizedTips(item){
     const source=Array.isArray(item?.tips)?item.tips:Array.isArray(item?.selection_details)?item.selection_details:Array.isArray(item?.selections_detail)?item.selections_detail:Array.isArray(item?.legs)?item.legs:[];
     return source.map(raw=>{
@@ -128,7 +144,7 @@
         result:text(raw.result||raw.status||raw.settlement),
         category:categoryForTip({market,pick})
       };
-    }).filter(tip=>tip.fixture&&tip.market&&tip.pick).slice(0,80);
+    }).filter(isAtomicTip).slice(0,80);
   }
 
   function plausibleCodeKickoff(value){
@@ -535,8 +551,8 @@
     setInterval(()=>{if(document.visibilityState==='visible')loadFeed({silent:true})},5*60*1000);
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')loadFeed({silent:true})});
   }
-  window.SportyMVP={state,displayableCodes,normalizedTips,consensusTips,kickoffForCode,categoryForCode,categoryForTip,isWon,isVerifiedSettlement,verifiedWinnerRows,isAvailable,dayLabel,dayFilterMatches,isoDay,daySortValue,dateValue,slug,text,number,formatPct,loadFeed,renderAll,copyCode,launchSporty,codeCard,codeHubCard};
+  window.SportyMVP={state,displayableCodes,normalizedTips,isAtomicTip,consensusTips,kickoffForCode,categoryForCode,categoryForTip,isWon,isVerifiedSettlement,verifiedWinnerRows,isAvailable,dayLabel,dayFilterMatches,isoDay,daySortValue,dateValue,slug,text,number,formatPct,loadFeed,renderAll,copyCode,launchSporty,codeCard,codeHubCard};
   window.__SPORTY_FEED_TEST__={normalizedFeedItem,isAvailable,isWon,plausibleExpiry};
-  window.__SPORTY_MVP_TEST__={dayLabel,dayFilterMatches,isoDay,officialLoadUrl,internationalMode,consensusTips,kickoffForCode};
+  window.__SPORTY_MVP_TEST__={dayLabel,dayFilterMatches,isoDay,officialLoadUrl,internationalMode,consensusTips,kickoffForCode,isAtomicTip};
   document.addEventListener('DOMContentLoaded',init);
 })();

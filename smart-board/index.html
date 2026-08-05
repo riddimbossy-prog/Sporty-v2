@@ -36,7 +36,7 @@
 <section class="page-intro popular-board-hero">
   <div>
     <div class="eyebrow">Today’s community consensus</div>
-    <h1>Popular tips for today.</h1>
+    <h1 id="popularBoardHeroTitle">Popular tips for today.</h1>
     <p class="lead">See the selections appearing most often across verified public slips, then build and share your own sporty.codes prediction slip.</p>
   </div>
   <div class="popular-board-hero-side">
@@ -49,7 +49,7 @@
 <section class="section event-board-section" id="eventBoardSection" data-mode="disabled" hidden><div class="section-head"><div><div class="eyebrow">Direct public SportyBet collector</div><h2>SportyBet Match Board</h2><p>Upcoming public fixtures and prices from the custom collector.</p></div><span class="pill" id="eventBoardStatus">Disabled on Smart Board</span></div><div class="market-board-grid" id="eventBoardGrid"></div></section>
 
 <section class="stats-grid popular-board-stats" id="intelligenceStatsSection" data-population-section hidden>
-  <div class="stat-card"><span>Popular today</span><strong data-popular-stat="tips">0</strong></div>
+  <div class="stat-card"><span data-popular-stat-label="tips">Popular today</span><strong data-popular-stat="tips">0</strong></div>
   <div class="stat-card"><span>Fixtures</span><strong data-popular-stat="fixtures">0</strong></div>
   <div class="stat-card"><span>Source slips</span><strong data-popular-stat="slips">0</strong></div>
   <div class="stat-card"><span>My prediction slip</span><strong data-popular-stat="my-slip">0</strong></div>
@@ -64,7 +64,7 @@
 
 <section class="section popular-board-section" id="smartBoardSection" data-population-section hidden>
   <div class="section-head popular-board-head">
-    <div><div class="eyebrow">Daily consensus list</div><h2>Today’s popular tips</h2><p>Ranked by repeated appearances across verified public slips. Popularity is not a guarantee.</p></div>
+    <div><div class="eyebrow">Daily consensus list</div><h2 id="popularBoardSectionTitle">Today’s popular tips</h2><p>Ranked by repeated appearances across verified public slips. Popularity is not a guarantee.</p></div>
     <span class="pill green" id="popularBoardCount">Waiting for tips</span>
   </div>
   <div class="controls popular-board-controls">

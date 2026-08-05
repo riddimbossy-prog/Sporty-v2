@@ -75,6 +75,26 @@
     return size;
   }
 
+  function ellipsizeText(ctx,value,maxWidth){
+    const source=clean(value);
+    if(ctx.measureText(source).width<=maxWidth)return source;
+    let low=0,high=source.length,best='';
+    while(low<=high){
+      const mid=Math.floor((low+high)/2);const candidate=`${source.slice(0,mid).trimEnd()}…`;
+      if(ctx.measureText(candidate).width<=maxWidth){best=candidate;low=mid+1}else high=mid-1;
+    }
+    return best||'…';
+  }
+
+  function isAtomicShareItem(item={}){
+    if(window.SportyMVP?.isAtomicTip)return window.SportyMVP.isAtomicTip(item);
+    const fixture=clean(item.fixture),market=clean(item.market),pick=clean(item.pick);
+    if(!fixture||!market||!pick||fixture.length>180||market.length>90||pick.length>120)return false;
+    if((fixture.match(/\b(?:vs?|versus)\b|\s[-–—]\s/gi)||[]).length>1)return false;
+    if((fixture.match(/\b(?:over\/under|double chance|draw no bet|match winner|both teams to score|team total|1x2)\b/gi)||[]).length>1)return false;
+    return true;
+  }
+
   function wrapText(ctx,text,x,y,maxWidth,lineHeight,maxLines=4){
     const words=clean(text).split(' ').filter(Boolean);
     const lines=[];
@@ -258,10 +278,11 @@
     let y=286;
     y=wrapText(ctx,clean(payload.title)||'My sporty.codes prediction slip',74,y,930,70,2)+18;
 
-    const items=(Array.isArray(payload.items)?payload.items:[]).slice(0,4);
+    const allItems=(Array.isArray(payload.items)?payload.items:[]).filter(isAtomicShareItem);
+    const items=allItems.slice(0,4);
     const rowH=92;
     const listY=y;
-    const listH=Math.max(170,items.length*rowH+34+(Array.isArray(payload.items)&&payload.items.length>4?42:0));
+    const listH=Math.max(170,items.length*rowH+34+(allItems.length>4?42:0));
     fillRounded(ctx,66,listY,948,listH,30,'rgba(4,5,8,.72)','rgba(255,255,255,.11)',2);
     let rowY=listY+28;
     items.forEach((item,index)=>{
@@ -269,22 +290,24 @@
       ctx.fillStyle='#ff5b68';ctx.font='900 24px Arial, Helvetica, sans-serif';ctx.fillText(String(index+1).padStart(2,'0'),94,rowY+22);
       ctx.fillStyle='#ffffff';ctx.font='900 27px Arial, Helvetica, sans-serif';
       const fixture=clean(item.fixture)||'Match';
-      const size=fitText(ctx,fixture,650,27,20,900);ctx.font=`900 ${size}px Arial, Helvetica, sans-serif`;ctx.fillText(fixture,148,rowY+20);
+      const size=fitText(ctx,fixture,650,27,20,900);ctx.font=`900 ${size}px Arial, Helvetica, sans-serif`;ctx.fillText(ellipsizeText(ctx,fixture,650),148,rowY+20);
       ctx.fillStyle='rgba(255,255,255,.62)';ctx.font='700 21px Arial, Helvetica, sans-serif';
       const direction=`${clean(item.market)||'Market'}: ${clean(item.pick)||'Selection'}`;
-      const clipped=direction.length>72?`${direction.slice(0,69)}…`:direction;ctx.fillText(clipped,148,rowY+54);
+      ctx.fillText(ellipsizeText(ctx,direction,650),148,rowY+54);
       ctx.fillStyle='#ffffff';ctx.font='900 27px Arial, Helvetica, sans-serif';ctx.textAlign='right';ctx.fillText(num(item.odds)>1?num(item.odds).toFixed(2):'—',970,rowY+33);ctx.textAlign='left';
       ctx.fillStyle='rgba(255,255,255,.48)';ctx.font='700 18px Arial, Helvetica, sans-serif';ctx.fillText(clean(item.day)||clean(payload.day)||'See site',148,rowY+82);
       rowY+=rowH;
     });
-    if(Array.isArray(payload.items)&&payload.items.length>4){ctx.fillStyle='rgba(255,255,255,.62)';ctx.font='800 20px Arial, Helvetica, sans-serif';ctx.fillText(`+ ${payload.items.length-4} more selections on sporty.codes`,94,listY+listH-20)}
+    if(allItems.length>4){ctx.fillStyle='rgba(255,255,255,.62)';ctx.font='800 20px Arial, Helvetica, sans-serif';ctx.fillText(`+ ${allItems.length-4} more selections on sporty.codes`,94,listY+listH-20)}
 
     const metricsY=listY+listH+26;
     const gap=18,boxW=(948-gap)/2;
-    drawMetric(ctx,66,metricsY,boxW,'Combined odds',num(payload.totalOdds)>0?num(payload.totalOdds).toFixed(2):'—');
-    drawMetric(ctx,66+boxW+gap,metricsY,boxW,'Selections',String(Array.isArray(payload.items)?payload.items.length:0));
-    drawMetric(ctx,66,metricsY+134,boxW,'Practice points',num(payload.practicePoints).toFixed(2));
-    drawMetric(ctx,66+boxW+gap,metricsY+134,boxW,'Projected points',num(payload.projectedPoints).toFixed(2));
+    const combined=allItems.reduce((total,item)=>{const odds=num(item.odds);return total*(odds>1&&odds<=1000?odds:1)},1);
+    const practice=num(payload.practicePoints);
+    drawMetric(ctx,66,metricsY,boxW,'Combined odds',allItems.length?combined.toFixed(2):'—');
+    drawMetric(ctx,66+boxW+gap,metricsY,boxW,'Selections',String(allItems.length));
+    drawMetric(ctx,66,metricsY+134,boxW,'Practice points',practice.toFixed(2));
+    drawMetric(ctx,66+boxW+gap,metricsY+134,boxW,'Projected points',(practice*combined).toFixed(2));
 
     ctx.fillStyle='rgba(255,255,255,.65)';ctx.font='700 22px Arial, Helvetica, sans-serif';
     wrapText(ctx,'Prediction planning only. No deposit, wallet, payment or real-money wager is processed by sporty.codes.',74,metricsY+300,920,32,3);

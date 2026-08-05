@@ -82,7 +82,7 @@
   function buildSlips(){
     const api=mvp();if(!api)return[];
     const slips=api.displayableCodes().map(item=>{
-      const tips=api.normalizedTips(item).map(tip=>{const recovered=window.SportyCustomApiMatch?.reconcileTip?.(tip,aux.events)||tip;return{...recovered,category:api.categoryForTip(recovered)}});
+      const tips=api.normalizedTips(item).map(tip=>{const recovered=window.SportyCustomApiMatch?.reconcileTip?.(tip,aux.events)||tip;return{...recovered,category:api.categoryForTip(recovered)}}).filter(tip=>api.isAtomicTip?.(tip)!==false);
       return{item,code:text(item.code),source:sourceName(item),sourceKey:sourceKey(item),tips,tipSet:new Set(tips.map(tipKey)),createdAt:dateValue(item.created_at||api.state.feed.generated_at)};
     }).filter(slip=>slip.tips.length);
     clusterSlips(slips);return slips;
@@ -277,7 +277,21 @@
     if(!rows.length&&unpersonalizedRows.length){rows=unpersonalizedRows;relaxedPreferences=true}
     if(!rows.length&&ui.day==='today'&&undatedRows.length){rows=undatedRows;usingDatePendingFallback=true}
     const count=$('#popularBoardCount');if(count)count.textContent=rows.length?`${rows.length} popular tip${rows.length===1?'':'s'}${usingDatePendingFallback?' · dates pending':''}${relaxedPreferences?' · filters relaxed':''}`:'No matching tips';
-    const boardDay=$('#popularBoardDay');if(boardDay)boardDay.textContent=usingDatePendingFallback?'Dates pending':ui.day==='today'?'Today':ui.day==='tomorrow'?'Tomorrow':ui.day==='week'?'Next 7 days':ui.day==='undated'?'Date unavailable':'All available';
+    const view=usingDatePendingFallback
+      ?{badge:'Dates pending',hero:'Popular tips awaiting confirmed dates.',section:'Date-pending popular tips',stat:'Date pending'}
+      :ui.day==='today'
+        ?{badge:'Today',hero:'Popular tips for today.',section:'Today’s popular tips',stat:'Popular today'}
+        :ui.day==='tomorrow'
+          ?{badge:'Tomorrow',hero:'Popular tips for tomorrow.',section:'Tomorrow’s popular tips',stat:'Popular tomorrow'}
+          :ui.day==='week'
+            ?{badge:'Next 7 days',hero:'Popular tips for the next 7 days.',section:'Next 7 days popular tips',stat:'Popular next 7 days'}
+            :ui.day==='undated'
+              ?{badge:'Date pending',hero:'Popular tips awaiting confirmed dates.',section:'Date-pending popular tips',stat:'Date pending'}
+              :{badge:'All days',hero:'Popular tips across all available matches.',section:'All available popular tips',stat:'Popular available'};
+    const boardDay=$('#popularBoardDay');if(boardDay)boardDay.textContent=view.badge;
+    const heroTitle=$('#popularBoardHeroTitle');if(heroTitle)heroTitle.textContent=view.hero;
+    const sectionTitle=$('#popularBoardSectionTitle');if(sectionTitle)sectionTitle.textContent=view.section;
+    const statLabel=$('[data-popular-stat-label="tips"]');if(statLabel)statLabel.textContent=view.stat;
     if(usingDatePendingFallback){
       const notice=empty('Kickoff dates are being recovered',`${rows.length} repeated popular tip${rows.length===1?' is':'s are'} shown below without a Today label. The collector now enriches dates before saving and will update these cards after the next successful workflow run.`);
       notice.classList.add('date-pending-notice');root.append(notice);
