@@ -7,4 +7,4 @@ assert.match(source,/if\(!tips\.length\)continue;/,'zero-tip candidates must not
 assert.match(source,/booking_code_selections\(id\)/,'cleanup must inspect stored selections');
 assert.match(source,/purgeUnverifiedAutoCollectedRows/,'unverified historical auto rows must be removed');
 assert.match(source,/version:11/,'public feed contract must advertise the verified-slip revision');
-console.log('data-service verified feed v21.7.2 test passed');
+console.log('data-service verified feed v21.7.3 test passed');

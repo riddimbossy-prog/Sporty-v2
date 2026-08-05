@@ -12,7 +12,7 @@ cp -R "$ROOT"/. "$TMP"/
 )
 grep -q 'https://example.supabase.co' "$TMP/.render-site/config.js"
 grep -q 'sb_publishable_example_key' "$TMP/.render-site/config.js"
-grep -q 'sporty.codes 21.7.2' "$TMP/.render-site/render-build.txt"
+grep -q 'sporty.codes 21.7.3' "$TMP/.render-site/render-build.txt"
 test -f "$TMP/.render-site/assets/logo-wordmark-dark.webp"
 test -f "$TMP/.render-site/login.html"
 test -f "$TMP/.render-site/admin-login.html"

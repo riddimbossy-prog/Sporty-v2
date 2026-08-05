@@ -1,4 +1,4 @@
-# Build verification — v21.7.2
+# Build verification — v21.7.3
 
 Validated locally:
 

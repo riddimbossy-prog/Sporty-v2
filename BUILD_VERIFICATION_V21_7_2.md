@@ -1,4 +1,4 @@
-# Sporty.codes v21.7.2 build verification
+# Sporty.codes v21.7.3 build verification
 
 ## Root cause
 - Verified Code Hub selections were stored before kickoff enrichment.

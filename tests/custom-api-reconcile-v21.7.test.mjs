@@ -27,4 +27,4 @@ assert.match(dataService,/if\(!events\.length&&enabled\('ALLOW_API_FOOTBALL_FALL
 const render=fs.readFileSync(new URL('../render.yaml',import.meta.url),'utf8');
 assert.match(render,/ALLOW_API_FOOTBALL_FALLBACK\s*\n\s*value:\s*false/,'Render must default to the custom SportyBet event source');
 
-console.log('custom API fixture reconciliation v21.7.2 test passed');
+console.log('custom API fixture reconciliation v21.7.3 test passed');

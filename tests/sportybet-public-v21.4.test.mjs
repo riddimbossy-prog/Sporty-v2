@@ -30,7 +30,7 @@ assert.doesNotMatch(moduleSource,/Authorization\s*:/i);
 assert.doesNotMatch(moduleSource,/captcha/i);
 const board=await readFile('smart-board.html','utf8');
 assert.match(board,/id="eventBoardSection"/);
-assert.match(board,/src="\/src\/market-board\.js\?v=21\.7\.2"/);
+assert.match(board,/src="\/src\/market-board\.js\?v=21\.7\.3"/);
 const client=await readFile('src/market-board.js','utf8');
 assert.match(client,/\/api\/get_upcoming_events\?days=3/);
 console.log('v21.4 direct public SportyBet collector tests passed.');

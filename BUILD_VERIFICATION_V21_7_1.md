@@ -1,4 +1,4 @@
-# Build verification — v21.7.2
+# Build verification — v21.7.3
 
 Target: restore successful GitHub Actions completion for safe zero-result Code Hub runs without weakening verified-slip publishing.
 
