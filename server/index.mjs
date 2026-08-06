@@ -11,9 +11,20 @@ const adminToken=env('CUSTOM_API_ADMIN_TOKEN');
 const rate=new Map();
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp','.ico':'image/x-icon','.txt':'text/plain; charset=utf-8'};
 const routeFiles={'/':'index.html','/international':'international.html','/marketplace':'marketplace.html','/free-codes':'marketplace.html','/smart-board':'smart-board.html','/elite-picks':'elite-picks.html','/most-added':'most-added.html','/won-codes':'won-codes.html','/performance':'performance.html','/sources':'sources.html','/control-room':'control-room.html','/login':'login.html','/admin-login':'admin-login.html','/admin-users':'admin-users.html','/privacy':'privacy.html','/account':'account.html','/saved':'saved.html','/deployment-check':'deployment-check.html'};
+const legacyApiPaths=new Set(['/get_code_hub_codes','/get_booking','/get_upcoming_events','/search_matches','/get_fixture_stats']);
 
 function clientIp(req){return text(req.headers['x-forwarded-for']).split(',')[0]||req.socket.remoteAddress||'unknown'}
-function allow(req){const key=clientIp(req),now=Date.now(),windowMs=60000,limit=Math.max(20,number(env('API_RATE_LIMIT_PER_MINUTE','120'))||120);let row=rate.get(key);if(!row||row.reset<=now)row={count:0,reset:now+windowMs};row.count++;rate.set(key,row);return row.count<=limit}
+function isApiRequest(url){return url.pathname.startsWith('/api/')||legacyApiPaths.has(url.pathname)}
+function allowApi(req){
+  const key=clientIp(req),now=Date.now(),windowMs=60000,limit=Math.max(20,number(env('API_RATE_LIMIT_PER_MINUTE','120'))||120);
+  let row=rate.get(key);
+  if(!row||row.reset<=now)row={count:0,reset:now+windowMs};
+  row.count++;
+  rate.set(key,row);
+  if(rate.size>2000){for(const [entryKey,entry] of rate){if(entry.reset<=now)rate.delete(entryKey)}}
+  return row.count<=limit;
+}
+function tooManyRequests(){return json({error:'Too many requests'},429,{'retry-after':'60','cache-control':'no-store, max-age=0'})}
 function send(res,result){res.writeHead(result.status,result.headers);res.end(result.body)}
 function auth(req){if(!adminToken)return false;const bearer=text(req.headers.authorization).replace(/^Bearer\s+/i,'');return bearer===adminToken||text(req.headers['x-admin-token'])===adminToken}
 async function body(req){let raw='';for await(const chunk of req){raw+=chunk;if(raw.length>1024*1024)throw new Error('Request body too large')}if(!raw)return{};try{return JSON.parse(raw)}catch{throw new Error('Invalid JSON body')}}
@@ -21,7 +32,7 @@ function securityHeaders(extra={}){return{'x-content-type-options':'nosniff','x-
 
 async function api(req,url){
   const path=url.pathname.replace(/^\/api/,'');
-  if(req.method==='GET'&&path==='/health'){const status=await getSystemStatus();return json({ok:true,service:'sporty.codes-custom-api',version:'21.7.3',api_contract:'sporty-codes-compatibility-v3',official_sportybet_api:false,browser_agent_collector:true,time:new Date().toISOString(),...status});}
+  if(req.method==='GET'&&path==='/health'){const status=await getSystemStatus();return json({ok:true,service:'sporty.codes-custom-api',version:'21.7.3',api_contract:'sporty-codes-compatibility-v3',official_sportybet_api:false,browser_agent_collector:true,rate_limit_scope:'api-only',time:new Date().toISOString(),...status});}
   if(req.method==='GET'&&path==='/source-status')return json(await getSourceStatus());
   if(req.method==='GET'&&path==='/collector-status')return json({ok:true,collector:'sportybet-browser-agent',status:await getBrowserCollectorStatus()});
   if(req.method==='GET'&&path==='/get_code_hub_codes')return json(await getCodeHubCodes({limit:url.searchParams.get('limit')||24}));
@@ -42,8 +53,7 @@ function runtimeConfig(){
   const supabaseKey=text(env('SUPABASE_PUBLISHABLE_KEY'));
   const setupPending=!(supabaseUrl&&supabaseKey);
   const payload={mode:'auto',allowDemoFallback:false,setupPending,configSource:'render-runtime',buildVersion:'21.7.3',supabaseUrl,supabaseAnonKey:supabaseKey,currency:'GHS',platformFeePercent:10,codeHubBannerEnabled:true,apiBaseUrl:'/api',codeHubFeedUrl:'/api/get_code_hub_codes',upcomingEventsUrl:'/api/get_upcoming_events',codeHubLoadUrl:'https://www.sportybet.com/gh/m/code-hub/load-code',sportyOfficialUrl:'https://www.sportybet.com/',regionalSites:{GH:'https://www.sportybet.com/gh/'},carouselIntervalMs:4300};
-  return `window.SPORTY_CONFIG = ${JSON.stringify(payload)};
-`;
+  return `window.SPORTY_CONFIG = ${JSON.stringify(payload)};\n`;
 }
 
 function cacheControl(path){
@@ -62,9 +72,11 @@ async function staticFile(urlPath){
 const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url||'/',`http://${req.headers.host||'localhost'}`);
   try{
-    if(!allow(req)){send(res,json({error:'Too many requests'},429,{'retry-after':'60'}));return}
-    const isApi=url.pathname.startsWith('/api/')||['/get_code_hub_codes','/get_booking','/get_upcoming_events','/search_matches','/get_fixture_stats'].includes(url.pathname);
-    if(isApi){const result=await api(req,url);result.headers={...securityHeaders(),...result.headers};send(res,result);return}
+    const isApi=isApiRequest(url);
+    if(isApi){
+      if(url.pathname!=='/api/health'&&!allowApi(req)){send(res,tooManyRequests());return}
+      const result=await api(req,url);result.headers={...securityHeaders(),...result.headers};send(res,result);return
+    }
     if(url.pathname==='/config.js'){send(res,{status:200,headers:securityHeaders({'content-type':'text/javascript; charset=utf-8','cache-control':'no-cache, no-store, must-revalidate'}),body:runtimeConfig()});return}
     send(res,await staticFile(url.pathname));
   }catch(error){console.error('[server]',publicError(error));send(res,json({error:publicError(error)},500,securityHeaders()))}
