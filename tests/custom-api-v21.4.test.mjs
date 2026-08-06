@@ -21,6 +21,15 @@ assert.match(build,/src\/market-board\.js/);
 assert.match(build,/server\/lib\/sportybet-public\.mjs/);
 assert.match(build,/codeHubFeedUrl:\s*"\/api\/get_code_hub_codes"/);
 assert.match(build,/upcomingEventsUrl:\s*"\/api\/get_upcoming_events"/);
+
+const server=await readFile('server/index.mjs','utf8');
+assert.match(server,/function isApiRequest\(url\)/,'API scope detector must exist');
+assert.match(server,/const isApi=isApiRequest\(url\);/,'Requests must be classified before applying the limiter');
+assert.match(server,/if\(isApi\)\{\s*if\(url\.pathname!==['"]\/api\/health['"]&&!allowApi\(req\)\)/s,'Only API requests may consume rate-limit quota');
+assert.doesNotMatch(server,/try\{\s*if\(!allowApi?\(req\)\)/s,'Static pages and navigation must never be rate limited');
+assert.match(server,/cache-control['"]:\s*['"]no-store, max-age=0['"]/,'429 responses must not be cached');
+assert.match(server,/rate_limit_scope:['"]api-only['"]/,'Health status must expose the limiter scope');
+
 const status=await getSystemStatus();
 assert.equal(typeof status.ready,'boolean');
 assert.equal(status.collector,'sportybet-browser-agent');
