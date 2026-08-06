@@ -1,12 +1,12 @@
-const VERSION='sporty-codes-v21.7.3-mobile-nav-p5';
-const ASSET_VERSION='21.7.3-p5';
+const VERSION='sporty-codes-v21.7.3-readability-p6';
+const ASSET_VERSION='21.7.3-p6';
 const STATIC_CACHE=`${VERSION}-static`;
 const PAGE_CACHE=`${VERSION}-pages`;
 const DATA_CACHE=`${VERSION}-data`;
 const IMAGE_CACHE=`${VERSION}-images`;
 const CORE=[
   '/login.html','/international.html','/offline.html','/manifest.json','/data/codehub-banner.json','/sportybet-events.json',
-  `/styles.css?v=${ASSET_VERSION}`,`/responsive.css?v=${ASSET_VERSION}`,`/mobile-nav.css?v=${ASSET_VERSION}`,`/pwa.css?v=${ASSET_VERSION}`,
+  `/styles.css?v=${ASSET_VERSION}`,`/responsive.css?v=${ASSET_VERSION}`,`/mobile-nav.css?v=${ASSET_VERSION}`,`/readability.css?v=${ASSET_VERSION}`,`/pwa.css?v=${ASSET_VERSION}`,
   `/config.js?v=${ASSET_VERSION}`,`/src/market-board.js?v=${ASSET_VERSION}`,`/src/region.js?v=${ASSET_VERSION}`,`/src/international.js?v=${ASSET_VERSION}`,`/src/auth.js?v=${ASSET_VERSION}`,`/src/login.js?v=${ASSET_VERSION}`,`/src/admin-login.js?v=${ASSET_VERSION}`,`/src/member-home.js?v=${ASSET_VERSION}`,`/src/share.js?v=${ASSET_VERSION}`,`/src/slip-builder.js?v=${ASSET_VERSION}`,`/src/custom-api-match.js?v=${ASSET_VERSION}`,`/src/intelligence.js?v=${ASSET_VERSION}`,`/src/elite.js?v=${ASSET_VERSION}`,`/src/pwa.js?v=${ASSET_VERSION}`,`/src/experience.js?v=${ASSET_VERSION}`,`/src/auth-confirmation-resilience.js?v=${ASSET_VERSION}`,
   '/icons/icon-192.png','/assets/logo-wordmark-dark.webp','/assets/logo-wordmark-light.webp','/favicon.svg'
 ];
