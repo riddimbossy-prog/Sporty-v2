@@ -1,7 +1,17 @@
 
 (()=>{
   'use strict';
-  const RELEASE='21.7.3-p4';
+  const RELEASE='21.7.3-p5';
+  const MOBILE_NAV_RELEASE='21.7.3-p5';
+
+  if(!document.querySelector('link[data-mobile-nav-polish]')){
+    const mobileNavStyle=document.createElement('link');
+    mobileNavStyle.rel='stylesheet';
+    mobileNavStyle.href=`/mobile-nav.css?v=${MOBILE_NAV_RELEASE}`;
+    mobileNavStyle.dataset.mobileNavPolish='true';
+    document.head.append(mobileNavStyle);
+  }
+
   const isStandalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
   const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
   let deferredPrompt=null;
