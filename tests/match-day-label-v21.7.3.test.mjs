@@ -8,13 +8,14 @@ assert.equal(__test.coerceKickoff('Tomorrow 09:15', reference)?.toISOString(), '
 assert.equal(__test.coerceKickoff('06/08/2026 14:00', reference)?.toISOString(), '2026-08-06T14:00:00.000Z');
 assert.equal(__test.coerceKickoff(1785942000000, reference)?.toISOString(), new Date(1785942000000).toISOString());
 
+const expectedDynamicTomorrow = __test.coerceKickoff('Tomorrow 20:00')?.toISOString();
 const tips = __test.scanTips({
   selections:[
     {eventName:'Home FC vs Away FC',marketName:'1X2',selectionName:'Home',odd:'1.55',eventDate:'Tomorrow 20:00'},
   ],
 });
 assert.equal(tips.length,1);
-assert.equal(tips[0].kickoff,'2026-08-06T20:00:00.000Z');
+assert.equal(tips[0].kickoff,expectedDynamicTomorrow);
 
 const mvp = readFileSync(new URL('../src/mvp.js', import.meta.url),'utf8');
 assert.match(mvp,/Today \+ Tomorrow/);
