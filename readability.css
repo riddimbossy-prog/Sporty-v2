@@ -1,0 +1,99 @@
+/* sporty.codes site-wide small-text readability patch — v21.7.3-p6 */
+
+:root{
+  --sporty-micro-text:.76rem;
+  --sporty-small-text:.82rem;
+}
+
+/* Tiny uppercase labels and ranking markers. */
+.eyebrow,
+.card-kicker,
+.winner-mark,
+.hero-stat span,
+.stat-card span,
+.metric span,
+.strength-score span,
+.performance-metric span,
+.source-stat span,
+.intelligence-stat span{
+  font-size:var(--sporty-micro-text)!important;
+  line-height:1.35;
+}
+
+/* Pills, compact actions, filter labels and code-source chips. */
+.pill,
+.mini-button,
+.source-codes code,
+.live-status,
+.controls label,
+.intelligence-controls label,
+.saved-toolbar label,
+.audience-toolbar label,
+.filter-label,
+.badge,
+.status-badge,
+.classification-badge,
+.market-tag,
+.date-tag{
+  font-size:var(--sporty-micro-text)!important;
+  line-height:1.35;
+}
+
+/* Helper copy, metadata, disclaimers and footer text. */
+.card-note,
+.codehub-foot,
+.footer,
+.member-home-disclaimer,
+.tip-meta,
+.code-meta,
+.source-meta,
+.performance-meta,
+.account-meta,
+.auth-helper,
+.auth-note,
+.field-note,
+.form-help,
+.password-strength,
+.privacy-copy,
+.empty p,
+small{
+  font-size:var(--sporty-small-text)!important;
+  line-height:1.55;
+}
+
+/* Keep dense cards readable without changing their overall proportions. */
+.code-card p,
+.tip-card p,
+.intelligence-card p,
+.performance-card p,
+.source-card p,
+.saved-card p,
+.account-panel p,
+.auth-card p{
+  line-height:1.58;
+}
+
+@media(max-width:700px){
+  :root{
+    --sporty-micro-text:.78rem;
+    --sporty-small-text:.85rem;
+  }
+
+  .controls label,
+  .intelligence-controls label,
+  .saved-toolbar label,
+  .audience-toolbar label{
+    font-weight:850;
+  }
+
+  .footer{
+    line-height:1.6;
+  }
+}
+
+@media(max-width:390px){
+  :root{
+    --sporty-micro-text:.75rem;
+    --sporty-small-text:.82rem;
+  }
+}
