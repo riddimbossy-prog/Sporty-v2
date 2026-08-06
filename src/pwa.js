@@ -1,8 +1,9 @@
 
 (()=>{
   'use strict';
-  const RELEASE='21.7.3-p5';
+  const RELEASE='21.7.3-p6';
   const MOBILE_NAV_RELEASE='21.7.3-p5';
+  const READABILITY_RELEASE='21.7.3-p6';
 
   if(!document.querySelector('link[data-mobile-nav-polish]')){
     const mobileNavStyle=document.createElement('link');
@@ -10,6 +11,14 @@
     mobileNavStyle.href=`/mobile-nav.css?v=${MOBILE_NAV_RELEASE}`;
     mobileNavStyle.dataset.mobileNavPolish='true';
     document.head.append(mobileNavStyle);
+  }
+
+  if(!document.querySelector('link[data-site-readability]')){
+    const readabilityStyle=document.createElement('link');
+    readabilityStyle.rel='stylesheet';
+    readabilityStyle.href=`/readability.css?v=${READABILITY_RELEASE}`;
+    readabilityStyle.dataset.siteReadability='true';
+    document.head.append(readabilityStyle);
   }
 
   const isStandalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
