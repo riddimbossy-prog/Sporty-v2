@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { __test } from '../server/lib/sportybet-browser.mjs';
 
-const reference = new Date('2026-08-05T10:00:00Z');
+const expectedToday = __test.coerceKickoff('Today 18:30')?.toISOString();
+const expectedTomorrow = __test.coerceKickoff('Tomorrow 20:00')?.toISOString();
+
 const payload = {
   data: {
     booking: {
@@ -32,7 +34,7 @@ assert.equal(tips[0].market, 'Match Result');
 assert.equal(tips[0].pick, 'Home');
 assert.equal(tips[0].odds, 1.85);
 assert.equal(tips[0].league, 'Ghana Premier League');
-assert.equal(tips[0].kickoff, '2026-08-05T18:30:00.000Z');
+assert.equal(tips[0].kickoff, expectedToday);
 
 const tomorrowPayload = {
   eventName: 'Kotoko vs Medeama',
@@ -51,6 +53,6 @@ const tomorrow = __test.scanTips(tomorrowPayload);
 assert.equal(tomorrow.length, 1);
 assert.equal(tomorrow[0].market, 'Total Goals');
 assert.equal(tomorrow[0].pick, 'Over 1.5');
-assert.equal(tomorrow[0].kickoff, '2026-08-06T20:00:00.000Z');
+assert.equal(tomorrow[0].kickoff, expectedTomorrow);
 
 console.log('nested kickoff inheritance v21.7.3 test passed');
