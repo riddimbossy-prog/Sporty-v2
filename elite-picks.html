@@ -84,10 +84,13 @@
 <script src="/src/market-board.js?v=21.7.3-p3" defer></script>
 <script src="/src/slip-builder.js?v=21.7.3-p3" defer></script>
 <script src="/src/custom-api-match.js?v=21.7.3-p3" defer></script>
+<!--STATS2PITCH_ELITE_BOOTSTRAP-->
 <script>
   window.SportyEliteAvailability={
-    source:'stats2pitch-inline',
+    source:'stats2pitch-server-first',
     loadData:async()=>{
+      const embedded=window.__SPORTY_ELITE_BOOTSTRAP__;
+      if(Array.isArray(embedded?.items))return embedded;
       const response=await fetch(`/api/elite-picks?ts=${Date.now()}`,{cache:'no-store',headers:{Accept:'application/json'}});
       if(!response.ok)throw new Error(`Stats2Pitch Elite feed unavailable (${response.status})`);
       const data=await response.json();
@@ -97,9 +100,8 @@
     usableItems:data=>Array.isArray(data?.items)?data.items.slice(0,10):[]
   };
 </script>
-<script src="/src/elite-stats2pitch-bridge.js?v=21.7.4-p2" defer></script>
-<script src="/src/elite.js?v=21.7.4-p2" defer></script>
-<script src="/src/pwa.js?v=21.7.4-p2" defer></script>
+<script src="/src/elite.js?v=21.7.4-p3" defer></script>
+<script src="/src/pwa.js?v=21.7.4-p3" defer></script>
 <script src="/src/experience.js?v=21.7.3-p3" defer></script>
 </body>
 </html>
