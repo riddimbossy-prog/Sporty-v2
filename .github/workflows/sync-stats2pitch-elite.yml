@@ -1,0 +1,39 @@
+name: Sync Stats2Pitch Elite Picks
+
+on:
+  workflow_dispatch:
+    inputs:
+      prediction_date:
+        description: Optional YYYY-MM-DD date override
+        required: false
+        type: string
+  schedule:
+    - cron: '15 */2 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-stats2pitch-elite
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      APP_TIMEZONE: Africa/Accra
+      STATS2PITCH_BASE_URL: ${{ secrets.STATS2PITCH_BASE_URL }}
+      STATS2PITCH_ELITE_FEED_TOKEN: ${{ secrets.STATS2PITCH_ELITE_FEED_TOKEN }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      PREDICTION_DATE: ${{ inputs.prediction_date }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Import up to 10 Stats2Pitch Elite picks
+        run: node scripts/sync-stats2pitch-elite.mjs
