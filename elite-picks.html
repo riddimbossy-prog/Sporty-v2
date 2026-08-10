@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#08090d">
   <meta name="color-scheme" content="light dark">
   <script>try{const t=localStorage.getItem('sporty_theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t;const m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==='dark'?'#07090d':'#f2f4f8'}catch{}</script>
-  <meta name="description" content="Elite Picks combines independent public-tip consensus with market-specific statistical verification.">
+  <meta name="description" content="Elite Picks shows the strongest daily selections exported by the Stats2Pitch prediction engine.">
   <link rel="manifest" href="/manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -30,24 +30,24 @@
 <nav class="mobile-nav" aria-label="Mobile navigation"><a href="/"><b>⌂</b><span>Discover</span></a><a href="/marketplace.html"><b>▦</b><span>Codes</span></a><a class="active" href="/elite-picks.html"><b>◆</b><span>Elite</span></a><a href="/smart-board.html"><b>◈</b><span>Board</span></a><a href="/account.html"><b>●</b><span>Account</span></a></nav>
 <main class="shell">
   <section class="page-intro elite-intro">
-    <div><div class="eyebrow">Independent consensus + team statistics</div><h1>Elite Picks Intelligence.</h1><p class="lead">Most Added discovers the candidate. Venue-adjusted form, goal records, market history and competition context decide whether it deserves Elite status.</p></div>
-    <div class="elite-method-badge"><span>Dual verification</span><strong>Consensus + statistics</strong><small>Ranking score, not a probability</small></div>
+    <div><div class="eyebrow">Stats2Pitch verified selections</div><h1>Elite Picks Intelligence.</h1><p class="lead">Up to 10 daily selections are imported from Stats2Pitch after its split-stat, contradiction and market-safety checks. If fewer than 10 qualify, only the qualified picks are shown.</p></div>
+    <div class="elite-method-badge"><span>Daily engine feed</span><strong>Stats2Pitch → Elite</strong><small>Ranking score, not a probability</small></div>
   </section>
 
   <section class="stats-grid elite-stats" id="eliteStatsSection" hidden>
     <div class="stat-card"><span>Elite Strong</span><strong data-elite-stat="strong">0</strong></div>
     <div class="stat-card"><span>Elite Supported</span><strong data-elite-stat="supported">0</strong></div>
     <div class="stat-card"><span>Elite Watch</span><strong data-elite-stat="watch">0</strong></div>
-    <div class="stat-card"><span>Total candidates</span><strong data-elite-stat="total">0</strong></div>
+    <div class="stat-card"><span>Total picks</span><strong data-elite-stat="total">0</strong></div>
   </section>
 
   <section class="elite-policy">
     <strong>How Elite works</strong>
-    <p>Most Added supplies the candidate. Elite Strong requires high popularity, several independent booking codes, low opposition and strong statistical backing. Elite Supported passes the core checks. Elite Watch keeps promising candidates visible when evidence is still developing.</p>
+    <p>Stats2Pitch exports only its final one-pick-per-fixture board after safety rules are applied. High-contradiction and watchlist picks are excluded, and safer DNB or double-chance downgrades are preserved exactly when the engine chooses them.</p>
   </section>
 
   <section class="section elite-browser" id="eliteContent" hidden>
-    <div class="section-head"><div><div class="eyebrow">Statistically verified repeated tips</div><h2>Today’s Elite board</h2><p>Most Added candidates are graded by verified-code consensus, opposition, data quality and available team-stat evidence.</p></div></div>
+    <div class="section-head"><div><div class="eyebrow">Today’s Stats2Pitch selections</div><h2>Today’s Elite board</h2><p>The board can contain up to 10 picks. It never adds weaker selections just to fill a quota.</p></div></div>
     <div class="elite-toolbar">
       <div class="elite-tabs" role="tablist" aria-label="Elite classifications">
         <button class="active" type="button" data-elite-filter="all">All</button>
@@ -60,8 +60,8 @@
     <div class="elite-grid" id="eliteGrid"></div>
   </section>
 
-  <section class="section elite-loading" id="eliteLoading"><div class="loading-card"><span class="loading-spinner" aria-hidden="true"></span><strong>Checking Elite candidates…</strong><p>Comparing independent consensus with current team statistics.</p></div></section>
-  <section class="section" id="eliteEmpty" hidden><div class="empty-state"><div class="eyebrow">Elite engine active</div><h2>No qualified Elite Picks right now</h2><p>Most Added is still being analysed. Strong, Supported and Watch candidates will appear automatically when verified public slips are available.</p><a class="button secondary" href="/smart-board.html">Review Smart Board</a></div></section>
+  <section class="section elite-loading" id="eliteLoading"><div class="loading-card"><span class="loading-spinner" aria-hidden="true"></span><strong>Loading Stats2Pitch Elite picks…</strong><p>Checking today’s persisted Elite feed.</p></div></section>
+  <section class="section" id="eliteEmpty" hidden><div class="empty-state"><div class="eyebrow">Elite engine active</div><h2>No qualified Elite Picks right now</h2><p>Stats2Pitch has not exported a qualifying selection for this board yet. The page updates automatically after the next scheduled sync.</p><a class="button secondary" href="/smart-board.html">Review Smart Board</a></div></section>
 </main>
 
 <dialog class="elite-evidence-dialog" id="eliteEvidenceDialog">
@@ -84,7 +84,7 @@
 <script src="/src/market-board.js?v=21.7.3-p3" defer></script>
 <script src="/src/slip-builder.js?v=21.7.3-p3" defer></script>
 <script src="/src/custom-api-match.js?v=21.7.3-p3" defer></script>
-<script src="/src/intelligence.js?v=21.7.3-p3" defer></script>
+<script src="/src/elite-stats2pitch-bridge.js?v=21.7.4" defer></script>
 <script src="/src/elite.js?v=21.7.3-p3" defer></script>
 <script src="/src/pwa.js?v=21.7.3-p3" defer></script>
 <script src="/src/experience.js?v=21.7.3-p3" defer></script>
