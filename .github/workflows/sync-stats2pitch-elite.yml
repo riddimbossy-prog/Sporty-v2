@@ -33,7 +33,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
-      - run: npm ci --ignore-scripts
       - name: Import up to 10 Stats2Pitch Elite picks
         run: node scripts/sync-stats2pitch-elite.mjs
