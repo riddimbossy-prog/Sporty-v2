@@ -20,7 +20,8 @@ assert.match(elite,/if\(section\)section\.hidden=!rows\.length/,'empty homepage 
 assert.match(home,/href="\/elite-picks\.html"><b>◆<\/b><span>Elite<\/span>/,'mobile home navigation must include Elite');
 assert.match(page,/No qualified Elite Picks right now/,'direct Elite page must explain an empty board');
 assert.match(page,/styles\.css\?v=21\.7\.3/,'Elite page must load fresh styles');
-assert.match(page,/elite\.js\?v=21\.7\.4-p1/,'Elite page must cache-bust the Stats2Pitch renderer');
-assert.match(page,/elite-stats2pitch-bridge\.js\?v=21\.7\.4-p1/,'Elite page must cache-bust the Stats2Pitch bridge');
-assert.match(sw,/sporty-codes-v21\.7\.3-stats2pitch-p1/,'PWA cache must rotate without breaking legacy cache-family checks');
-console.log('v21.7.4 Stats2Pitch Elite cache checks passed');
+assert.match(page,/\/api\/elite-picks\?ts=/,'Elite page must bootstrap directly from the persisted Stats2Pitch API');
+assert.match(page,/elite\.js\?v=21\.7\.4-p2/,'Elite page must cache-bust the Stats2Pitch renderer');
+assert.match(page,/elite-stats2pitch-bridge\.js\?v=21\.7\.4-p2/,'Elite page must cache-bust the Stats2Pitch bridge');
+assert.match(sw,/sporty-codes-v21\.7\.3-stats2pitch-p1/,'PWA cache must remain in the current Stats2Pitch cache family');
+console.log('v21.7.4 Stats2Pitch Elite direct-feed cache checks passed');
