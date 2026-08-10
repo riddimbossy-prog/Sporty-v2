@@ -20,5 +20,7 @@ assert.match(elite,/if\(section\)section\.hidden=!rows\.length/,'empty homepage 
 assert.match(home,/href="\/elite-picks\.html"><b>◆<\/b><span>Elite<\/span>/,'mobile home navigation must include Elite');
 assert.match(page,/No qualified Elite Picks right now/,'direct Elite page must explain an empty board');
 assert.match(page,/styles\.css\?v=21\.7\.3/,'Elite page must load fresh styles');
-assert.match(sw,/sporty-codes-v21\.7\.3/,'PWA cache must be bumped');
-console.log('v21.7.3 persistent Elite navigation checks passed');
+assert.match(page,/elite\.js\?v=21\.7\.4-p1/,'Elite page must cache-bust the Stats2Pitch renderer');
+assert.match(page,/elite-stats2pitch-bridge\.js\?v=21\.7\.4-p1/,'Elite page must cache-bust the Stats2Pitch bridge');
+assert.match(sw,/sporty-codes-v21\.7\.4-stats2pitch-p1/,'PWA cache must be rotated for the Stats2Pitch Elite frontend');
+console.log('v21.7.4 Stats2Pitch Elite cache checks passed');
