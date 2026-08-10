@@ -1,4 +1,4 @@
-import { select } from './supabase.mjs';
+import { select, configured } from './supabase.mjs';
 import { text } from './core.mjs';
 
 const localDate=()=>new Intl.DateTimeFormat('en-CA',{timeZone:text(process.env.APP_TIMEZONE)||'Africa/Accra',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
@@ -38,6 +38,7 @@ function publicItem(row){
 }
 
 export async function getStats2PitchElite({date,limit=10}={}){
+  if(!configured())throw new Error('Elite database reader is not configured on the web service');
   const predictionDate=normalizeDate(date),safeLimit=Math.max(1,Math.min(10,Number(limit)||10));
   const rows=await select('sporty_elite_picks',{select:'*',source:'eq.stats2pitch',prediction_date:`eq.${predictionDate}`,status:'eq.upcoming',order:'engine_rating.desc.nullslast,family_count.desc.nullslast,kickoff.asc',limit:String(safeLimit)});
   const items=(Array.isArray(rows)?rows:[]).map(publicItem);
