@@ -13,6 +13,7 @@ const rate=new Map();
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp','.ico':'image/x-icon','.txt':'text/plain; charset=utf-8'};
 const routeFiles={'/':'index.html','/international':'international.html','/marketplace':'marketplace.html','/free-codes':'marketplace.html','/smart-board':'smart-board.html','/elite-picks':'elite-picks.html','/most-added':'most-added.html','/won-codes':'won-codes.html','/performance':'performance.html','/sources':'sources.html','/control-room':'control-room.html','/login':'login.html','/admin-login':'admin-login.html','/admin-users':'admin-users.html','/privacy':'privacy.html','/account':'account.html','/saved':'saved.html','/deployment-check':'deployment-check.html'};
 const legacyApiPaths=new Set(['/get_code_hub_codes','/get_booking','/get_upcoming_events','/search_matches','/get_fixture_stats']);
+const elitePagePaths=new Set(['/elite-picks','/elite-picks/','/elite-picks.html']);
 
 function clientIp(req){return text(req.headers['x-forwarded-for']).split(',')[0]||req.socket.remoteAddress||'unknown'}
 function isApiRequest(url){return url.pathname.startsWith('/api/')||legacyApiPaths.has(url.pathname)}
@@ -30,6 +31,7 @@ function send(res,result){res.writeHead(result.status,result.headers);res.end(re
 function auth(req){if(!adminToken)return false;const bearer=text(req.headers.authorization).replace(/^Bearer\s+/i,'');return bearer===adminToken||text(req.headers['x-admin-token'])===adminToken}
 async function body(req){let raw='';for await(const chunk of req){raw+=chunk;if(raw.length>1024*1024)throw new Error('Request body too large')}if(!raw)return{};try{return JSON.parse(raw)}catch{throw new Error('Invalid JSON body')}}
 function securityHeaders(extra={}){return{'x-content-type-options':'nosniff','x-frame-options':'DENY','referrer-policy':'strict-origin-when-cross-origin','permissions-policy':'geolocation=(), microphone=(), camera=()','cross-origin-resource-policy':'same-origin',...extra}}
+function safeScriptJson(value){return JSON.stringify(value).replace(/[<>&\u2028\u2029]/g,char=>({'<':'\\u003c','>':'\\u003e','&':'\\u0026','\u2028':'\\u2028','\u2029':'\\u2029'}[char]||char))}
 
 async function api(req,url){
   const path=url.pathname.replace(/^\/api/,'');
@@ -70,6 +72,15 @@ async function staticFile(urlPath){
   let relative=routeFiles[urlPath]||urlPath.replace(/^\//,'');if(!relative)relative='index.html';relative=normalize(relative).replace(/^(\.\.(\/|\\|$))+/,'');let path=join(root,relative);
   try{const info=await stat(path);if(info.isDirectory())path=join(path,'index.html');const data=await readFile(path);return{status:200,headers:securityHeaders({'content-type':mime[extname(path)]||'application/octet-stream','cache-control':cacheControl(path)}),body:data}}catch{const data=await readFile(join(root,'404.html')).catch(()=>Buffer.from('Not found'));return{status:404,headers:securityHeaders({'content-type':'text/html; charset=utf-8'}),body:data}}
 }
+async function elitePage(){
+  const base=await staticFile('/elite-picks');
+  if(base.status!==200)return base;
+  let payload={source:'stats2pitch',count:0,max:10,items:[]};
+  try{payload=await getStats2PitchElite({limit:10})}catch(error){console.error('[elite-page]',publicError(error))}
+  const bootstrap=`<script>window.__SPORTY_ELITE_BOOTSTRAP__=${safeScriptJson(payload)};</script>`;
+  const html=base.body.toString('utf8').replace('<!--STATS2PITCH_ELITE_BOOTSTRAP-->',bootstrap);
+  return{...base,headers:{...base.headers,'cache-control':'no-cache, no-store, must-revalidate'},body:Buffer.from(html)};
+}
 
 const server=http.createServer(async(req,res)=>{
   const url=new URL(req.url||'/',`http://${req.headers.host||'localhost'}`);
@@ -79,6 +90,7 @@ const server=http.createServer(async(req,res)=>{
       if(url.pathname!=='/api/health'&&!allowApi(req)){send(res,tooManyRequests());return}
       const result=await api(req,url);result.headers={...securityHeaders(),...result.headers};send(res,result);return
     }
+    if(req.method==='GET'&&elitePagePaths.has(url.pathname)){send(res,await elitePage());return}
     if(url.pathname==='/config.js'){send(res,{status:200,headers:securityHeaders({'content-type':'text/javascript; charset=utf-8','cache-control':'no-cache, no-store, must-revalidate'}),body:runtimeConfig()});return}
     send(res,await staticFile(url.pathname));
   }catch(error){console.error('[server]',publicError(error));send(res,json({error:publicError(error)},500,securityHeaders()))}
