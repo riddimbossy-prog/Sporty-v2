@@ -7,6 +7,7 @@ const experience=read('src/experience.js');
 const elite=read('src/elite.js');
 const home=read('index.html');
 const page=read('elite-picks.html');
+const server=read('server/index.mjs');
 const sw=read('service-worker.js');
 
 assert.match(css,/\[hidden\]\{display:none!important\}/,'native hidden must continue to hide empty homepage sections');
@@ -20,8 +21,12 @@ assert.match(elite,/if\(section\)section\.hidden=!rows\.length/,'empty homepage 
 assert.match(home,/href="\/elite-picks\.html"><b>◆<\/b><span>Elite<\/span>/,'mobile home navigation must include Elite');
 assert.match(page,/No qualified Elite Picks right now/,'direct Elite page must explain an empty board');
 assert.match(page,/styles\.css\?v=21\.7\.3/,'Elite page must load fresh styles');
-assert.match(page,/\/api\/elite-picks\?ts=/,'Elite page must bootstrap directly from the persisted Stats2Pitch API');
-assert.match(page,/elite\.js\?v=21\.7\.4-p2/,'Elite page must cache-bust the Stats2Pitch renderer');
-assert.match(page,/elite-stats2pitch-bridge\.js\?v=21\.7\.4-p2/,'Elite page must cache-bust the Stats2Pitch bridge');
+assert.match(page,/STATS2PITCH_ELITE_BOOTSTRAP/,'Elite page must expose a server bootstrap insertion point');
+assert.match(page,/__SPORTY_ELITE_BOOTSTRAP__/,'Elite loader must prefer the server-embedded payload');
+assert.match(page,/\/api\/elite-picks\?ts=/,'Elite page must retain a direct API fallback');
+assert.match(page,/elite\.js\?v=21\.7\.4-p3/,'Elite page must cache-bust the server-first renderer');
+assert.doesNotMatch(page,/elite-stats2pitch-bridge\.js/,'Elite page must not load a second bridge that can overwrite the server-first loader');
+assert.match(server,/elitePagePaths/,'server must intercept Elite page requests');
+assert.match(server,/__SPORTY_ELITE_BOOTSTRAP__/,'server must embed the persisted Stats2Pitch Elite payload in the HTML response');
 assert.match(sw,/sporty-codes-v21\.7\.3-stats2pitch-p1/,'PWA cache must remain in the current Stats2Pitch cache family');
-console.log('v21.7.4 Stats2Pitch Elite direct-feed cache checks passed');
+console.log('v21.7.4 Stats2Pitch Elite server-first checks passed');
