@@ -59,6 +59,28 @@
     return (parts.length?parts:[raw]).slice(0,5);
   }
 
+  function slipKey(item){
+    return text(item.id)||[text(item.kickoff).slice(0,10),matchContext(item).toLowerCase(),text(item.market).toLowerCase(),text(item.pick).toLowerCase()].join('|');
+  }
+
+  function slipItem(item){
+    if(!item)return null;
+    const fixture=matchContext(item)||`${text(item.league)||'Stats2Pitch'} — Elite pick`;
+    return{
+      id:slipKey(item),
+      fixture,
+      market:marketLabel(item),
+      pick:predictionText(item),
+      odds:num(item.average_odds)||0,
+      kickoff:item.kickoff||null,
+      league:text(item.league),
+      tier:`Elite ${classLabel(item)}`,
+      popularity:score(item),
+      appearances:1,
+      sources:1
+    };
+  }
+
   function visibleItems(){
     const q=state.search.toLowerCase();
     return state.items.filter(item=>{
@@ -86,6 +108,7 @@
     const context=matchContext(item);
     const reasons=reasonPoints(item).map(point=>`<li>${esc(point)}</li>`).join('');
     const strong=text(item.classification)==='elite_strong';
+    const key=slipKey(item);
     return `<article class="elite-v2-card ${className(item)}" data-market-bucket="${bucket(item)}">
       <div class="elite-v2-card-head">
         <div class="elite-v2-context">
@@ -110,6 +133,12 @@
         <span class="elite-v2-tag agreement">${agreement(item)}</span>
       </div>
 
+      <div class="elite-v2-card-actions">
+        <button class="elite-v2-add-slip" type="button" data-elite-slip-add="${esc(key)}" data-slip-add-key="${esc(key)}" aria-pressed="false">
+          <span class="elite-v2-add-plus" aria-hidden="true">＋</span><span data-add-label>Add to prediction slip</span>
+        </button>
+      </div>
+
       <details class="elite-v2-why">
         <summary>Why this pick</summary>
         <ul class="elite-v2-reasons">${reasons}</ul>
@@ -117,6 +146,23 @@
 
       <div class="elite-v2-card-foot"><span>Stats2Pitch verified</span><span>#${String(index+1).padStart(2,'0')}</span></div>
     </article>`;
+  }
+
+  function syncSlipUi(){
+    const api=window.SportySlip;
+    const launcher=$('#eliteV2OpenSlip');
+    const count=api?.count?.()||0;
+    const countNode=$('#eliteV2SlipCount');if(countNode)countNode.textContent=String(count);
+    if(launcher)launcher.setAttribute('aria-label',count?`Open prediction slip with ${count} selection${count===1?'':'s'}`:'Create prediction slip');
+    document.querySelectorAll('[data-elite-slip-add]').forEach(button=>{
+      const key=text(button.dataset.eliteSlipAdd);
+      const item=state.items.find(row=>slipKey(row)===key);
+      const added=Boolean(item&&api?.has?.(slipItem(item)));
+      button.classList.toggle('is-added',added);
+      button.setAttribute('aria-pressed',String(added));
+      const label=button.querySelector('[data-add-label]');if(label)label.textContent=added?'In prediction slip':'Add to prediction slip';
+      const plus=button.querySelector('.elite-v2-add-plus');if(plus)plus.textContent=added?'✓':'＋';
+    });
   }
 
   function render(){
@@ -131,6 +177,7 @@
     const rows=visibleItems();
     grid.innerHTML=rows.length?rows.map(card).join(''):`<div class="elite-v2-state"><h2>No picks match this view</h2><p>Change the market filter or search term to see today’s available selections.</p></div>`;
     const count=$('#eliteV2VisibleCount');if(count)count.textContent=`${rows.length} of ${state.items.length} picks`;
+    syncSlipUi();
   }
 
   async function fetchFeed({force=false}={}){
@@ -158,6 +205,20 @@
     }));
     const search=$('#eliteV2Search');if(search)search.addEventListener('input',()=>{state.search=text(search.value);render()});
     const refresh=$('#eliteV2Refresh');if(refresh)refresh.addEventListener('click',async()=>{refresh.disabled=true;refresh.textContent='Refreshing…';await fetchFeed({force:true});refresh.disabled=false;refresh.textContent='Refresh picks'});
+    const launcher=$('#eliteV2OpenSlip');if(launcher)launcher.addEventListener('click',()=>window.SportySlip?.open?.());
+    const grid=$('#eliteV2Grid');if(grid)grid.addEventListener('click',event=>{
+      const button=event.target.closest?.('[data-elite-slip-add]');
+      if(!button)return;
+      const key=text(button.dataset.eliteSlipAdd);
+      const item=state.items.find(row=>slipKey(row)===key);
+      const payload=slipItem(item);
+      if(!payload||!window.SportySlip)return;
+      if(window.SportySlip.has(payload))window.SportySlip.open();
+      else window.SportySlip.add(payload,button);
+      syncSlipUi();
+    });
+    document.addEventListener('sporty:slip-updated',syncSlipUi);
+    document.addEventListener('DOMContentLoaded',()=>setTimeout(syncSlipUi,0),{once:true});
   }
 
   bind();fetchFeed();
