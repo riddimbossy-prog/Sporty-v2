@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/styles.css?v=21.7.3">
   <link rel="stylesheet" href="/responsive.css?v=21.7.3-p3">
   <link rel="stylesheet" href="/pwa.css?v=21.7.3-p3">
-  <link rel="stylesheet" href="/elite-board-v2.css?v=22.1.1">
+  <link rel="stylesheet" href="/elite-board-v2.css?v=22.2.0">
   <title>Elite Picks — sporty.codes</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 </head>
@@ -31,7 +31,7 @@
       <div class="elite-v2-hero-copy">
         <div class="elite-v2-kicker"><span class="elite-v2-kicker-dot"></span>Sporty.codes × Stats2Pitch</div>
         <h1>Elite Picks.</h1>
-        <p>Today’s strongest Stats2Pitch selections — with the prediction, market and reference price shown first. Open “Why this pick” only when you want the engine reasoning.</p>
+        <p>Today’s strongest Stats2Pitch selections — with the prediction, market and reference price shown first. Add the picks you want to a prediction slip and share it in the same branded format as Smart Board.</p>
       </div>
       <div class="elite-v2-feed-status">
         <span class="elite-v2-feed-dot" aria-hidden="true"></span>
@@ -41,6 +41,7 @@
         <span class="elite-v2-pill"><strong id="eliteV2BoardDate">Today</strong></span>
         <span class="elite-v2-pill" id="eliteV2Updated">Fresh daily feed</span>
         <span class="elite-v2-pill">Up to <strong>10 picks</strong></span>
+        <button class="elite-v2-slip-launch" id="eliteV2OpenSlip" type="button" aria-label="Create prediction slip">Create prediction slip <span class="elite-v2-slip-count" id="eliteV2SlipCount">0</span></button>
       </div>
     </div>
   </section>
@@ -73,16 +74,18 @@
 </main>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<footer class="footer"><span class="footer-brand"><img src="/assets/logo-mark.webp" width="30" height="30" alt="" loading="lazy" decoding="async">sporty.codes</span><span>Statistical discovery tools. 18+ only. Use responsibly.</span></footer>
+<footer class="footer"><span class="footer-brand"><img src="/assets/logo-mark.webp" width="30" height="30" alt="" loading="lazy" decoding="async">sporty.codes</span><span>Prediction planning only. No real-money stake is processed.</span></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
 <script src="/config.js?v=21.7.3-p3" defer></script>
 <script src="/src/region.js?v=21.7.3-p3" defer></script>
 <script src="/src/auth.js?v=21.7.3-p3" defer></script>
 <script src="/src/saved.js?v=21.7.3-p3" defer></script>
+<script src="/src/mvp.js?v=21.7.3-p3" defer></script>
+<script src="/src/share.js?v=21.7.3-p3" defer></script>
 <script src="/src/slip-builder.js?v=21.7.3-p3" defer></script>
 <!--STATS2PITCH_ELITE_BOOTSTRAP-->
-<script src="/src/elite-board-v2.js?v=22.1.0" defer></script>
+<script src="/src/elite-board-v2.js?v=22.2.0" defer></script>
 <script src="/src/pwa.js?v=21.7.4-p4" defer></script>
 </body>
 </html>
