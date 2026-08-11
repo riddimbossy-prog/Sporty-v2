@@ -129,6 +129,16 @@
   function removeItem(id){state.items=state.items.filter(item=>item.id!==id);persist();render();document.dispatchEvent(new CustomEvent('sporty:slip-updated',{detail:{items:[...state.items]}}))}
   function clear(){if(!state.items.length)return;state.items=[];persist();render();document.dispatchEvent(new CustomEvent('sporty:slip-updated',{detail:{items:[]}}));toast('Prediction slip cleared.')}
   function has(raw){const item=normalize(raw);return Boolean(item&&state.items.some(row=>row.id===item.id))}
+  function sync(raw){
+    const item=normalize(raw);if(!item)return false;
+    const index=state.items.findIndex(row=>row.id===item.id);if(index<0)return false;
+    const current=state.items[index];
+    const fields=['fixture','market','pick','odds','kickoff','league','tier','popularity','appearances','sources'];
+    if(!fields.some(field=>current[field]!==item[field]))return false;
+    state.items[index]=item;persist();render();
+    document.dispatchEvent(new CustomEvent('sporty:slip-updated',{detail:{items:[...state.items]}}));
+    return true;
+  }
   function count(){return state.items.length}
 
   function save(){
@@ -224,6 +234,6 @@
   }
 
   function init(){load();build();render()}
-  window.SportySlip={add,remove:removeItem,clear,open,close,toggle,has,count,getState:()=>({items:[...state.items],practicePoints:state.practicePoints,totalOdds:combinedOdds(),projectedPoints:projectedPoints()})};
+  window.SportySlip={add,remove:removeItem,clear,open,close,toggle,has,sync,count,getState:()=>({items:[...state.items],practicePoints:state.practicePoints,totalOdds:combinedOdds(),projectedPoints:projectedPoints()})};
   document.addEventListener('DOMContentLoaded',init);
 })();
