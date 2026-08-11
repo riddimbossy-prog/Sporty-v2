@@ -5,9 +5,10 @@
   const $=selector=>document.querySelector(selector);
   const text=value=>String(value??'').trim();
   const num=value=>{const n=Number(value);return Number.isFinite(n)?n:null};
-  const esc=value=>text(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  const esc=value=>text(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[ch]));
   const localDate=value=>{if(!value)return'Time TBC';const d=new Date(value);return Number.isFinite(d.getTime())?d.toLocaleString([], {weekday:'short',hour:'2-digit',minute:'2-digit'}):'Time TBC'};
   const dateOnly=value=>{if(!value)return'Today';const d=new Date(value);return Number.isFinite(d.getTime())?d.toLocaleDateString([], {year:'numeric',month:'short',day:'numeric'}):text(value)};
+  const usableFixture=value=>{const fixture=text(value);return fixture&&!/^(fixture|match)$/i.test(fixture)?fixture:''};
 
   function bucket(item){
     const market=text(item.market).toLowerCase();
@@ -23,8 +24,8 @@
   function score(item){return Math.round(num(item.elite_score)??num(item.engine_rating)??70)}
 
   function matchContext(item){
-    const fixture=text(item.fixture);
-    if(fixture&&!/^(fixture|match)$/i.test(fixture))return fixture;
+    const fixture=usableFixture(item.fixture);if(fixture)return fixture;
+    const slipFixture=usableFixture(item.slip_item?.fixture);if(slipFixture)return slipFixture;
     const home=text(item.home_team),away=text(item.away_team);
     return home&&away?`${home} vs ${away}`:'';
   }
@@ -111,12 +112,11 @@
     const key=slipKey(item);
     return `<article class="elite-v2-card ${className(item)}" data-market-bucket="${bucket(item)}">
       <div class="elite-v2-card-head">
-        <div class="elite-v2-context">
-          <div class="elite-v2-league">${esc(item.league||'Competition')}</div>
-          ${context?`<div class="elite-v2-fixture-context">${esc(context)}</div>`:''}
-        </div>
+        <div class="elite-v2-context"><div class="elite-v2-league">${esc(item.league||'Competition')}</div></div>
         <div class="elite-v2-kickoff">${esc(localDate(item.kickoff))}</div>
       </div>
+
+      ${context?`<div class="elite-v2-matchup"><span>Matchup</span><strong>${esc(context)}</strong></div>`:''}
 
       <div class="elite-v2-pick-block">
         <div class="elite-v2-pick-label">Today’s pick</div>
@@ -157,7 +157,9 @@
     document.querySelectorAll('[data-elite-slip-add]').forEach(button=>{
       const key=text(button.dataset.eliteSlipAdd);
       const item=state.items.find(row=>slipKey(row)===key);
-      const added=Boolean(item&&api?.has?.(slipItem(item)));
+      const payload=slipItem(item);
+      if(payload&&api?.has?.(payload))api?.sync?.(payload);
+      const added=Boolean(payload&&api?.has?.(payload));
       button.classList.toggle('is-added',added);
       button.setAttribute('aria-pressed',String(added));
       const label=button.querySelector('[data-add-label]');if(label)label.textContent=added?'In prediction slip':'Add to prediction slip';
@@ -213,7 +215,7 @@
       const item=state.items.find(row=>slipKey(row)===key);
       const payload=slipItem(item);
       if(!payload||!window.SportySlip)return;
-      if(window.SportySlip.has(payload))window.SportySlip.open();
+      if(window.SportySlip.has(payload)){window.SportySlip.sync?.(payload);window.SportySlip.open()}
       else window.SportySlip.add(payload,button);
       syncSlipUi();
     });
