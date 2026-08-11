@@ -1,0 +1,86 @@
+/* Elite Picks share-dialog fit fix.
+   The generated share card stays 1080x1350 (4:5); this file only fixes
+   how that complete image is previewed inside short desktop/mobile viewports. */
+body[data-page="elite-v2"] .share-dialog-shell{
+  position:fixed;
+  inset:0;
+  z-index:20000;
+  display:grid;
+  place-items:center;
+  padding:clamp(10px,2vw,22px);
+  overflow:auto;
+}
+body[data-page="elite-v2"] .share-dialog-shell[hidden]{display:none!important}
+body[data-page="elite-v2"] .share-dialog-backdrop{position:fixed;inset:0}
+body[data-page="elite-v2"] .share-dialog{
+  position:relative;
+  width:min(1100px,calc(100vw - 24px));
+  max-height:calc(100dvh - 24px);
+  overflow:auto;
+  overscroll-behavior:contain;
+}
+body[data-page="elite-v2"] .share-dialog-head{padding-right:58px}
+body[data-page="elite-v2"] .share-dialog-body{
+  display:grid;
+  grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr);
+  gap:18px;
+  align-items:start;
+  min-height:0;
+}
+body[data-page="elite-v2"] .share-dialog-preview-wrap{
+  display:grid;
+  place-items:center;
+  min-width:0;
+  min-height:0;
+  max-height:calc(100dvh - 190px);
+  padding:14px;
+  overflow:auto;
+  overscroll-behavior:contain;
+}
+body[data-page="elite-v2"] .share-dialog-preview{
+  display:block!important;
+  width:auto!important;
+  height:auto!important;
+  max-width:100%!important;
+  max-height:calc(100dvh - 220px)!important;
+  aspect-ratio:auto!important;
+  object-fit:contain!important;
+  object-position:center top!important;
+  margin:auto;
+}
+body[data-page="elite-v2"] .share-dialog-preview[hidden]{display:none!important}
+body[data-page="elite-v2"] .share-dialog-controls{
+  min-width:0;
+  align-self:start;
+}
+
+/* Short desktop/laptop screens: prioritize seeing the whole 4:5 card. */
+@media(min-width:761px) and (max-height:720px){
+  body[data-page="elite-v2"] .share-dialog{width:min(1040px,calc(100vw - 20px));max-height:calc(100dvh - 16px)}
+  body[data-page="elite-v2"] .share-dialog-body{grid-template-columns:minmax(0,1.15fr) minmax(270px,.85fr);gap:14px}
+  body[data-page="elite-v2"] .share-dialog-preview-wrap{max-height:calc(100dvh - 160px);padding:10px}
+  body[data-page="elite-v2"] .share-dialog-preview{max-height:calc(100dvh - 182px)!important}
+  body[data-page="elite-v2"] .share-dialog-note{margin-bottom:0}
+}
+
+/* Phones, folded devices and tablets: stack preview and controls and let the
+   dialog scroll instead of cropping either section. */
+@media(max-width:760px){
+  body[data-page="elite-v2"] .share-dialog-shell{place-items:end center;padding:8px}
+  body[data-page="elite-v2"] .share-dialog{
+    width:100%;
+    max-height:calc(100dvh - 8px);
+    border-radius:22px 22px 12px 12px;
+  }
+  body[data-page="elite-v2"] .share-dialog-body{grid-template-columns:1fr;gap:12px}
+  body[data-page="elite-v2"] .share-dialog-preview-wrap{max-height:54dvh;padding:10px}
+  body[data-page="elite-v2"] .share-dialog-preview{max-height:calc(54dvh - 20px)!important;max-width:min(100%,430px)!important}
+  body[data-page="elite-v2"] .share-dialog-controls{position:static;width:100%}
+  body[data-page="elite-v2"] .share-dialog-actions{grid-template-columns:1fr 1fr}
+}
+
+@media(max-width:480px){
+  body[data-page="elite-v2"] .share-dialog-preview-wrap{max-height:46dvh}
+  body[data-page="elite-v2"] .share-dialog-preview{max-height:calc(46dvh - 16px)!important}
+  body[data-page="elite-v2"] .share-dialog-actions{grid-template-columns:1fr}
+}
