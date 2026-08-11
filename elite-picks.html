@@ -5,109 +5,82 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#08090d">
   <meta name="color-scheme" content="light dark">
-  <script>try{const t=localStorage.getItem('sporty_theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t;const m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==='dark'?'#07090d':'#f2f4f8'}catch{}</script>
-  <meta name="description" content="Elite Picks shows the strongest daily selections exported by the Stats2Pitch prediction engine.">
+  <meta name="description" content="Elite Board shows the strongest daily Stats2Pitch selections on sporty.codes.">
+  <script>try{const t=localStorage.getItem('sporty_theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t}catch{}</script>
   <link rel="manifest" href="/manifest.json">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="sporty.codes">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="alternate icon" href="/favicon.ico">
   <link rel="apple-touch-icon" href="/icons/icon-180.png">
   <link rel="stylesheet" href="/styles.css?v=21.7.3">
   <link rel="stylesheet" href="/responsive.css?v=21.7.3-p3">
   <link rel="stylesheet" href="/pwa.css?v=21.7.3-p3">
-  <title>Elite Picks — sporty.codes</title>
+  <link rel="stylesheet" href="/elite-board-v2.css?v=22.0.0">
+  <title>Elite Board — sporty.codes</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-  <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
 </head>
-<body data-page="elite">
+<body data-page="elite-v2">
 <header class="topbar">
   <a class="brand" href="/" aria-label="sporty.codes home"><img class="brand-logo brand-logo-dark" src="/assets/logo-wordmark-dark.webp" width="180" height="40" alt="sporty.codes" decoding="async" fetchpriority="high"><img class="brand-logo brand-logo-light" src="/assets/logo-wordmark-light.webp" width="180" height="40" alt="sporty.codes" decoding="async" fetchpriority="high"></a>
   <nav class="desktop-nav" aria-label="Main navigation"><a class="nav-link" href="/">Discover</a><a class="nav-link" href="/marketplace.html">Free Codes</a><a class="nav-link" href="/smart-board.html">Smart Board</a><a class="nav-link active" href="/elite-picks.html">Elite Picks</a><a class="nav-link" href="/saved.html">Saved</a><a class="nav-link" href="/performance.html">Performance</a><a class="nav-link" href="/won-codes.html">Results</a></nav>
   <div class="top-actions"><a class="account-button" data-auth-link href="/login.html">Sign in</a><button class="install-button" id="installButton" type="button">Install</button><button class="icon-button" id="themeButton" type="button" aria-label="Change theme">☾</button></div>
 </header>
 <nav class="mobile-nav" aria-label="Mobile navigation"><a href="/"><b>⌂</b><span>Discover</span></a><a href="/marketplace.html"><b>▦</b><span>Codes</span></a><a class="active" href="/elite-picks.html"><b>◆</b><span>Elite</span></a><a href="/smart-board.html"><b>◈</b><span>Board</span></a><a href="/account.html"><b>●</b><span>Account</span></a></nav>
-<main class="shell">
-  <section class="page-intro elite-intro">
-    <div><div class="eyebrow">Stats2Pitch verified selections</div><h1>Elite Picks Intelligence.</h1><p class="lead">Up to 10 daily selections are imported from Stats2Pitch after its split-stat, contradiction and market-safety checks. If fewer than 10 qualify, only the qualified picks are shown.</p></div>
-    <div class="elite-method-badge"><span>Daily engine feed</span><strong>Stats2Pitch → Elite</strong><small>Ranking score, not a probability</small></div>
-  </section>
 
-  <section class="stats-grid elite-stats" id="eliteStatsSection" hidden>
-    <div class="stat-card"><span>Elite Strong</span><strong data-elite-stat="strong">0</strong></div>
-    <div class="stat-card"><span>Elite Supported</span><strong data-elite-stat="supported">0</strong></div>
-    <div class="stat-card"><span>Elite Watch</span><strong data-elite-stat="watch">0</strong></div>
-    <div class="stat-card"><span>Total picks</span><strong data-elite-stat="total">0</strong></div>
-  </section>
-
-  <section class="elite-policy">
-    <strong>How Elite works</strong>
-    <p>Stats2Pitch exports only its final one-pick-per-fixture board after safety rules are applied. High-contradiction and watchlist picks are excluded, and safer DNB or double-chance downgrades are preserved exactly when the engine chooses them.</p>
-  </section>
-
-  <section class="section elite-browser" id="eliteContent" hidden>
-    <div class="section-head"><div><div class="eyebrow">Today’s Stats2Pitch selections</div><h2>Today’s Elite board</h2><p>The board can contain up to 10 picks. It never adds weaker selections just to fill a quota.</p></div></div>
-    <div class="elite-toolbar">
-      <div class="elite-tabs" role="tablist" aria-label="Elite classifications">
-        <button class="active" type="button" data-elite-filter="all">All</button>
-        <button type="button" data-elite-filter="elite_strong">Elite Strong</button>
-        <button type="button" data-elite-filter="elite_supported">Elite Supported</button>
-        <button type="button" data-elite-filter="elite_watch">Elite Watch</button>
+<main class="elite-v2-shell">
+  <section class="elite-v2-hero">
+    <div class="elite-v2-hero-main">
+      <div class="elite-v2-kicker"><span class="elite-v2-kicker-dot"></span>Stats2Pitch daily selections</div>
+      <h1>Elite Board.</h1>
+      <p>A clean daily board containing only the selections Stats2Pitch has already passed through its split-stat, contradiction and market-safety rules. The board can show fewer than 10 picks when fewer qualify.</p>
+      <div class="elite-v2-hero-actions">
+        <span class="elite-v2-pill"><strong id="eliteV2BoardDate">Today</strong> board</span>
+        <span class="elite-v2-pill" id="eliteV2Updated">Fresh daily feed</span>
+        <span class="elite-v2-pill">Maximum <strong>10 picks</strong></span>
       </div>
-      <label class="elite-search">Search<input id="eliteSearch" type="search" placeholder="Fixture, market, selection or league"></label>
     </div>
-    <div class="elite-grid" id="eliteGrid"></div>
+    <aside class="elite-v2-feed-card">
+      <div><small>Daily engine feed</small><h2>Stats2Pitch → Elite</h2><p>No community-consensus mixing. No filler selections. Only the persisted Stats2Pitch daily feed.</p></div>
+      <div class="elite-v2-live"><i></i><span>Feed connected</span></div>
+    </aside>
   </section>
 
-  <section class="section elite-loading" id="eliteLoading"><div class="loading-card"><span class="loading-spinner" aria-hidden="true"></span><strong>Loading Stats2Pitch Elite picks…</strong><p>Checking today’s persisted Elite feed.</p></div></section>
-  <section class="section" id="eliteEmpty" hidden><div class="empty-state"><div class="eyebrow">Elite engine active</div><h2>No qualified Elite Picks right now</h2><p>Stats2Pitch has not exported a qualifying selection for this board yet. The page updates automatically after the next scheduled sync.</p><a class="button secondary" href="/smart-board.html">Review Smart Board</a></div></section>
+  <section class="elite-v2-stats" aria-label="Elite Board summary">
+    <div class="elite-v2-stat"><span>Total picks</span><strong data-elite-v2-stat="total">0</strong><small>Up to 10 daily</small></div>
+    <div class="elite-v2-stat"><span>Elite Strong</span><strong data-elite-v2-stat="strong">0</strong><small>Highest-ranked group</small></div>
+    <div class="elite-v2-stat"><span>Market groups</span><strong data-elite-v2-stat="markets">0</strong><small>Across today’s board</small></div>
+    <div class="elite-v2-stat"><span>Average score</span><strong data-elite-v2-stat="average">—</strong><small>Ranking score</small></div>
+  </section>
+
+  <section class="elite-v2-panel" id="eliteV2Content" hidden>
+    <div class="elite-v2-toolbar">
+      <div class="elite-v2-tabs" role="tablist" aria-label="Filter Elite Board by market">
+        <button class="elite-v2-tab is-active" type="button" data-elite-v2-filter="all">All</button>
+        <button class="elite-v2-tab" type="button" data-elite-v2-filter="result">1X2</button>
+        <button class="elite-v2-tab" type="button" data-elite-v2-filter="safety">DNB / DC</button>
+        <button class="elite-v2-tab" type="button" data-elite-v2-filter="btts">BTTS</button>
+        <button class="elite-v2-tab" type="button" data-elite-v2-filter="goals">Goals</button>
+      </div>
+      <label class="elite-v2-search"><span class="sr-only">Search Elite Board</span><input id="eliteV2Search" type="search" placeholder="Search team, league, market…" autocomplete="off"></label>
+    </div>
+    <div class="elite-v2-status"><strong id="eliteV2VisibleCount">0 picks</strong><button class="elite-v2-refresh" id="eliteV2Refresh" type="button">Refresh feed</button></div>
+  </section>
+
+  <section class="elite-v2-state" id="eliteV2Loading"><div class="elite-v2-spinner" aria-hidden="true"></div><h2>Loading today’s Elite Board</h2><p>Reading the current persisted Stats2Pitch selections.</p></section>
+  <section class="elite-v2-state" id="eliteV2Error" hidden><div class="elite-v2-kicker" style="justify-content:center">Feed unavailable</div><h2>Elite Board could not load</h2><p id="eliteV2ErrorMessage">Please refresh the feed.</p></section>
+  <section class="elite-v2-state" id="eliteV2Empty" hidden><div class="elite-v2-kicker" style="justify-content:center">Engine active</div><h2>No qualified picks for this board</h2><p>Stats2Pitch has not published a qualifying selection for today yet. The page will show picks automatically after the next successful daily sync.</p></section>
+  <section class="elite-v2-grid" id="eliteV2Grid" aria-live="polite"></section>
 </main>
 
-<dialog class="elite-evidence-dialog" id="eliteEvidenceDialog">
-  <div class="elite-dialog-head"><div><span class="eyebrow">Verification evidence</span><h2 id="eliteEvidenceTitle">Elite evidence</h2><p id="eliteEvidencePick"></p></div><button class="icon-button" id="closeEliteEvidence" type="button" aria-label="Close evidence">×</button></div>
-  <div class="elite-evidence-grid" id="eliteEvidenceGrid"></div>
-  <p class="elite-evidence-reason" id="eliteEvidenceReason"></p>
-  <small id="eliteEvidenceUpdated"></small>
-  <p class="elite-dialog-note">Elite Score is a ranking score. It is not a guaranteed outcome or a stated chance of winning. 18+ only.</p>
-</dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<footer class="footer"><span class="footer-brand"><img src="/assets/logo-mark.webp" width="30" height="30" alt="" loading="lazy" decoding="async" fetchpriority="low">sporty.codes</span><span>Statistical discovery tools for public codes. 18+ only. Use responsibly.</span></footer>
+<footer class="footer"><span class="footer-brand"><img src="/assets/logo-mark.webp" width="30" height="30" alt="" loading="lazy" decoding="async">sporty.codes</span><span>Statistical discovery tools. 18+ only. Use responsibly.</span></footer>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
 <script src="/config.js?v=21.7.3-p3" defer></script>
 <script src="/src/region.js?v=21.7.3-p3" defer></script>
 <script src="/src/auth.js?v=21.7.3-p3" defer></script>
 <script src="/src/saved.js?v=21.7.3-p3" defer></script>
-<script src="/src/handoff.js?v=21.7.3-p3" defer></script>
-<script src="/src/share.js?v=21.7.3-p3" defer></script>
-<script src="/src/mvp.js?v=21.7.3-p3" defer></script>
-<script src="/src/market-board.js?v=21.7.3-p3" defer></script>
 <script src="/src/slip-builder.js?v=21.7.3-p3" defer></script>
-<script src="/src/custom-api-match.js?v=21.7.3-p3" defer></script>
 <!--STATS2PITCH_ELITE_BOOTSTRAP-->
-<script>
-  window.SportyEliteAvailability={
-    source:'stats2pitch-server-first',
-    loadData:async()=>{
-      const embedded=window.__SPORTY_ELITE_BOOTSTRAP__;
-      if(Array.isArray(embedded?.items)&&embedded.items.length>0)return embedded;
-      try{
-        const response=await fetch(`/api/elite-picks?ts=${Date.now()}`,{cache:'no-store',headers:{Accept:'application/json'}});
-        if(!response.ok)throw new Error(`Stats2Pitch Elite feed unavailable (${response.status})`);
-        const data=await response.json();
-        window.__SPORTY_ELITE_LAST_PAYLOAD__=data;
-        if(Array.isArray(data?.items))return data;
-      }catch(error){
-        console.warn('[elite] live API retry failed',error);
-      }
-      if(Array.isArray(embedded?.items))return embedded;
-      return{source:'stats2pitch',count:0,max:10,items:[]};
-    },
-    usableItems:data=>Array.isArray(data?.items)?data.items.slice(0,10):[]
-  };
-</script>
-<script src="/src/elite.js?v=21.7.4-p4" defer></script>
+<script src="/src/elite-board-v2.js?v=22.0.0" defer></script>
 <script src="/src/pwa.js?v=21.7.4-p4" defer></script>
-<script src="/src/experience.js?v=21.7.3-p3" defer></script>
 </body>
 </html>
