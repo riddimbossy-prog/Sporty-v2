@@ -1,18 +1,86 @@
 import { select, configured } from './supabase.mjs';
-import { text } from './core.mjs';
+import { text, canonical } from './core.mjs';
+import { getUpcomingEvents } from './data-service.mjs';
 
 const localDate=()=>new Intl.DateTimeFormat('en-CA',{timeZone:text(process.env.APP_TIMEZONE)||'Africa/Accra',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 const normalizeDate=value=>/^\d{4}-\d{2}-\d{2}$/.test(text(value))?text(value):localDate();
 const numeric=value=>{const n=Number(value);return Number.isFinite(n)?n:null};
+const genericFixture=value=>!text(value)||/^(fixture|match)$/i.test(text(value));
+const cleanPickTeam=value=>text(value)
+  .replace(/\s+to win$/i,'')
+  .replace(/\s+[—-]\s+draw no bet$/i,'')
+  .replace(/\s+dnb$/i,'')
+  .trim();
+
+function fixtureId(event){
+  return text(event?.provider_fixture_id||event?.game_id||event?.event_id).replace(/^api-football:/i,'');
+}
+function kickoffMs(value){const n=Date.parse(value||'');return Number.isFinite(n)?n:null}
+function teamMatches(name,wanted){
+  const a=canonical(name),b=canonical(wanted);
+  if(!a||!b)return false;
+  return a===b||a.includes(b)||b.includes(a);
+}
+function eventForRow(row,events){
+  const sourceId=text(row?.source_fixture_id);
+  if(sourceId){
+    const exact=events.find(event=>fixtureId(event)===sourceId);
+    if(exact)return exact;
+  }
+
+  const rowKickoff=kickoffMs(row?.kickoff);
+  const rowLeague=canonical(row?.league);
+  const pickedTeam=cleanPickTeam(row?.pick);
+  const candidates=events.filter(event=>{
+    const eventKickoff=kickoffMs(event?.kickoff||event?.start_time);
+    if(rowKickoff&&eventKickoff&&Math.abs(rowKickoff-eventKickoff)>3*60*60*1000)return false;
+    if(rowLeague&&canonical(event?.league)&&canonical(event?.league)!==rowLeague)return false;
+    if(pickedTeam&&!/both teams|\bgg\b|\byes\b|\bno\b|over|under/i.test(pickedTeam)){
+      if(!teamMatches(event?.home_team,pickedTeam)&&!teamMatches(event?.away_team,pickedTeam))return false;
+    }
+    return true;
+  });
+  return candidates.length===1?candidates[0]:null;
+}
+function enrichRow(row,event){
+  if(!event)return row;
+  const home=text(row?.home_team)||text(event?.home_team);
+  const away=text(row?.away_team)||text(event?.away_team);
+  const fixture=!genericFixture(row?.fixture)?text(row.fixture):(home&&away?`${home} vs ${away}`:text(row?.fixture));
+  return{
+    ...row,
+    fixture:fixture||'Fixture',
+    home_team:home||null,
+    away_team:away||null,
+    league:text(row?.league)||text(event?.league)||null,
+    country:text(row?.country)||text(event?.country)||null,
+    kickoff:row?.kickoff||event?.kickoff||null
+  };
+}
+async function enrichMatchups(rows){
+  if(!Array.isArray(rows)||!rows.some(row=>genericFixture(row?.fixture)||!text(row?.home_team)||!text(row?.away_team)))return rows||[];
+  try{
+    const feed=await getUpcomingEvents({days:7});
+    const events=Array.isArray(feed?.events)?feed.events:[];
+    if(!events.length)return rows;
+    return rows.map(row=>enrichRow(row,eventForRow(row,events)));
+  }catch(error){
+    console.warn('[elite-feed] matchup enrichment unavailable:',error?.message||error);
+    return rows;
+  }
+}
 
 function publicItem(row){
+  const home=text(row.home_team),away=text(row.away_team);
+  const fixture=!genericFixture(row.fixture)?text(row.fixture):(home&&away?`${home} vs ${away}`:'Fixture');
   return{
     id:row.id,
-    key:`${row.fixture}|${row.market}|${row.pick}`,
-    fixture:row.fixture,
-    home_team:row.home_team,
-    away_team:row.away_team,
+    key:`${fixture}|${row.market}|${row.pick}`,
+    fixture,
+    home_team:home||null,
+    away_team:away||null,
     league:row.league,
+    country:row.country||null,
     kickoff:row.kickoff,
     market:row.market,
     pick:row.pick,
@@ -34,7 +102,7 @@ function publicItem(row){
     last_verified_at:row.source_generated_at||row.imported_at,
     reason:row.reason,
     evidence:{source:'stats2pitch',families:Array.isArray(row.families)?row.families:[],family_count:Number(row.family_count||0),contradiction:row.contradiction},
-    slip_item:{id:row.id,fixture:row.fixture,market:row.market,pick:row.pick,odds:row.odds,kickoff:row.kickoff,league:row.league,tier:row.label||'Stats2Pitch Elite'}
+    slip_item:{id:row.id,fixture,home_team:home||null,away_team:away||null,market:row.market,pick:row.pick,odds:row.odds,kickoff:row.kickoff,league:row.league,tier:row.label||'Stats2Pitch Elite'}
   };
 }
 
@@ -55,9 +123,6 @@ function rankRows(rows){
 export async function getStats2PitchElite({date,limit=10}={}){
   if(!configured())throw new Error('Elite database reader is not configured on the web service');
   const predictionDate=normalizeDate(date),safeLimit=Math.max(1,Math.min(10,Number(limit)||10));
-  // Query only the stable identity fields in PostgREST, then filter/rank in Node.
-  // This avoids a valid daily feed disappearing because of a stale status value or
-  // PostgREST order/nulls syntax while still keeping the result source/date strict.
   const rows=await select('sporty_elite_picks',{
     select:'*',
     source:'eq.stats2pitch',
@@ -68,6 +133,7 @@ export async function getStats2PitchElite({date,limit=10}={}){
     const status=text(row?.status).toLowerCase();
     return !status||!['settled','finished','cancelled','canceled','postponed','abandoned'].includes(status);
   });
-  const items=rankRows(current).slice(0,safeLimit).map(publicItem);
+  const enriched=await enrichMatchups(current);
+  const items=rankRows(enriched).slice(0,safeLimit).map(publicItem);
   return{source:'stats2pitch',date:predictionDate,count:items.length,max:10,items};
 }
