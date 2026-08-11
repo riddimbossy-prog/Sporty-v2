@@ -6,6 +6,7 @@ const globalCss=read('styles.css');
 const page=read('elite-picks.html');
 const boardJs=read('src/elite-board-v2.js');
 const boardCss=read('elite-board-v2.css');
+const sharePreviewCss=read('elite-share-preview.css');
 const home=read('index.html');
 const server=read('server/index.mjs');
 
@@ -14,6 +15,7 @@ assert.match(home,/href="\/elite-picks\.html"><b>◆<\/b><span>Elite<\/span>/,'m
 assert.match(page,/data-page="elite-v2"/,'Elite page must use the standalone surface');
 assert.match(page,/Elite Picks\./,'clear Elite Picks hero must be present');
 assert.match(page,/elite-board-v2\.css\?v=22\.2\.0/,'Elite page must load the shareable-slip stylesheet');
+assert.match(page,/elite-share-preview\.css\?v=22\.2\.1/,'Elite page must load the share-preview fit layer');
 assert.match(page,/elite-board-v2\.js\?v=22\.2\.0/,'Elite page must load the shareable-slip renderer');
 assert.match(page,/color-scheme" content="light dark"/,'Elite page must advertise both light and dark color schemes');
 assert.match(page,/localStorage\.getItem\('sporty_theme'\)/,'Elite page must restore the saved Sporty theme before paint');
@@ -40,6 +42,11 @@ assert.match(boardCss,/html\[data-theme="light"\] body\[data-page="elite-v2"\]/,
 assert.match(boardCss,/--elite-bg:#f6f7f9/,'Elite light theme must use the Sporty white-page background');
 assert.match(boardCss,/html\[data-theme="light"\] \.elite-v2-add-slip/,'Elite slip controls must remain legible in the white theme');
 assert.match(boardCss,/@media\(max-width:600px\)/,'Elite Picks must include phone/Z Fold responsive rules');
+assert.match(sharePreviewCss,/\.share-dialog-preview\{/,'Elite share preview must have an explicit fit rule');
+assert.match(sharePreviewCss,/object-fit:contain!important/,'Elite share preview must show the whole branded card instead of cropping it');
+assert.match(sharePreviewCss,/max-height:calc\(100dvh - 220px\)!important/,'desktop share preview must be bounded by the viewport');
+assert.match(sharePreviewCss,/@media\(max-width:760px\)/,'share dialog must stack safely on phones and folded devices');
+assert.match(sharePreviewCss,/grid-template-columns:1fr/,'mobile share dialog must use a single-column layout');
 assert.match(server,/elitePagePaths/,'server must intercept Elite page requests');
 assert.match(server,/__SPORTY_ELITE_BOOTSTRAP__/,'server must embed the persisted Stats2Pitch Elite payload in the HTML response');
-console.log('Elite Picks theme, clarity and shareable prediction-slip checks passed');
+console.log('Elite Picks theme, clarity, shareable slip and full-preview checks passed');
