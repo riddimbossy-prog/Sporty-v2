@@ -24,9 +24,9 @@ assert.match(page,/styles\.css\?v=21\.7\.3/,'Elite page must load fresh styles')
 assert.match(page,/STATS2PITCH_ELITE_BOOTSTRAP/,'Elite page must expose a server bootstrap insertion point');
 assert.match(page,/__SPORTY_ELITE_BOOTSTRAP__/,'Elite loader must prefer the server-embedded payload');
 assert.match(page,/\/api\/elite-picks\?ts=/,'Elite page must retain a direct API fallback');
-assert.match(page,/elite\.js\?v=21\.7\.4-p3/,'Elite page must cache-bust the server-first renderer');
+assert.match(page,/elite\.js\?v=21\.7\.4-p4/,'Elite page must cache-bust the resilient current-day renderer');
 assert.doesNotMatch(page,/elite-stats2pitch-bridge\.js/,'Elite page must not load a second bridge that can overwrite the server-first loader');
 assert.match(server,/elitePagePaths/,'server must intercept Elite page requests');
 assert.match(server,/__SPORTY_ELITE_BOOTSTRAP__/,'server must embed the persisted Stats2Pitch Elite payload in the HTML response');
 assert.match(sw,/sporty-codes-v21\.7\.3-stats2pitch-p1/,'PWA cache must remain in the current Stats2Pitch cache family');
-console.log('v21.7.4 Stats2Pitch Elite server-first checks passed');
+console.log('v21.7.4 Stats2Pitch Elite resilient server-first checks passed');
