@@ -13,8 +13,10 @@ assert.match(globalCss,/\[hidden\]\{display:none!important\}/,'native hidden mus
 assert.match(home,/href="\/elite-picks\.html"><b>◆<\/b><span>Elite<\/span>/,'mobile home navigation must include Elite');
 assert.match(page,/data-page="elite-v2"/,'Elite page must use the standalone surface');
 assert.match(page,/Elite Picks\./,'clear Elite Picks hero must be present');
-assert.match(page,/elite-board-v2\.css\?v=22\.1\.0/,'Elite page must load the fresh dedicated stylesheet');
-assert.match(page,/elite-board-v2\.js\?v=22\.1\.0/,'Elite page must load the fresh dedicated renderer');
+assert.match(page,/elite-board-v2\.css\?v=22\.1\.1/,'Elite page must load the fresh light-theme stylesheet');
+assert.match(page,/elite-board-v2\.js\?v=22\.1\.0/,'Elite page must load the dedicated renderer');
+assert.match(page,/color-scheme" content="light dark"/,'Elite page must advertise both light and dark color schemes');
+assert.match(page,/localStorage\.getItem\('sporty_theme'\)/,'Elite page must restore the saved Sporty theme before paint');
 assert.match(page,/Supported picks/,'summary must distinguish supported selections from strong selections');
 assert.doesNotMatch(page,/src\/elite\.js/,'discarded legacy Elite renderer must not be loaded by the page');
 assert.doesNotMatch(page,/elite-stats2pitch-bridge\.js/,'discarded Elite bridge must not be loaded by the page');
@@ -25,7 +27,10 @@ assert.match(boardJs,/predictionText/,'renderer must promote the actual predicti
 assert.match(boardJs,/Why this pick/,'long engine reasoning must sit behind an expandable explanation');
 assert.match(boardJs,/data-elite-v2-filter/,'renderer must support market filtering');
 assert.match(boardCss,/--elite-red:#ff343d/,'Elite surface must use the Sporty red brand accent');
+assert.match(boardCss,/html\[data-theme="light"\] body\[data-page="elite-v2"\]/,'Elite surface must provide dedicated light-theme overrides');
+assert.match(boardCss,/--elite-bg:#f6f7f9/,'Elite light theme must use the Sporty white-page background');
+assert.match(boardCss,/\.elite-v2-card\{background:linear-gradient\(180deg,#ffffff,#fafbfc\)/,'Elite light-theme picks must render on white cards');
 assert.match(boardCss,/@media\(max-width:600px\)/,'Elite Picks must include phone/Z Fold responsive rules');
 assert.match(server,/elitePagePaths/,'server must intercept Elite page requests');
 assert.match(server,/__SPORTY_ELITE_BOOTSTRAP__/,'server must embed the persisted Stats2Pitch Elite payload in the HTML response');
-console.log('Elite Picks Sporty theme and clarity checks passed');
+console.log('Elite Picks Sporty light/dark theme and clarity checks passed');
