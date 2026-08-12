@@ -1,20 +1,20 @@
 .elite-v2-matchup{
   display:grid;
-  gap:4px;
+  gap:6px;
   margin-top:12px;
   padding:12px 14px;
   border:1px solid var(--elite-line);
   border-radius:14px;
   background:#0a0c11;
 }
-.elite-v2-matchup span{
+.elite-v2-matchup>span{
   color:var(--elite-red);
   font-size:10px;
   font-weight:950;
   letter-spacing:.11em;
   text-transform:uppercase;
 }
-.elite-v2-matchup strong{
+.elite-v2-matchup>strong{
   color:#fff;
   font-size:17px;
   font-weight:950;
@@ -22,13 +22,86 @@
   letter-spacing:-.02em;
   overflow-wrap:anywhere;
 }
+.elite-v2-teams-row{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center;
+  gap:12px;
+  min-height:58px;
+}
+.elite-v2-team{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+.elite-v2-team-away{
+  justify-content:flex-end;
+  text-align:right;
+}
+.elite-v2-team strong{
+  color:#fff;
+  font-size:15px;
+  font-weight:950;
+  line-height:1.25;
+  overflow-wrap:anywhere;
+}
+.elite-v2-crest-wrap{
+  width:46px;
+  height:46px;
+  flex:0 0 46px;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  border-radius:13px;
+  border:1px solid rgba(255,255,255,.10);
+  background:#fff;
+  box-shadow:0 7px 20px rgba(0,0,0,.18);
+}
+.elite-v2-crest{
+  width:38px;
+  height:38px;
+  display:block;
+  object-fit:contain;
+}
+.elite-v2-crest-fallback{
+  width:100%;
+  height:100%;
+  display:grid;
+  place-items:center;
+  background:#151821;
+  color:#fff;
+  font-size:12px;
+  font-weight:950;
+  letter-spacing:.03em;
+}
+.elite-v2-vs{
+  color:var(--elite-red);
+  font-size:10px;
+  font-weight:950;
+  letter-spacing:.08em;
+}
 html[data-theme="light"] .elite-v2-matchup{
   background:#fff;
   border-color:rgba(16,19,26,.11);
   box-shadow:0 6px 18px rgba(18,25,38,.035);
 }
-html[data-theme="light"] .elite-v2-matchup strong{color:#10131a}
+html[data-theme="light"] .elite-v2-matchup>strong,
+html[data-theme="light"] .elite-v2-team strong{color:#10131a}
+html[data-theme="light"] .elite-v2-crest-wrap{
+  border-color:rgba(16,19,26,.10);
+  box-shadow:0 6px 16px rgba(18,25,38,.07);
+}
+html[data-theme="light"] .elite-v2-crest-fallback{
+  background:#f1f3f6;
+  color:#11141b;
+}
 @media(max-width:600px){
   .elite-v2-matchup{margin-top:10px;padding:11px 12px}
-  .elite-v2-matchup strong{font-size:16px}
+  .elite-v2-matchup>strong{font-size:16px}
+  .elite-v2-teams-row{gap:8px}
+  .elite-v2-crest-wrap{width:40px;height:40px;flex-basis:40px;border-radius:11px}
+  .elite-v2-crest{width:33px;height:33px}
+  .elite-v2-team{gap:7px}
+  .elite-v2-team strong{font-size:13px}
 }
