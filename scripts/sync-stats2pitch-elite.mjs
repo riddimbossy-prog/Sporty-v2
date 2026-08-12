@@ -59,6 +59,9 @@ function normalize(item,date,generatedAt){
     fixture,
     home_team:home||null,
     away_team:away||null,
+    home_logo:text(item.home_logo||item.homeLogo||item.home?.logo)||null,
+    away_logo:text(item.away_logo||item.awayLogo||item.away?.logo)||null,
+    league_logo:text(item.league_logo||item.leagueLogo)||null,
     league:text(item.league)||null,
     country:text(item.country)||null,
     kickoff:item.kickoff||null,
@@ -98,7 +101,12 @@ async function main(){
   const rows=(Array.isArray(payload.items)?payload.items:[]).slice(0,10).map(item=>normalize(item,date,payload.generated_at));
   await remove('sporty_elite_picks',{prediction_date:`eq.${date}`,source:'eq.stats2pitch'});
   if(rows.length)await upsert('sporty_elite_picks',rows,{onConflict:'id'});
-  console.log(JSON.stringify({ok:true,date,count:rows.length,source:'stats2pitch',generated_at:payload.generated_at,refreshed:missingSnapshot||staleSnapshot,matchups:rows.filter(row=>row.home_team&&row.away_team).length}));
+  console.log(JSON.stringify({
+    ok:true,date,count:rows.length,source:'stats2pitch',generated_at:payload.generated_at,
+    refreshed:missingSnapshot||staleSnapshot,
+    matchups:rows.filter(row=>row.home_team&&row.away_team).length,
+    crests:rows.filter(row=>row.home_logo&&row.away_logo).length
+  }));
 }
 
 main().catch(error=>{console.error(`[stats2pitch-elite-sync] ${error.message}`);process.exitCode=1});
