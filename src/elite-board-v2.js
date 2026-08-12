@@ -5,10 +5,12 @@
   const $=selector=>document.querySelector(selector);
   const text=value=>String(value??'').trim();
   const num=value=>{const n=Number(value);return Number.isFinite(n)?n:null};
-  const esc=value=>text(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[ch]));
+  const esc=value=>text(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const localDate=value=>{if(!value)return'Time TBC';const d=new Date(value);return Number.isFinite(d.getTime())?d.toLocaleString([], {weekday:'short',hour:'2-digit',minute:'2-digit'}):'Time TBC'};
   const dateOnly=value=>{if(!value)return'Today';const d=new Date(value);return Number.isFinite(d.getTime())?d.toLocaleDateString([], {year:'numeric',month:'short',day:'numeric'}):text(value)};
   const usableFixture=value=>{const fixture=text(value);return fixture&&!/^(fixture|match)$/i.test(fixture)?fixture:''};
+  const safeLogo=value=>/^https?:\/\//i.test(text(value))?text(value):'';
+  const initials=value=>text(value).split(/\s+/).filter(Boolean).slice(0,2).map(word=>word[0]?.toUpperCase()||'').join('')||'?';
 
   function bucket(item){
     const market=text(item.market).toLowerCase();
@@ -68,17 +70,13 @@
     if(!item)return null;
     const fixture=matchContext(item)||`${text(item.league)||'Stats2Pitch'} — Elite pick`;
     return{
-      id:slipKey(item),
-      fixture,
-      market:marketLabel(item),
-      pick:predictionText(item),
-      odds:num(item.average_odds)||0,
-      kickoff:item.kickoff||null,
-      league:text(item.league),
-      tier:`Elite ${classLabel(item)}`,
-      popularity:score(item),
-      appearances:1,
-      sources:1
+      id:slipKey(item),fixture,
+      home_team:text(item.home_team),away_team:text(item.away_team),
+      home_logo:safeLogo(item.home_logo),away_logo:safeLogo(item.away_logo),
+      market:marketLabel(item),pick:predictionText(item),
+      odds:num(item.average_odds)||0,kickoff:item.kickoff||null,
+      league:text(item.league),tier:`Elite ${classLabel(item)}`,
+      popularity:score(item),appearances:1,sources:1
     };
   }
 
@@ -104,9 +102,34 @@
     const updated=$('#eliteV2Updated');if(updated){const stamp=state.items.map(x=>x.last_verified_at).filter(Boolean).sort().pop();updated.textContent=stamp?`Updated ${new Date(stamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`:'Fresh daily feed'}
   }
 
+  function teamSide(name,logo,side){
+    const crest=safeLogo(logo);
+    return `<div class="elite-v2-team elite-v2-team-${side}">
+      <div class="elite-v2-crest-wrap">
+        ${crest?`<img class="elite-v2-crest" data-team-crest src="${esc(crest)}" alt="${esc(name)} crest" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:''}
+        <span class="elite-v2-crest-fallback" ${crest?'hidden':''}>${esc(initials(name))}</span>
+      </div>
+      <strong>${esc(name||'Team')}</strong>
+    </div>`;
+  }
+
+  function matchupBlock(item){
+    const context=matchContext(item),home=text(item.home_team),away=text(item.away_team);
+    if(home&&away){
+      return `<div class="elite-v2-matchup elite-v2-matchup-with-crests">
+        <span>Matchup</span>
+        <div class="elite-v2-teams-row">
+          ${teamSide(home,item.home_logo,'home')}
+          <b class="elite-v2-vs">VS</b>
+          ${teamSide(away,item.away_logo,'away')}
+        </div>
+      </div>`;
+    }
+    return context?`<div class="elite-v2-matchup"><span>Matchup</span><strong>${esc(context)}</strong></div>`:'';
+  }
+
   function card(item,index){
     const reference=num(item.average_odds);
-    const context=matchContext(item);
     const reasons=reasonPoints(item).map(point=>`<li>${esc(point)}</li>`).join('');
     const strong=text(item.classification)==='elite_strong';
     const key=slipKey(item);
@@ -116,7 +139,7 @@
         <div class="elite-v2-kickoff">${esc(localDate(item.kickoff))}</div>
       </div>
 
-      ${context?`<div class="elite-v2-matchup"><span>Matchup</span><strong>${esc(context)}</strong></div>`:''}
+      ${matchupBlock(item)}
 
       <div class="elite-v2-pick-block">
         <div class="elite-v2-pick-label">Today’s pick</div>
@@ -146,6 +169,14 @@
 
       <div class="elite-v2-card-foot"><span>Stats2Pitch verified</span><span>#${String(index+1).padStart(2,'0')}</span></div>
     </article>`;
+  }
+
+  function wireCrestFallbacks(root=document){
+    root.querySelectorAll?.('img[data-team-crest]').forEach(image=>{
+      const fallback=image.parentElement?.querySelector('.elite-v2-crest-fallback');
+      image.addEventListener('load',()=>{if(fallback)fallback.hidden=true},{once:true});
+      image.addEventListener('error',()=>{image.hidden=true;if(fallback)fallback.hidden=false},{once:true});
+    });
   }
 
   function syncSlipUi(){
@@ -178,6 +209,7 @@
     if(!grid)return;
     const rows=visibleItems();
     grid.innerHTML=rows.length?rows.map(card).join(''):`<div class="elite-v2-state"><h2>No picks match this view</h2><p>Change the market filter or search term to see today’s available selections.</p></div>`;
+    wireCrestFallbacks(grid);
     const count=$('#eliteV2VisibleCount');if(count)count.textContent=`${rows.length} of ${state.items.length} picks`;
     syncSlipUi();
   }
