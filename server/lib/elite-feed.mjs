@@ -52,6 +52,9 @@ function enrichRow(row,event){
     fixture:fixture||'Fixture',
     home_team:home||null,
     away_team:away||null,
+    home_logo:text(row?.home_logo)||text(event?.home_logo||event?.home_team_logo)||null,
+    away_logo:text(row?.away_logo)||text(event?.away_logo||event?.away_team_logo)||null,
+    league_logo:text(row?.league_logo)||text(event?.league_logo)||null,
     league:text(row?.league)||text(event?.league)||null,
     country:text(row?.country)||text(event?.country)||null,
     kickoff:row?.kickoff||event?.kickoff||null
@@ -79,6 +82,9 @@ function publicItem(row){
     fixture,
     home_team:home||null,
     away_team:away||null,
+    home_logo:text(row.home_logo)||null,
+    away_logo:text(row.away_logo)||null,
+    league_logo:text(row.league_logo)||null,
     league:row.league,
     country:row.country||null,
     kickoff:row.kickoff,
@@ -102,7 +108,7 @@ function publicItem(row){
     last_verified_at:row.source_generated_at||row.imported_at,
     reason:row.reason,
     evidence:{source:'stats2pitch',families:Array.isArray(row.families)?row.families:[],family_count:Number(row.family_count||0),contradiction:row.contradiction},
-    slip_item:{id:row.id,fixture,home_team:home||null,away_team:away||null,market:row.market,pick:row.pick,odds:row.odds,kickoff:row.kickoff,league:row.league,tier:row.label||'Stats2Pitch Elite'}
+    slip_item:{id:row.id,fixture,home_team:home||null,away_team:away||null,home_logo:text(row.home_logo)||null,away_logo:text(row.away_logo)||null,market:row.market,pick:row.pick,odds:row.odds,kickoff:row.kickoff,league:row.league,tier:row.label||'Stats2Pitch Elite'}
   };
 }
 
