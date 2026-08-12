@@ -10,6 +10,8 @@ const matchupCss=read('elite-matchup-v2.css');
 const sharePreviewCss=read('elite-share-preview.css');
 const slipBuilder=read('src/slip-builder.js');
 const eliteFeed=read('server/lib/elite-feed.mjs');
+const eliteSync=read('scripts/sync-stats2pitch-elite.mjs');
+const crestMigration=read('supabase/migrations/011_stats2pitch_elite_crests.sql');
 const home=read('index.html');
 const server=read('server/index.mjs');
 
@@ -18,10 +20,10 @@ assert.match(home,/href="\/elite-picks\.html"><b>◆<\/b><span>Elite<\/span>/,'m
 assert.match(page,/data-page="elite-v2"/,'Elite page must use the standalone surface');
 assert.match(page,/Elite Picks\./,'clear Elite Picks hero must be present');
 assert.match(page,/elite-board-v2\.css\?v=22\.2\.0/,'Elite page must load the shareable-slip stylesheet');
-assert.match(page,/elite-matchup-v2\.css\?v=22\.3\.0/,'Elite page must load the explicit matchup styling layer');
+assert.match(page,/elite-matchup-v2\.css\?v=22\.4\.0/,'Elite page must load the crest-aware matchup styling layer');
 assert.match(page,/elite-share-preview\.css\?v=22\.2\.1/,'Elite page must load the share-preview fit layer');
 assert.match(page,/src\/slip-builder\.js\?v=21\.7\.4-p5/,'Elite page must load a fresh slip builder that can refresh saved fixture metadata');
-assert.match(page,/elite-board-v2\.js\?v=22\.3\.0/,'Elite page must load the matchup-aware renderer');
+assert.match(page,/elite-board-v2\.js\?v=22\.4\.0/,'Elite page must load the crest-aware renderer');
 assert.match(page,/color-scheme" content="light dark"/,'Elite page must advertise both light and dark color schemes');
 assert.match(page,/localStorage\.getItem\('sporty_theme'\)/,'Elite page must restore the saved Sporty theme before paint');
 assert.match(page,/Supported picks/,'summary must distinguish supported selections from strong selections');
@@ -33,6 +35,9 @@ assert.match(boardJs,/\/api\/elite-picks\?limit=10&ts=/,'renderer must read the 
 assert.match(boardJs,/embedded\.items\.length/,'renderer may use a non-empty server bootstrap without an extra request');
 assert.match(boardJs,/predictionText/,'renderer must promote the actual prediction to the primary card line');
 assert.match(boardJs,/elite-v2-matchup/,'renderer must show a dedicated Home vs Away matchup line');
+assert.match(boardJs,/data-team-crest/,'renderer must place team crest images in matchup cards');
+assert.match(boardJs,/home_logo:safeLogo/,'Elite slip payload must retain the home crest URL');
+assert.match(boardJs,/away_logo:safeLogo/,'Elite slip payload must retain the away crest URL');
 assert.match(boardJs,/Why this pick/,'long engine reasoning must sit behind an expandable explanation');
 assert.match(boardJs,/data-elite-v2-filter/,'renderer must support market filtering');
 assert.match(boardJs,/data-slip-add-key/,'Elite cards must expose shared slip-state keys');
@@ -45,6 +50,12 @@ assert.match(eliteFeed,/getUpcomingEvents/,'Elite feed must resolve missing fixt
 assert.match(eliteFeed,/source_fixture_id/,'Elite matchup enrichment must use the Stats2Pitch provider fixture id');
 assert.match(eliteFeed,/home_team:home\|\|null/,'Elite API must publish the resolved home team');
 assert.match(eliteFeed,/away_team:away\|\|null/,'Elite API must publish the resolved away team');
+assert.match(eliteFeed,/home_logo:text\(row\.home_logo\)/,'Elite API must publish the persisted home crest URL');
+assert.match(eliteFeed,/away_logo:text\(row\.away_logo\)/,'Elite API must publish the persisted away crest URL');
+assert.match(eliteSync,/home_logo:text\(item\.home_logo\|\|item\.homeLogo/,'Elite sync must persist Stats2Pitch home crest aliases');
+assert.match(eliteSync,/away_logo:text\(item\.away_logo\|\|item\.awayLogo/,'Elite sync must persist Stats2Pitch away crest aliases');
+assert.match(crestMigration,/add column if not exists home_logo text/,'Elite crest migration must add a home crest column');
+assert.match(crestMigration,/add column if not exists away_logo text/,'Elite crest migration must add an away crest column');
 assert.match(boardCss,/--elite-red:#ff343d/,'Elite surface must use the Sporty red brand accent');
 assert.match(boardCss,/\.elite-v2-slip-launch/,'Elite page must style the create-slip control');
 assert.match(boardCss,/\.elite-v2-add-slip/,'Elite cards must style add-to-slip controls');
@@ -52,8 +63,9 @@ assert.match(boardCss,/html\[data-theme="light"\] body\[data-page="elite-v2"\]/,
 assert.match(boardCss,/--elite-bg:#f6f7f9/,'Elite light theme must use the Sporty white-page background');
 assert.match(boardCss,/html\[data-theme="light"\] \.elite-v2-add-slip/,'Elite slip controls must remain legible in the white theme');
 assert.match(boardCss,/@media\(max-width:600px\)/,'Elite Picks must include phone/Z Fold responsive rules');
-assert.match(matchupCss,/\.elite-v2-matchup strong/,'Elite matchup must have a readable primary team-vs-team line');
-assert.match(matchupCss,/html\[data-theme="light"\] \.elite-v2-matchup/,'Elite matchup must remain readable in the white theme');
+assert.match(matchupCss,/\.elite-v2-crest\{/,'Elite matchup layer must style real team crest images');
+assert.match(matchupCss,/object-fit:contain/,'team crests must fit without being cropped');
+assert.match(matchupCss,/html\[data-theme="light"\] \.elite-v2-crest-wrap/,'team crests must remain clean in the white theme');
 assert.match(sharePreviewCss,/\.share-dialog-preview\{/,'Elite share preview must have an explicit fit rule');
 assert.match(sharePreviewCss,/object-fit:contain!important/,'Elite share preview must show the whole branded card instead of cropping it');
 assert.match(sharePreviewCss,/max-height:calc\(100dvh - 220px\)!important/,'desktop share preview must be bounded by the viewport');
@@ -61,4 +73,4 @@ assert.match(sharePreviewCss,/@media\(max-width:760px\)/,'share dialog must stac
 assert.match(sharePreviewCss,/grid-template-columns:1fr/,'mobile share dialog must use a single-column layout');
 assert.match(server,/elitePagePaths/,'server must intercept Elite page requests');
 assert.match(server,/__SPORTY_ELITE_BOOTSTRAP__/,'server must embed the persisted Stats2Pitch Elite payload in the HTML response');
-console.log('Elite Picks matchup, shareable slip, theme and full-preview checks passed');
+console.log('Elite Picks matchup, crest, shareable slip, theme and full-preview checks passed');
