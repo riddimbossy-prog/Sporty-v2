@@ -7,7 +7,7 @@
   const num=value=>{const n=Number(value);return Number.isFinite(n)?n:null};
   const esc=value=>text(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const localDate=value=>{if(!value)return'Time TBC';const d=new Date(value);return Number.isFinite(d.getTime())?d.toLocaleString([], {weekday:'short',hour:'2-digit',minute:'2-digit'}):'Time TBC'};
-  const dateOnly=value=>{if(!value)return'Today';const d=new Date(value);return Number.isFinite(d.getTime())?d.toLocaleDateString([], {year:'numeric',month:'short',day:'numeric'}):text(value)};
+  const dateOnly=value=>{if(!value)return'This week';const d=new Date(value);return Number.isFinite(d.getTime())?d.toLocaleDateString([], {month:'short',day:'numeric'}):text(value)};
   const usableFixture=value=>{const fixture=text(value);return fixture&&!/^(fixture|match)$/i.test(fixture)?fixture:''};
   const safeLogo=value=>/^https?:\/\//i.test(text(value))?text(value):'';
   const initials=value=>text(value).split(/\s+/).filter(Boolean).slice(0,2).map(word=>word[0]?.toUpperCase()||'').join('')||'?';
@@ -22,9 +22,11 @@
     return'other';
   }
 
-  function className(item){return text(item.classification)==='elite_strong'?'is-strong':'is-supported'}
-  function classLabel(item){return text(item.classification)==='elite_strong'?'Strong':'Supported'}
-  function score(item){return Math.round(num(item.elite_score)??num(item.engine_rating)??70)}
+  function weekLabel(payload){
+    const monday=payload?.week?.monday,sunday=payload?.week?.sunday;
+    if(monday&&sunday)return `${dateOnly(`${monday}T12:00:00Z`)} – ${dateOnly(`${sunday}T12:00:00Z`)}`;
+    return'This week';
+  }
 
   function matchContext(item){
     const fixture=usableFixture(item.fixture);if(fixture)return fixture;
@@ -55,17 +57,6 @@
     return pick;
   }
 
-  function agreement(item){
-    const value=text(item.evidence?.contradiction||item.contradiction||'LOW').toUpperCase();
-    return value==='LOW'?'High agreement':value==='MODERATE'?'Some disagreement':'Review signals';
-  }
-
-  function reasonPoints(item){
-    const raw=text(item.reason)||'Qualified by the Away-Fav Streak engine.';
-    const parts=raw.split(/\s*•\s*/).map(text).filter(Boolean);
-    return (parts.length?parts:[raw]).slice(0,5);
-  }
-
   function slipKey(item){
     return text(item.id)||[text(item.kickoff).slice(0,10),matchContext(item).toLowerCase(),text(item.market).toLowerCase(),text(item.pick).toLowerCase()].join('|');
   }
@@ -79,8 +70,8 @@
       home_logo:safeLogo(item.home_logo),away_logo:safeLogo(item.away_logo),
       market:marketLabel(item),pick:predictionText(item),
       odds:num(item.average_odds)||0,kickoff:item.kickoff||null,
-      league:text(item.league),tier:`Elite ${classLabel(item)}`,
-      popularity:score(item),appearances:1,sources:1
+      league:text(item.league),tier:'Elite',
+      popularity:1,appearances:1,sources:1
     };
   }
 
@@ -97,13 +88,13 @@
 
   function renderStats(){
     const total=state.items.length;
-    const strong=state.items.filter(x=>text(x.classification)==='elite_strong').length;
-    const supported=Math.max(0,total-strong);
-    const avg=total?Math.round(state.items.reduce((sum,x)=>sum+score(x),0)/total):0;
-    const values={total,strong,supported,average:avg||'—'};
+    const fixtures=new Set(state.items.map(item=>matchContext(item)||item.id)).size;
+    const markets=new Set(state.items.map(item=>marketLabel(item))).size;
+    const upcoming=state.items.map(item=>Date.parse(item.kickoff||'')).filter(Number.isFinite).filter(value=>value>=Date.now()).sort((a,b)=>a-b)[0];
+    const values={total,fixtures,markets,next:upcoming?new Date(upcoming).toLocaleString([], {weekday:'short',hour:'2-digit',minute:'2-digit'}):'—'};
     for(const[key,value]of Object.entries(values)){const node=$(`[data-elite-v2-stat="${key}"]`);if(node)node.textContent=String(value)}
-    const boardDate=$('#eliteV2BoardDate');if(boardDate)boardDate.textContent=state.payload?.date?dateOnly(`${state.payload.date}T12:00:00Z`):'Today';
-    const updated=$('#eliteV2Updated');if(updated){const stamp=state.items.map(x=>x.last_verified_at).filter(Boolean).sort().pop();updated.textContent=stamp?`Updated ${new Date(stamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`:'Fresh daily feed'}
+    const boardDate=$('#eliteV2BoardDate');if(boardDate)boardDate.textContent=weekLabel(state.payload);
+    const updated=$('#eliteV2Updated');if(updated){const stamp=state.items.map(x=>x.last_verified_at).filter(Boolean).sort().pop();updated.textContent=stamp?`Updated ${new Date(stamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`:'Fresh weekly feed'}
   }
 
   function teamSide(name,logo,side){
@@ -134,10 +125,8 @@
 
   function card(item,index){
     const reference=num(item.average_odds);
-    const reasons=reasonPoints(item).map(point=>`<li>${esc(point)}</li>`).join('');
-    const strong=text(item.classification)==='elite_strong';
     const key=slipKey(item);
-    return `<article class="elite-v2-card ${className(item)}" data-market-bucket="${bucket(item)}">
+    return `<article class="elite-v2-card" data-market-bucket="${bucket(item)}">
       <div class="elite-v2-card-head">
         <div class="elite-v2-context"><div class="elite-v2-league">${esc(item.league||'Competition')}</div></div>
         <div class="elite-v2-kickoff">${esc(localDate(item.kickoff))}</div>
@@ -146,18 +135,12 @@
       ${matchupBlock(item)}
 
       <div class="elite-v2-pick-block">
-        <div class="elite-v2-pick-label">Today’s pick</div>
+        <div class="elite-v2-pick-label">This week’s pick</div>
         <div class="elite-v2-main-pick">${esc(predictionText(item))}</div>
         <div class="elite-v2-market-row">
           <div class="elite-v2-market-copy"><span>Market</span><strong>${esc(marketLabel(item))}</strong></div>
           <div class="elite-v2-reference"><span>Reference</span><strong>${reference?reference.toFixed(2):'—'}</strong></div>
         </div>
-      </div>
-
-      <div class="elite-v2-meta">
-        <span class="elite-v2-tag ${strong?'strong':'supported'}">${classLabel(item)}</span>
-        <span class="elite-v2-tag">Engine score ${score(item)}</span>
-        <span class="elite-v2-tag agreement">${agreement(item)}</span>
       </div>
 
       <div class="elite-v2-card-actions">
@@ -166,12 +149,7 @@
         </button>
       </div>
 
-      <details class="elite-v2-why">
-        <summary>Why this pick</summary>
-        <ul class="elite-v2-reasons">${reasons}</ul>
-      </details>
-
-      <div class="elite-v2-card-foot"><span>Away-Fav Streak</span><span>#${String(index+1).padStart(2,'0')}</span></div>
+      <div class="elite-v2-card-foot"><span>Elite</span><span>#${String(index+1).padStart(2,'0')}</span></div>
     </article>`;
   }
 
@@ -212,7 +190,7 @@
     renderStats();
     if(!grid)return;
     const rows=visibleItems();
-    grid.innerHTML=rows.length?rows.map(card).join(''):`<div class="elite-v2-state"><h2>No picks match this view</h2><p>Change the market filter or search term to see today’s available selections.</p></div>`;
+    grid.innerHTML=rows.length?rows.map(card).join(''):`<div class="elite-v2-state"><h2>No picks match this view</h2><p>Change the market filter or search term to see this week’s available selections.</p></div>`;
     wireCrestFallbacks(grid);
     const count=$('#eliteV2VisibleCount');if(count)count.textContent=`${rows.length} of ${state.items.length} picks`;
     syncSlipUi();
@@ -224,15 +202,15 @@
       const embedded=window.__SPORTY_ELITE_BOOTSTRAP__;
       let payload=!force&&Array.isArray(embedded?.items)&&embedded.items.length?embedded:null;
       if(!payload){
-        const response=await fetch(`/api/elite-picks?limit=10&ts=${Date.now()}`,{cache:'no-store',headers:{Accept:'application/json'}});
+        const response=await fetch(`/api/elite-picks?ts=${Date.now()}`,{cache:'no-store',headers:{Accept:'application/json'}});
         if(!response.ok)throw new Error(`Elite feed returned HTTP ${response.status}`);
         payload=await response.json();
       }
       if(!Array.isArray(payload?.items))throw new Error('Elite feed returned an invalid payload');
       state.payload=payload;
-      state.items=payload.items.slice(0,10);
+      state.items=payload.items;
     }catch(error){
-      state.items=[];state.error=text(error?.message)||'Unable to load today’s Elite feed.';
+      state.items=[];state.error=text(error?.message)||'Unable to load this week’s Elite feed.';
     }finally{state.loading=false;render()}
   }
 

@@ -1,10 +1,10 @@
 import { select, configured } from './supabase.mjs';
 import { text, canonical } from './core.mjs';
 import { getUpcomingEvents } from './data-service.mjs';
+import { accraWeek } from './week.mjs';
 
 const localDate=()=>new Intl.DateTimeFormat('en-CA',{timeZone:text(process.env.APP_TIMEZONE)||'Africa/Accra',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 const normalizeDate=value=>/^\d{4}-\d{2}-\d{2}$/.test(text(value))?text(value):localDate();
-const numeric=value=>{const n=Number(value);return Number.isFinite(n)?n:null};
 const genericFixture=value=>!text(value)||/^(fixture|match)$/i.test(text(value));
 const cleanPickTeam=value=>text(value)
   .replace(/\s+to win$/i,'')
@@ -73,7 +73,7 @@ async function enrichMatchups(rows){
   }
 }
 
-function publicItem(row){
+export function toPublicEliteItem(row){
   const home=text(row.home_team),away=text(row.away_team);
   const fixture=!genericFixture(row.fixture)?text(row.fixture):(home&&away?`${home} vs ${away}`:'Fixture');
   return{
@@ -91,61 +91,41 @@ function publicItem(row){
     market:row.market,
     pick:row.pick,
     average_odds:row.odds,
-    classification:row.classification,
-    label:row.label||'Away-Fav Streak',
-    engine:'away-fav-streak-v1',
-    elite_score:row.engine_rating||row.elite_score||70,
-    consensus_score:0,
-    statistical_score:Math.round(Number(row.engine_rating||row.elite_score||70)/2),
-    statistical_percent:Number(row.engine_rating||row.elite_score||70),
-    independent_groups:0,
-    independent_sources:0,
-    total_additions:Number(row.family_count||0),
-    source_reliability:Number(row.engine_rating||row.elite_score||70),
-    opposition_level:String(row.contradiction||'LOW').toUpperCase()==='LOW'?'Low':'Moderate',
-    opposition_share:String(row.contradiction||'LOW').toUpperCase()==='LOW'?5:20,
-    trend:'Away-Fav Streak',
-    statistics_complete:true,
     last_verified_at:row.source_generated_at||row.imported_at,
-    reason:row.reason,
-    evidence:{source:'stats2pitch',families:Array.isArray(row.families)?row.families:[],family_count:Number(row.family_count||0),contradiction:row.contradiction},
-    slip_item:{id:row.id,fixture,home_team:home||null,away_team:away||null,home_logo:text(row.home_logo)||null,away_logo:text(row.away_logo)||null,market:row.market,pick:row.pick,odds:row.odds,kickoff:row.kickoff,league:row.league,tier:row.label||'Away-Fav Streak'}
+    slip_item:{id:row.id,fixture,home_team:home||null,away_team:away||null,home_logo:text(row.home_logo)||null,away_logo:text(row.away_logo)||null,market:row.market,pick:row.pick,odds:row.odds,kickoff:row.kickoff,league:row.league}
   };
 }
 
 function rankRows(rows){
   return [...rows].sort((a,b)=>{
-    const ratingA=numeric(a?.engine_rating)??numeric(a?.elite_score)??0;
-    const ratingB=numeric(b?.engine_rating)??numeric(b?.elite_score)??0;
-    if(ratingB!==ratingA)return ratingB-ratingA;
-    const familiesA=numeric(a?.family_count)??0;
-    const familiesB=numeric(b?.family_count)??0;
-    if(familiesB!==familiesA)return familiesB-familiesA;
     const kickoffA=Date.parse(a?.kickoff||'')||Number.MAX_SAFE_INTEGER;
     const kickoffB=Date.parse(b?.kickoff||'')||Number.MAX_SAFE_INTEGER;
-    return kickoffA-kickoffB;
+    if(kickoffA!==kickoffB)return kickoffA-kickoffB;
+    return text(a?.fixture).localeCompare(text(b?.fixture));
   });
 }
 
-export async function getStats2PitchElite({date,limit=10}={}){
+function currentRow(row){
+  const status=text(row?.status).toLowerCase();
+  if(status&&['settled','finished','cancelled','canceled','postponed','abandoned'].includes(status))return false;
+  const label=text(row?.label).toLowerCase();
+  const engine=text(row?.engine).toLowerCase();
+  if(label&&!['elite','away-fav','streak','stats2pitch'].some(token=>label.includes(token)))return false;
+  if(engine&&!engine.includes('away-fav')&&engine!=='elite')return false;
+  return true;
+}
+
+export async function getStats2PitchElite({date}={}){
   if(!configured())throw new Error('Elite database reader is not configured on the web service');
-  const predictionDate=normalizeDate(date),safeLimit=Math.max(1,Math.min(10,Number(limit)||10));
-  const rows=await select('sporty_elite_picks',{
+  const week=accraWeek(date?new Date(`${normalizeDate(date)}T12:00:00Z`):new Date());
+  const batches=await Promise.all(week.dates.map(predictionDate=>select('sporty_elite_picks',{
     select:'*',
     source:'eq.stats2pitch',
     prediction_date:`eq.${predictionDate}`,
-    limit:'50'
-  });
-  const current=(Array.isArray(rows)?rows:[]).filter(row=>{
-    const status=text(row?.status).toLowerCase();
-    if(status&&['settled','finished','cancelled','canceled','postponed','abandoned'].includes(status))return false;
-    const label=text(row?.label).toLowerCase();
-    const engine=text(row?.engine).toLowerCase();
-    if(label&&!label.includes('away-fav')&&!label.includes('streak'))return false;
-    if(engine&&!engine.includes('away-fav'))return false;
-    return true;
-  });
+    limit:'200'
+  })));
+  const current=batches.flat().filter(row=>row&&currentRow(row));
   const enriched=await enrichMatchups(current);
-  const items=rankRows(enriched).slice(0,safeLimit).map(publicItem);
-  return{source:'stats2pitch',date:predictionDate,count:items.length,max:10,items};
+  const items=rankRows(enriched).map(toPublicEliteItem);
+  return{source:'stats2pitch',week:{monday:week.monday,sunday:week.sunday},date:week.today,count:items.length,items};
 }

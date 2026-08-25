@@ -20,7 +20,7 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 45
     env:
       APP_TIMEZONE: Africa/Accra
       STATS2PITCH_BASE_URL: ${{ secrets.STATS2PITCH_BASE_URL }}
@@ -33,5 +33,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Import up to 10 Stats2Pitch Elite picks
+      - name: Import this week's Elite picks
         run: node scripts/sync-stats2pitch-elite.mjs

@@ -1,7 +1,7 @@
 import { remove, upsert, configured } from '../server/lib/supabase.mjs';
+import { accraWeek } from '../server/lib/week.mjs';
 
 const text=value=>String(value??'').trim();
-const dateForZone=()=>new Intl.DateTimeFormat('en-CA',{timeZone:text(process.env.APP_TIMEZONE)||'Africa/Accra',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 const required=name=>{const value=text(process.env[name]);if(!value)throw new Error(`${name} is required`);return value};
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
@@ -22,7 +22,7 @@ async function requestStats2Pitch(path,{method='GET'}={}){
 }
 
 async function fetchElite(date){
-  const params=new URLSearchParams({date,limit:'10'});
+  const params=new URLSearchParams({date});
   return requestStats2Pitch(`/api/export/elite?${params.toString()}`);
 }
 
@@ -41,7 +41,7 @@ async function ensureDailySnapshot(date){
     if(status.payload?.status==='complete')return status.payload;
     if(status.payload?.status==='failed')throw new Error(`Stats2Pitch Elite refresh failed${status.payload?.error?`: ${status.payload.error}`:''}`);
   }
-  throw new Error('Stats2Pitch Elite refresh timed out before today’s board was ready');
+  throw new Error(`Stats2Pitch Elite refresh timed out before the ${date} board was ready`);
 }
 
 function normalize(item,date,generatedAt){
@@ -68,24 +68,21 @@ function normalize(item,date,generatedAt){
     market:text(item.market)||'Market',
     pick:text(item.pick||item.selection)||'Selection',
     odds:Number.isFinite(Number(item.average_odds??item.odds))?Number(item.average_odds??item.odds):null,
-    classification:['elite_strong','elite_supported'].includes(text(item.classification))?text(item.classification):'elite_supported',
-    label:text(item.label)||'Away-Fav Streak',
-    elite_score:Number.isFinite(Number(item.elite_score??item.engineRating))?Number(item.elite_score??item.engineRating):null,
-    engine_rating:Number.isFinite(Number(item.engine_rating??item.engineRating))?Number(item.engine_rating??item.engineRating):null,
-    family_count:Number.isFinite(Number(item.family_count??item.familyCount))?Number(item.family_count??item.familyCount):null,
-    families:Array.isArray(item.families)?item.families:Array.isArray(item.filterFamilies)?item.filterFamilies:[],
-    contradiction:text(item.contradiction)||'LOW',
-    reason:text(item.reason)||(Array.isArray(item.reasons)?item.reasons.map(text).filter(Boolean).join(' • '):'Qualified by the Away-Fav Streak engine.'),
+    classification:'elite_supported',
+    label:'Elite',
+    elite_score:null,
+    engine_rating:null,
+    family_count:null,
+    families:[],
+    contradiction:null,
+    reason:null,
     status:'upcoming',
     source_generated_at:generatedAt||item.last_verified_at||null,
     imported_at:new Date().toISOString()
   };
 }
 
-async function main(){
-  if(!configured())throw new Error('Supabase is not configured for the sync job');
-  const date=text(process.env.PREDICTION_DATE)||dateForZone();
-
+async function syncDate(date){
   let {response,payload}=await fetchElite(date);
   const missingSnapshot=response.ok&&!payload?.generated_at;
   const staleSnapshot=response.status===409;
@@ -98,15 +95,36 @@ async function main(){
   if(!response.ok)throw new Error(`Stats2Pitch Elite export failed: HTTP ${response.status}${payload?.error?` - ${payload.error}`:''}`);
   if(!payload?.generated_at)throw new Error(`Stats2Pitch did not produce a persisted board for ${date}`);
 
-  const rows=(Array.isArray(payload.items)?payload.items:[]).slice(0,10).map(item=>normalize(item,date,payload.generated_at));
+  const rows=(Array.isArray(payload.items)?payload.items:[]).map(item=>normalize(item,date,payload.generated_at));
   await remove('sporty_elite_picks',{prediction_date:`eq.${date}`,source:'eq.stats2pitch'});
   if(rows.length)await upsert('sporty_elite_picks',rows,{onConflict:'id'});
-  console.log(JSON.stringify({
+  return{
     ok:true,date,count:rows.length,source:'stats2pitch',generated_at:payload.generated_at,
     refreshed:missingSnapshot||staleSnapshot,
     matchups:rows.filter(row=>row.home_team&&row.away_team).length,
     crests:rows.filter(row=>row.home_logo&&row.away_logo).length
-  }));
+  };
+}
+
+async function main(){
+  if(!configured())throw new Error('Supabase is not configured for the sync job');
+  const anchor=text(process.env.PREDICTION_DATE);
+  const week=accraWeek(anchor?new Date(`${anchor}T12:00:00Z`):new Date());
+  const days=[];
+  for(const date of week.dates){
+    try{
+      const result=await syncDate(date);
+      days.push(result);
+      console.log(JSON.stringify(result));
+    }catch(error){
+      const failed={ok:false,date,error:error.message};
+      days.push(failed);
+      console.error(`[stats2pitch-elite-sync] ${date}: ${error.message}`);
+    }
+  }
+  const okDays=days.filter(row=>row.ok);
+  console.log(JSON.stringify({ok:okDays.length>0,week:{monday:week.monday,sunday:week.sunday},days:days.length,imported:okDays.reduce((sum,row)=>sum+Number(row.count||0),0),failures:days.filter(row=>!row.ok).length}));
+  if(!okDays.length)throw new Error('No Elite days imported for this week');
 }
 
 main().catch(error=>{console.error(`[stats2pitch-elite-sync] ${error.message}`);process.exitCode=1});

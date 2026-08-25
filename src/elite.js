@@ -100,6 +100,16 @@
   }
 
   function card(item,{compact=false}={}){
+    if(compact){
+      const article=el('article','elite-card compact');
+      const title=el('div','elite-title');title.append(el('span','elite-market',text(item.market)||'Market'),el('h3','',text(item.fixture)||'Fixture unavailable'),el('p','elite-pick',text(item.pick)||'Selection unavailable'));
+      const meta=el('div','elite-meta');meta.append(el('span','',day(item.kickoff)),el('span','',item.average_odds?`Ref ${number(item.average_odds).toFixed(2)}`:'Odds TBC'));
+      article.append(title,meta);
+      const actions=el('div','card-actions elite-actions');
+      const slipItem=item.slip_item||{id:item.key||item.id,fixture:item.fixture,market:item.market,pick:item.pick,odds:item.average_odds,kickoff:item.kickoff,league:item.league,tier:'Elite'};
+      if(window.SportySlip){const add=el('button','button secondary elite-add-button',window.SportySlip.has?.(slipItem)?'Open slip':'Add to slip');add.type='button';add.addEventListener('click',()=>{if(window.SportySlip.has?.(slipItem))window.SportySlip.open?.();else window.SportySlip.add?.(slipItem,add)});actions.append(add)}
+      article.append(actions);return article;
+    }
     const article=el('article',`elite-card ${classificationClass(item.classification)}${compact?' compact':''}`);
     const head=el('div','elite-card-head');const badge=el('span','elite-badge',item.label||'Elite Watch');const score=el('div','elite-score');score.append(el('span','','Elite Score'),el('strong','',Math.round(number(item.elite_score))));head.append(badge,score);
     const title=el('div','elite-title');title.append(el('span','elite-market',text(item.market)||'Market'),el('h3','',text(item.fixture)||'Fixture unavailable'),el('p','elite-pick',text(item.pick)||'Selection unavailable'));
@@ -139,7 +149,7 @@
     rows.forEach(item=>root.append(card(item)));
   }
 
-  function renderHomePreview(){const root=$('#eliteHomeGrid');if(!root)return;clear(root);const rows=state.items.filter(item=>item.classification!=='elite_watch').slice(0,3);const section=root.closest('[data-population-section]');if(section)section.hidden=!rows.length;if(!rows.length)return;rows.forEach(item=>root.append(card(item,{compact:true}))) }
+  function renderHomePreview(){const root=$('#eliteHomeGrid');if(!root)return;clear(root);const rows=state.items.slice(0,3);const section=root.closest('[data-population-section]');if(section)section.hidden=!rows.length;if(!rows.length)return;rows.forEach(item=>root.append(card(item,{compact:true}))) }
 
   function renderPerformance(data){
     const root=$('#elitePerformanceGrid');if(!root)return;clear(root);const rows=(data?.groups||[]).filter(row=>row.sample_ready===true&&number(row.settled)>=30);const section=$('#elitePerformanceSection');if(section)section.hidden=!rows.length;if(!rows.length)return;

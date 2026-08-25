@@ -38,7 +38,7 @@ async function api(req,url){
   if(req.method==='GET'&&path==='/health'){const status=await getSystemStatus();return json({ok:true,service:'sporty.codes-custom-api',version:'21.7.4',api_contract:'sporty-codes-compatibility-v3',official_sportybet_api:false,browser_agent_collector:true,rate_limit_scope:'api-only',stats2pitch_elite_feed:true,time:new Date().toISOString(),...status});}
   if(req.method==='GET'&&path==='/source-status')return json(await getSourceStatus());
   if(req.method==='GET'&&path==='/collector-status')return json({ok:true,collector:'sportybet-browser-agent',status:await getBrowserCollectorStatus()});
-  if(req.method==='GET'&&path==='/elite-picks')return json(await getStats2PitchElite({date:url.searchParams.get('date'),limit:url.searchParams.get('limit')||10}));
+  if(req.method==='GET'&&path==='/elite-picks')return json(await getStats2PitchElite({date:url.searchParams.get('date')}));
   if(req.method==='GET'&&path==='/get_code_hub_codes')return json(await getCodeHubCodes({limit:url.searchParams.get('limit')||24}));
   if(req.method==='GET'&&path==='/get_booking'){const item=await getBooking(url.searchParams.get('code'));return item?json(item):json({error:'Code not found'},404)}
   if(req.method==='GET'&&path==='/get_upcoming_events')return json(await getUpcomingEvents({days:url.searchParams.get('days')||3}));
@@ -75,8 +75,8 @@ async function staticFile(urlPath){
 async function elitePage(){
   const base=await staticFile('/elite-picks');
   if(base.status!==200)return base;
-  let payload={source:'stats2pitch',count:0,max:10,items:[]};
-  try{payload=await getStats2PitchElite({limit:10})}catch(error){console.error('[elite-page]',publicError(error))}
+  let payload={source:'stats2pitch',count:0,items:[]};
+  try{payload=await getStats2PitchElite()}catch(error){console.error('[elite-page]',publicError(error))}
   const bootstrap=`<script>window.__SPORTY_ELITE_BOOTSTRAP__=${safeScriptJson(payload)};</script>`;
   const html=base.body.toString('utf8').replace('<!--STATS2PITCH_ELITE_BOOTSTRAP-->',bootstrap);
   return{...base,headers:{...base.headers,'cache-control':'no-cache, no-store, must-revalidate'},body:Buffer.from(html)};

@@ -61,7 +61,14 @@ assert.equal(over15.pick.selection,'Over 1.5');
 const topFive=diagnoseAwayFavFixture({...fixture({streak:1.22,awayO05:1.18,awayO15:1.32,homeO05:1.20}),homeSplit:{position:2,size:20,sampleReady:true},awaySplit:{position:3,size:20,sampleReady:true}});
 assert.equal(topFive.skip,'both-top-five');
 
-const board=buildAwayFavBoard([fixture({streak:1.22,awayO05:1.18,awayO15:1.32,homeO05:1.20,bttsYes:1.45})]);
+const board=buildAwayFavBoard(Array.from({length:12},(_,index)=>{
+  const row=fixture({streak:1.22,awayO05:1.18,awayO15:1.32,homeO05:1.20,bttsYes:1.45});
+  row.fixtureId=index+1;
+  row.kickoff=`2026-08-2${index<6?4:5}T${String(10+index).padStart(2,'0')}:00:00Z`;
+  return row;
+}));
 assert.equal(board.meta.engine,'away-fav-streak-v1');
-assert.equal(board.bestPicks.length,1);
+assert.equal(board.bestPicks.length,12,'every qualifier must publish with no daily cap');
+const kickoffs=board.bestPicks.map(row=>Date.parse(row.kickoff));
+assert.deepEqual(kickoffs,[...kickoffs].sort((a,b)=>a-b),'published picks must stay in kickoff order');
 console.log('v22 Away-Fav Streak Elite engine tests passed.');

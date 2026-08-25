@@ -75,8 +75,7 @@
   const ELITE_CACHE_MS=90*1000;
   let eliteFeedPromise=null;
   function usableEliteItems(data){
-    const allowed=new Set(['elite_verified','elite_strong','elite_supported','trending','elite_watch']);
-    return (Array.isArray(data?.items)?data.items:[]).filter(item=>allowed.has(String(item?.classification||''))&&String(item?.fixture||'').trim()&&String(item?.pick||'').trim());
+    return (Array.isArray(data?.items)?data.items:[]).filter(item=>String(item?.fixture||'').trim()&&String(item?.pick||'').trim());
   }
   function cachedEliteFeed(){
     try{
@@ -89,7 +88,7 @@
     if(eliteFeedPromise)return eliteFeedPromise;
     const cached=cachedEliteFeed();
     if(cached)eliteFeedPromise=Promise.resolve(cached);
-    else eliteFeedPromise=fetch('/data/elite-picks.json',{cache:'no-cache',headers:{Accept:'application/json'}})
+    else eliteFeedPromise=fetch('/api/elite-picks',{cache:'no-store',headers:{Accept:'application/json'}})
       .then(response=>{if(!response.ok)throw new Error('Elite feed unavailable');return response.json()})
       .then(data=>{
         const clean={...data,items:usableEliteItems(data)};

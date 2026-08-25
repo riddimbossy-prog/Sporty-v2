@@ -24,7 +24,7 @@ const payload={
   elite_supported:0,
   trending:0,
   items:[],
-  note:'Elite Picks are generated only by Stats2Pitch Away-Fav Streak v1 and imported with sync:stats2pitch-elite. Booking-code consensus is no longer an Elite source. Missing Goals Streak 2+ odds fail closed.'
+  note:'Elite Picks are imported from the Stats2Pitch weekly feed.'
 };
 
 await writeJson(env('ELITE_OUTPUT_PATH','data/elite-picks.json'),payload);

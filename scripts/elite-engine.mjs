@@ -29,8 +29,7 @@ export const RULES=Object.freeze({
   bonusPpgGap:6,
   penaltyCheap:8,
   strongAt:78,
-  supportedAt:64,
-  maxPicks:10
+  supportedAt:64
 })
 
 const finite=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))
@@ -260,9 +259,6 @@ export function diagnoseAwayFavFixture(fixture){
   const routed=routePick(odds)
   if(routed.skip)return{pick:null,skip:routed.skip,odds,home,away}
   const rating=scorePick(odds,home,away,routed.route,routed.odds)
-  if(rating.classification==='drop'){
-    return{pick:null,skip:'score-floor',odds,home,away,rating}
-  }
   return{pick:packPick(fixture,odds,home,away,routed,rating),skip:null,odds,home,away,rating}
 }
 
@@ -273,8 +269,7 @@ export function evaluateAwayFavFixture(fixture){
 export function buildAwayFavBoard(fixtures,meta={}){
   const diagnosed=(fixtures||[]).map(fixture=>({fixture,result:diagnoseAwayFavFixture(fixture)}))
   const qualified=diagnosed.map(row=>row.result.pick).filter(Boolean)
-    .sort((a,b)=>b.engineRating-a.engineRating||Date.parse(a.kickoff||0)-Date.parse(b.kickoff||0))
-  const best=qualified.slice(0,RULES.maxPicks)
+    .sort((a,b)=>Date.parse(a.kickoff||0)-Date.parse(b.kickoff||0)||b.engineRating-a.engineRating)
   const skipped=diagnosed.filter(row=>!row.result.pick).reduce((map,row)=>{
     const key=row.result.skip||'unknown'
     map[key]=(map[key]||0)+1
@@ -289,12 +284,12 @@ export function buildAwayFavBoard(fixtures,meta={}){
       maxOdd:RULES.streakMax,
       formSample:FORM_SAMPLE,
       qualified:qualified.length,
-      bestPicks:best.length,
+      bestPicks:qualified.length,
       skipped
     },
     priority:qualified,
-    bestPicks:best,
-    availableMarkets:[...new Set(best.map(row=>row.market))].sort()
+    bestPicks:qualified,
+    availableMarkets:[...new Set(qualified.map(row=>row.market))].sort()
   }
 }
 

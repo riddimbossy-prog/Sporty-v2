@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#08090d">
   <meta name="color-scheme" content="light dark">
   <script>try{const t=localStorage.getItem('sporty_theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t;const m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==='dark'?'#08090d':'#f6f7f9'}catch{}</script>
-  <meta name="description" content="Elite Picks shows today’s Away-Fav Streak selections on sporty.codes.">
+  <meta name="description" content="This week’s Elite Picks on sporty.codes.">
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/icons/icon-180.png">
@@ -31,28 +31,28 @@
   <section class="elite-v2-hero">
     <div class="elite-v2-hero-main">
       <div class="elite-v2-hero-copy">
-        <div class="elite-v2-kicker"><span class="elite-v2-kicker-dot"></span>Away-Fav Streak Engine</div>
+        <div class="elite-v2-kicker"><span class="elite-v2-kicker-dot"></span>This week</div>
         <h1>Elite Picks.</h1>
-        <p>Today’s Elite board is built only from away favourites in Goals Streak 2+ (1.10–1.49). Each match is then routed through team-goals and BTTS rules — one pick per fixture, up to ten a day.</p>
+        <p>Curated selections for this week’s fixtures, listed from Monday to Sunday. Every qualifying match is published.</p>
       </div>
       <div class="elite-v2-feed-status">
         <span class="elite-v2-feed-dot" aria-hidden="true"></span>
         <div><small>Daily feed</small><strong>Connected</strong></div>
       </div>
       <div class="elite-v2-hero-actions">
-        <span class="elite-v2-pill"><strong id="eliteV2BoardDate">Today</strong></span>
-        <span class="elite-v2-pill" id="eliteV2Updated">Fresh daily feed</span>
-        <span class="elite-v2-pill">Up to <strong>10 picks</strong></span>
+        <span class="elite-v2-pill"><strong id="eliteV2BoardDate">This week</strong></span>
+        <span class="elite-v2-pill" id="eliteV2Updated">Fresh weekly feed</span>
+        <span class="elite-v2-pill">All qualifying picks</span>
         <button class="elite-v2-slip-launch" id="eliteV2OpenSlip" type="button" aria-label="Create prediction slip">Create prediction slip <span class="elite-v2-slip-count" id="eliteV2SlipCount">0</span></button>
       </div>
     </div>
   </section>
 
   <section class="elite-v2-stats" aria-label="Elite Picks summary">
-    <div class="elite-v2-stat"><span>Today’s picks</span><strong data-elite-v2-stat="total">0</strong><small>Qualified selections</small></div>
-    <div class="elite-v2-stat"><span>Strong picks</span><strong data-elite-v2-stat="strong">0</strong><small>Highest-ranked</small></div>
-    <div class="elite-v2-stat"><span>Supported picks</span><strong data-elite-v2-stat="supported">0</strong><small>Passed Elite rules</small></div>
-    <div class="elite-v2-stat"><span>Average score</span><strong data-elite-v2-stat="average">—</strong><small>Engine ranking</small></div>
+    <div class="elite-v2-stat"><span>This week’s picks</span><strong data-elite-v2-stat="total">0</strong><small>Published selections</small></div>
+    <div class="elite-v2-stat"><span>Fixtures</span><strong data-elite-v2-stat="fixtures">0</strong><small>Matches on the board</small></div>
+    <div class="elite-v2-stat"><span>Markets</span><strong data-elite-v2-stat="markets">0</strong><small>Selection types</small></div>
+    <div class="elite-v2-stat"><span>Next kickoff</span><strong data-elite-v2-stat="next">—</strong><small>Soonest listed match</small></div>
   </section>
 
   <section class="elite-v2-panel" id="eliteV2Content" hidden>
@@ -69,9 +69,9 @@
     <div class="elite-v2-status"><strong id="eliteV2VisibleCount">0 picks</strong><button class="elite-v2-refresh" id="eliteV2Refresh" type="button">Refresh picks</button></div>
   </section>
 
-  <section class="elite-v2-state" id="eliteV2Loading"><div class="elite-v2-spinner" aria-hidden="true"></div><h2>Loading today’s picks</h2><p>Reading the Away-Fav Streak Elite feed.</p></section>
+  <section class="elite-v2-state" id="eliteV2Loading"><div class="elite-v2-spinner" aria-hidden="true"></div><h2>Loading this week’s picks</h2><p>Reading the Elite feed.</p></section>
   <section class="elite-v2-state" id="eliteV2Error" hidden><div class="elite-v2-kicker" style="justify-content:center">Feed unavailable</div><h2>Elite Picks could not load</h2><p id="eliteV2ErrorMessage">Please refresh the picks.</p></section>
-  <section class="elite-v2-state" id="eliteV2Empty" hidden><div class="elite-v2-kicker" style="justify-content:center">Engine active</div><h2>No Elite Picks yet</h2><p>The Away-Fav Streak engine has not published a qualifying away-favourite selection for today yet. Picks appear automatically after the next successful sync.</p></section>
+  <section class="elite-v2-state" id="eliteV2Empty" hidden><div class="elite-v2-kicker" style="justify-content:center">Board open</div><h2>No Elite Picks yet</h2><p>New selections appear as this week’s fixtures qualify.</p></section>
   <section class="elite-v2-grid" id="eliteV2Grid" aria-live="polite"></section>
 </main>
 
@@ -87,7 +87,7 @@
 <script src="/src/share.js?v=21.7.3-p3" defer></script>
 <script src="/src/slip-builder.js?v=21.7.4-p5" defer></script>
 <!--STATS2PITCH_ELITE_BOOTSTRAP-->
-<script src="/src/elite-board-v2.js?v=22.5.0" defer></script>
+<script src="/src/elite-board-v2.js?v=22.6.0" defer></script>
 <script src="/src/pwa.js?v=21.7.4-p4" defer></script>
 </body>
 </html>
