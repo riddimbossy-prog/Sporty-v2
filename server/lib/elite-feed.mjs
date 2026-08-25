@@ -93,6 +93,7 @@ function publicItem(row){
     average_odds:row.odds,
     classification:row.classification,
     label:row.label||'Away-Fav Streak',
+    engine:'away-fav-streak-v1',
     elite_score:row.engine_rating||row.elite_score||70,
     consensus_score:0,
     statistical_score:Math.round(Number(row.engine_rating||row.elite_score||70)/2),
@@ -137,7 +138,12 @@ export async function getStats2PitchElite({date,limit=10}={}){
   });
   const current=(Array.isArray(rows)?rows:[]).filter(row=>{
     const status=text(row?.status).toLowerCase();
-    return !status||!['settled','finished','cancelled','canceled','postponed','abandoned'].includes(status);
+    if(status&&['settled','finished','cancelled','canceled','postponed','abandoned'].includes(status))return false;
+    const label=text(row?.label).toLowerCase();
+    const engine=text(row?.engine).toLowerCase();
+    if(label&&!label.includes('away-fav')&&!label.includes('streak'))return false;
+    if(engine&&!engine.includes('away-fav'))return false;
+    return true;
   });
   const enriched=await enrichMatchups(current);
   const items=rankRows(enriched).slice(0,safeLimit).map(publicItem);

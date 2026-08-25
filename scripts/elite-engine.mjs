@@ -30,8 +30,7 @@ export const RULES=Object.freeze({
   penaltyCheap:8,
   strongAt:78,
   supportedAt:64,
-  maxPicks:10,
-  streakProxyFactor:1.08
+  maxPicks:10
 })
 
 const finite=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))
@@ -97,12 +96,7 @@ export function extractOdds(fixture){
   const bttsYes=oddOf(markets,'both-teams-score',['Yes'])
   let streak=scanOdd(markets,(key,market,name)=>isStreakName(key,market,name)&&/yes/.test(name))
   if(!streak)streak=oddOf(markets,'goals-streak-2',['Yes'])
-  let streakSource=streak?'market':null
-  if(!streak&&awayO15){
-    streak=round2(awayO15*RULES.streakProxyFactor)
-    streakSource='proxy-away-o15'
-  }
-  return{awayO05,awayO15,homeO05,homeO15,over15,awayWin,bttsYes,streak,streakSource}
+  return{awayO05,awayO15,homeO05,homeO15,over15,awayWin,bttsYes,streak,streakSource:streak?'market':null}
 }
 
 export function venueMetrics(fixtures,teamId,venue){
