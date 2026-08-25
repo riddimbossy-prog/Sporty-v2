@@ -1,45 +1,62 @@
 import assert from 'node:assert/strict';
-import { discoverEliteCandidates, verifyCandidate, classifyElite, normaliseFixtureStats } from '../scripts/elite-engine.mjs';
+import { diagnoseAwayFavFixture, buildAwayFavBoard, discoverEliteCandidates, classifyElite } from '../scripts/elite-engine.mjs';
 
-const tips=Array.from({length:8},(_,index)=>({
-  code:`ABCD${index+1}`,
-  author:`Source ${index+1}`,
-  odds:4.2,
-  selections:1,
-  created_at:'2026-08-02T10:00:00Z',
-  tips:[{fixture:'Babrunas vs Transinvest 2',market:'Match winner',pick:'Home Win',odds:1.55,league:'Lithuania 1 Lyga',kickoff:'2026-08-04T16:00:00Z'}]
-}));
-const feed={generated_at:'2026-08-02T10:00:00Z',items:tips};
-const sourceStats={sources:Array.from({length:8},(_,index)=>({source:`Source ${index+1}`,reliability_score:90}))};
-const key='2026-08-04|babrunas|match winner|home win';
-const tipHistory={tips:[{key,observations:4}]};
-const candidates=discoverEliteCandidates(feed,{sourceStats,tipHistory,minAppearances:5,minIndependent:3});
-assert.equal(candidates.length,1,'repeated tips should create one candidate');
-assert.equal(candidates[0].independent_sources,8,'single-tip slips from different sources remain independent');
-assert.ok(candidates[0].consensus_score>=38,'candidate should pass consensus floor');
+assert.equal(discoverEliteCandidates({items:[{tips:[{fixture:'A vs B',market:'Match winner',pick:'Home'}]}]}).length,0,'booking-code consensus discovery must stay retired');
+assert.equal(classifyElite({fixture:'A vs B'}).classification,'rejected','old consensus classifier must not publish Elite picks');
 
-const stats={
-  home:{overall:{MP:15,W:12,D:3,L:0,G:'24:4',PTS:39,form:'WWWDW'}},
-  away:{overall:{MP:15,W:4,D:2,L:9,G:'13:35',PTS:14,form:'LDLLW'}},
-  competition:{average_goals:2.7}
-};
-const normalized=normaliseFixtureStats(stats);
-assert.equal(normalized.home.matches,15);
-assert.equal(normalized.home.goals_for,24);
-assert.equal(normalized.away.goals_against,35);
-const verification=verifyCandidate(candidates[0],stats);
-assert.equal(verification.complete,true);
-assert.ok(verification.score>=40,`expected strong statistical score, received ${verification.score}`);
-const elite=classifyElite(candidates[0],verification);
-assert.equal(elite.classification,'elite_verified');
-assert.ok(elite.elite_score>=85);
+function finished(id,homeId,awayId,h,a){
+  return{
+    fixture:{id,date:`2026-03-${String((id%27)+1).padStart(2,'0')}T12:00:00Z`,status:{short:'FT'}},
+    teams:{home:{id:homeId},away:{id:awayId}},
+    goals:{home:h,away:a}
+  };
+}
+function venueRows(teamId,venue,scores){
+  return scores.map((pair,index)=>venue==='home'
+    ?finished(index+1,teamId,800+index,pair[0],pair[1])
+    :finished(index+1,800+index,teamId,pair[1],pair[0]));
+}
+const strongAway=[[2,0],[3,1],[2,1],[2,0],[3,0]];
+const weakHome=[[0,2],[1,2],[0,1],[0,2],[1,3]];
 
-const contradicting={
-  home:{overall:{MP:10,W:1,D:2,L:7,G:'7:22',PTS:5,form:'LLLLD'}},
-  away:{overall:{MP:10,W:8,D:1,L:1,G:'22:6',PTS:25,form:'WWWWD'}},
-  competition:{average_goals:2.5}
-};
-const contradiction=verifyCandidate(candidates[0],contradicting);
-assert.equal(contradiction.contradiction,true,'strongly opposed venue form must veto the candidate');
-assert.equal(classifyElite(candidates[0],contradiction).classification,'rejected');
-console.log('v21.0 Elite Picks engine tests passed.');
+function fixture(odds){
+  return{
+    fixtureId:1,league:'Test League',country:'England',kickoff:'2026-08-25T18:00:00Z',
+    home:{id:1,name:'Home FC',fixtures:venueRows(1,'home',weakHome)},
+    away:{id:2,name:'Away FC',fixtures:venueRows(2,'away',strongAway)},
+    homeSplit:{position:12,size:20,sampleReady:true},
+    awaySplit:{position:8,size:20,sampleReady:true},
+    marketOdds:[
+      {marketKey:'goals-streak-2',market:'Goals Streak 2+',outcomes:[{name:'Yes',odd:odds.streak??1.22}]},
+      {marketKey:'away-team-goals',market:'Away team goals',outcomes:[{name:'Over 0.5',odd:odds.awayO05},{name:'Over 1.5',odd:odds.awayO15}]},
+      {marketKey:'home-team-goals',market:'Home team goals',outcomes:[{name:'Over 0.5',odd:odds.homeO05}]},
+      {marketKey:'total-goals',market:'Total goals',outcomes:[{name:'Over 1.5',odd:odds.over15??1.30}]},
+      {marketKey:'match-winner',market:'Match winner',outcomes:[{name:'Away',odd:odds.awayWin??1.90}]},
+      {marketKey:'both-teams-score',market:'Both teams to score',outcomes:[{name:'Yes',odd:odds.bttsYes??1.45}]}
+    ]
+  };
+}
+
+const btts=diagnoseAwayFavFixture(fixture({streak:1.22,awayO05:1.18,awayO15:1.32,homeO05:1.20,bttsYes:1.45}));
+assert.equal(btts.pick.route,'btts','both Over 0.5 under 1.30 must choose BTTS');
+assert.equal(btts.pick.market,'both-teams-score');
+
+const awayWin=diagnoseAwayFavFixture(fixture({streak:1.25,awayO05:1.40,awayO15:1.35,homeO05:1.75,awayWin:1.42,bttsYes:1.70}));
+assert.equal(awayWin.pick.route,'away-win');
+assert.equal(awayWin.pick.selection,'Away');
+
+const awayO15=diagnoseAwayFavFixture(fixture({streak:1.25,awayO05:1.40,awayO15:1.35,homeO05:1.82,awayWin:1.80,bttsYes:1.70}));
+assert.equal(awayO15.pick.route,'away-o15');
+assert.equal(awayO15.pick.market,'away-team-goals');
+
+const over15=diagnoseAwayFavFixture(fixture({streak:1.28,awayO05:1.40,awayO15:1.38,homeO05:1.50,over15:1.33,awayWin:1.90,bttsYes:1.70}));
+assert.equal(over15.pick.route,'over-15');
+assert.equal(over15.pick.selection,'Over 1.5');
+
+const topFive=diagnoseAwayFavFixture({...fixture({streak:1.22,awayO05:1.18,awayO15:1.32,homeO05:1.20}),homeSplit:{position:2,size:20,sampleReady:true},awaySplit:{position:3,size:20,sampleReady:true}});
+assert.equal(topFive.skip,'both-top-five');
+
+const board=buildAwayFavBoard([fixture({streak:1.22,awayO05:1.18,awayO15:1.32,homeO05:1.20,bttsYes:1.45})]);
+assert.equal(board.meta.engine,'away-fav-streak-v1');
+assert.equal(board.bestPicks.length,1);
+console.log('v22 Away-Fav Streak Elite engine tests passed.');

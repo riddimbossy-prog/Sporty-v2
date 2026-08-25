@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#08090d">
   <meta name="color-scheme" content="light dark">
   <script>try{const t=localStorage.getItem('sporty_theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t;const m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==='dark'?'#08090d':'#f6f7f9'}catch{}</script>
-  <meta name="description" content="Elite Picks shows the strongest daily Stats2Pitch selections on sporty.codes.">
+  <meta name="description" content="Elite Picks shows today’s Away-Fav Streak selections on sporty.codes.">
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/icons/icon-180.png">
@@ -31,9 +31,9 @@
   <section class="elite-v2-hero">
     <div class="elite-v2-hero-main">
       <div class="elite-v2-hero-copy">
-        <div class="elite-v2-kicker"><span class="elite-v2-kicker-dot"></span>Sporty.codes × Stats2Pitch</div>
+        <div class="elite-v2-kicker"><span class="elite-v2-kicker-dot"></span>Away-Fav Streak Engine</div>
         <h1>Elite Picks.</h1>
-        <p>Today’s strongest Stats2Pitch selections — with the matchup, prediction, market and reference price shown clearly. Add the picks you want to a prediction slip and share it in the same branded format as Smart Board.</p>
+        <p>Today’s Elite board is built only from away favourites in Goals Streak 2+ (1.10–1.49). Each match is then routed through team-goals and BTTS rules — one pick per fixture, up to ten a day.</p>
       </div>
       <div class="elite-v2-feed-status">
         <span class="elite-v2-feed-dot" aria-hidden="true"></span>
@@ -60,18 +60,18 @@
       <div class="elite-v2-tabs" role="tablist" aria-label="Filter Elite Picks by market">
         <button class="elite-v2-tab is-active" type="button" data-elite-v2-filter="all">All</button>
         <button class="elite-v2-tab" type="button" data-elite-v2-filter="result">1X2</button>
-        <button class="elite-v2-tab" type="button" data-elite-v2-filter="safety">DNB / DC</button>
         <button class="elite-v2-tab" type="button" data-elite-v2-filter="btts">BTTS</button>
-        <button class="elite-v2-tab" type="button" data-elite-v2-filter="goals">Goals</button>
+        <button class="elite-v2-tab" type="button" data-elite-v2-filter="team">Team goals</button>
+        <button class="elite-v2-tab" type="button" data-elite-v2-filter="goals">Over 1.5</button>
       </div>
       <label class="elite-v2-search"><span class="sr-only">Search Elite Picks</span><input id="eliteV2Search" type="search" placeholder="Search team, league or market…" autocomplete="off"></label>
     </div>
     <div class="elite-v2-status"><strong id="eliteV2VisibleCount">0 picks</strong><button class="elite-v2-refresh" id="eliteV2Refresh" type="button">Refresh picks</button></div>
   </section>
 
-  <section class="elite-v2-state" id="eliteV2Loading"><div class="elite-v2-spinner" aria-hidden="true"></div><h2>Loading today’s picks</h2><p>Reading the current Stats2Pitch Elite feed.</p></section>
+  <section class="elite-v2-state" id="eliteV2Loading"><div class="elite-v2-spinner" aria-hidden="true"></div><h2>Loading today’s picks</h2><p>Reading the Away-Fav Streak Elite feed.</p></section>
   <section class="elite-v2-state" id="eliteV2Error" hidden><div class="elite-v2-kicker" style="justify-content:center">Feed unavailable</div><h2>Elite Picks could not load</h2><p id="eliteV2ErrorMessage">Please refresh the picks.</p></section>
-  <section class="elite-v2-state" id="eliteV2Empty" hidden><div class="elite-v2-kicker" style="justify-content:center">Engine active</div><h2>No Elite Picks yet</h2><p>Stats2Pitch has not published a qualifying selection for today yet. Picks appear automatically after the next successful sync.</p></section>
+  <section class="elite-v2-state" id="eliteV2Empty" hidden><div class="elite-v2-kicker" style="justify-content:center">Engine active</div><h2>No Elite Picks yet</h2><p>The Away-Fav Streak engine has not published a qualifying away-favourite selection for today yet. Picks appear automatically after the next successful sync.</p></section>
   <section class="elite-v2-grid" id="eliteV2Grid" aria-live="polite"></section>
 </main>
 
@@ -87,7 +87,7 @@
 <script src="/src/share.js?v=21.7.3-p3" defer></script>
 <script src="/src/slip-builder.js?v=21.7.4-p5" defer></script>
 <!--STATS2PITCH_ELITE_BOOTSTRAP-->
-<script src="/src/elite-board-v2.js?v=22.4.0" defer></script>
+<script src="/src/elite-board-v2.js?v=22.5.0" defer></script>
 <script src="/src/pwa.js?v=21.7.4-p4" defer></script>
 </body>
 </html>

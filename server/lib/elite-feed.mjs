@@ -92,7 +92,7 @@ function publicItem(row){
     pick:row.pick,
     average_odds:row.odds,
     classification:row.classification,
-    label:row.label||'Stats2Pitch Elite',
+    label:row.label||'Away-Fav Streak',
     elite_score:row.engine_rating||row.elite_score||70,
     consensus_score:0,
     statistical_score:Math.round(Number(row.engine_rating||row.elite_score||70)/2),
@@ -103,12 +103,12 @@ function publicItem(row){
     source_reliability:Number(row.engine_rating||row.elite_score||70),
     opposition_level:String(row.contradiction||'LOW').toUpperCase()==='LOW'?'Low':'Moderate',
     opposition_share:String(row.contradiction||'LOW').toUpperCase()==='LOW'?5:20,
-    trend:'Stats2Pitch verified',
+    trend:'Away-Fav Streak',
     statistics_complete:true,
     last_verified_at:row.source_generated_at||row.imported_at,
     reason:row.reason,
     evidence:{source:'stats2pitch',families:Array.isArray(row.families)?row.families:[],family_count:Number(row.family_count||0),contradiction:row.contradiction},
-    slip_item:{id:row.id,fixture,home_team:home||null,away_team:away||null,home_logo:text(row.home_logo)||null,away_logo:text(row.away_logo)||null,market:row.market,pick:row.pick,odds:row.odds,kickoff:row.kickoff,league:row.league,tier:row.label||'Stats2Pitch Elite'}
+    slip_item:{id:row.id,fixture,home_team:home||null,away_team:away||null,home_logo:text(row.home_logo)||null,away_logo:text(row.away_logo)||null,market:row.market,pick:row.pick,odds:row.odds,kickoff:row.kickoff,league:row.league,tier:row.label||'Away-Fav Streak'}
   };
 }
 

@@ -23,7 +23,7 @@ assert.match(page,/elite-board-v2\.css\?v=22\.2\.0/,'Elite page must load the sh
 assert.match(page,/elite-matchup-v2\.css\?v=22\.4\.0/,'Elite page must load the crest-aware matchup styling layer');
 assert.match(page,/elite-share-preview\.css\?v=22\.2\.1/,'Elite page must load the share-preview fit layer');
 assert.match(page,/src\/slip-builder\.js\?v=21\.7\.4-p5/,'Elite page must load a fresh slip builder that can refresh saved fixture metadata');
-assert.match(page,/elite-board-v2\.js\?v=22\.4\.0/,'Elite page must load the crest-aware renderer');
+assert.match(page,/elite-board-v2\.js\?v=22\.5\.0/,'Elite page must load the crest-aware renderer');
 assert.match(page,/color-scheme" content="light dark"/,'Elite page must advertise both light and dark color schemes');
 assert.match(page,/localStorage\.getItem\('sporty_theme'\)/,'Elite page must restore the saved Sporty theme before paint');
 assert.match(page,/Supported picks/,'summary must distinguish supported selections from strong selections');

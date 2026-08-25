@@ -14,9 +14,10 @@
 
   function bucket(item){
     const market=text(item.market).toLowerCase();
+    const pick=text(item.pick).toLowerCase();
     if(market.includes('btts')||market.includes('both teams'))return'btts';
-    if(market.includes('draw no bet')||market==='dnb'||market.includes('double chance')||market==='dc'||/^1x$|^x2$|^12$/.test(text(item.pick).toLowerCase()))return'safety';
-    if(market.includes('over')||market.includes('under')||/[ou]\s?\d/.test(market))return'goals';
+    if(market.includes('team goal')||pick.includes('away team')||pick.includes('home team'))return'team';
+    if(market.includes('over')||market.includes('under')||/[ou]\s?\d/.test(market)||pick.includes('over 1.5'))return'goals';
     if(market.includes('1x2')||market.includes('match winner'))return'result';
     return'other';
   }
@@ -39,6 +40,9 @@
     if(lower==='dnb'||lower.includes('draw no bet'))return'Draw No Bet';
     if(lower==='dc'||lower.includes('double chance'))return'Double Chance';
     if(lower==='btts'||lower.includes('both teams'))return'Both Teams To Score';
+    if(lower.includes('away team'))return'Away team goals';
+    if(lower.includes('home team'))return'Home team goals';
+    if(lower.includes('total'))return'Total goals';
     return raw;
   }
 
@@ -57,7 +61,7 @@
   }
 
   function reasonPoints(item){
-    const raw=text(item.reason)||'Qualified by the Stats2Pitch daily split-stat and market-safety board.';
+    const raw=text(item.reason)||'Qualified by the Away-Fav Streak engine.';
     const parts=raw.split(/\s*•\s*/).map(text).filter(Boolean);
     return (parts.length?parts:[raw]).slice(0,5);
   }
@@ -167,7 +171,7 @@
         <ul class="elite-v2-reasons">${reasons}</ul>
       </details>
 
-      <div class="elite-v2-card-foot"><span>Stats2Pitch verified</span><span>#${String(index+1).padStart(2,'0')}</span></div>
+      <div class="elite-v2-card-foot"><span>Away-Fav Streak</span><span>#${String(index+1).padStart(2,'0')}</span></div>
     </article>`;
   }
 
