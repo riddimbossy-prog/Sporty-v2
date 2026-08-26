@@ -33,5 +33,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Import this week's Elite picks
-        run: node scripts/sync-stats2pitch-elite.mjs
+      - name: Publish this week's Elite picks
+        run: node scripts/generate-sportybet-elite.mjs

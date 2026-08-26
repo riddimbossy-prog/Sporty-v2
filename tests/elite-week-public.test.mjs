@@ -9,6 +9,7 @@ const home=read('index.html');
 const boardJs=read('src/elite-board-v2.js');
 const feed=read('server/lib/elite-feed.mjs');
 const sync=read('scripts/sync-stats2pitch-elite.mjs');
+const generate=read('scripts/generate-sportybet-elite.mjs');
 const server=read('server/index.mjs');
 
 const week=accraWeek(new Date('2026-08-26T15:00:00Z'));
@@ -71,9 +72,11 @@ assert.doesNotMatch(feed,/\blimit=10\b/);
 assert.doesNotMatch(feed,/max:10/);
 assert.doesNotMatch(sync,/\.slice\(0,10\)/);
 assert.doesNotMatch(sync,/limit:'10'/);
+assert.doesNotMatch(generate,/\.slice\(0,10\)/);
 assert.doesNotMatch(server,/getStats2PitchElite\(\{limit:10\}\)/);
 assert.match(feed,/accraWeek/);
 assert.match(sync,/accraWeek/);
+assert.match(generate,/accraWeek/);
 assert.match(page,/This week/);
 assert.match(home,/This week/);
 

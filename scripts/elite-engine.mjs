@@ -41,12 +41,13 @@ const done=f=>FINISHED.has(String(f?.fixture?.status?.short||'').toUpperCase())
 const atVenue=(f,id,venue)=>venue==='home'?String(f?.teams?.home?.id)===String(id):String(f?.teams?.away?.id)===String(id)
 
 function oddOf(markets,key,names){
-  const market=(markets||[]).find(m=>m?.marketKey===key)
-  if(!market)return null
-  for(const name of names){
-    const hit=(market.outcomes||[]).find(o=>norm(o?.name)===norm(name))
-    const price=num(hit?.odd)
-    if(price)return price
+  for(const market of markets||[]){
+    if(market?.marketKey!==key)continue
+    for(const name of names){
+      const hit=(market.outcomes||[]).find(o=>norm(o?.name)===norm(name))
+      const price=num(hit?.odd)
+      if(price)return price
+    }
   }
   return null
 }
@@ -64,7 +65,16 @@ function scanOdd(markets,test){
 
 function isStreakName(key,market,name){
   const blob=`${key} ${market} ${name}`
-  return /goal(?:s)? streak/.test(blob)||/streak 2/.test(blob)||/2 (?:goal )?streak/.test(blob)||/consecutive goals/.test(blob)||key==='goals-streak-2'||key==='goals streak 2'
+  return /goal(?:s)? streak/.test(blob)
+    ||/streak 2/.test(blob)
+    ||/2 (?:goal )?streak/.test(blob)
+    ||/consecutive goals/.test(blob)
+    ||/goals? in a row/.test(blob)
+    ||/2\+ goals in a row/.test(blob)
+    ||/score 2 or more goals in a row/.test(blob)
+    ||key==='goals-streak-2'
+    ||key==='goals streak 2'
+    ||key==='60010'
 }
 
 function teamGoalOdd(markets,side,line,teamName){
@@ -92,10 +102,11 @@ export function extractOdds(fixture){
   const homeO15=teamGoalOdd(markets,'home',1.5,homeName)
   const over15=oddOf(markets,'total-goals',['Over 1.5','O 1.5'])
   const awayWin=oddOf(markets,'match-winner',['Away','2'])
+  const homeWin=oddOf(markets,'match-winner',['Home','1'])
   const bttsYes=oddOf(markets,'both-teams-score',['Yes'])
   let streak=scanOdd(markets,(key,market,name)=>isStreakName(key,market,name)&&/yes/.test(name))
   if(!streak)streak=oddOf(markets,'goals-streak-2',['Yes'])
-  return{awayO05,awayO15,homeO05,homeO15,over15,awayWin,bttsYes,streak,streakSource:streak?'market':null}
+  return{awayO05,awayO15,homeO05,homeO15,over15,awayWin,homeWin,bttsYes,streak,streakSource:streak?'market':null}
 }
 
 export function venueMetrics(fixtures,teamId,venue){
@@ -124,14 +135,14 @@ export function venueMetrics(fixtures,teamId,venue){
 function tableGate(homeSplit,awaySplit){
   const hp=num(homeSplit?.position),ap=num(awaySplit?.position)
   const hs=num(homeSplit?.size),as=num(awaySplit?.size)
-  if(!hp||!ap||!hs||!as)return{ok:false,skip:'table-unverified'}
+  if(!hp||!ap||!hs||!as)return{ok:true,skip:null}
   if(hp<=RULES.topN&&ap<=RULES.topN)return{ok:false,skip:'both-top-five'}
   if(hp>hs-RULES.bottomN&&ap>as-RULES.bottomN)return{ok:false,skip:'both-bottom-three'}
   return{ok:true,skip:null}
 }
 
 function similarForm(home,away){
-  if(home.ppg===null||away.ppg===null||home.gf===null||away.gf===null||home.ga===null||away.ga===null)return true
+  if(home.ppg===null||away.ppg===null||home.gf===null||away.gf===null||home.ga===null||away.ga===null)return false
   return Math.abs(away.ppg-home.ppg)<RULES.similarPpg
     &&Math.abs(away.gf-home.gf)<RULES.similarGf
     &&Math.abs(away.ga-home.ga)<RULES.similarGa
@@ -225,6 +236,7 @@ function packPick(fixture,odds,home,away,routed,rating){
       homeO05:odds.homeO05,
       homeO15:odds.homeO15,
       awayWin:odds.awayWin,
+      homeWin:odds.homeWin,
       bttsYes:odds.bttsYes,
       over15:odds.over15
     },
@@ -243,14 +255,17 @@ export function diagnoseAwayFavFixture(fixture){
   if(odds.streak<RULES.streakMin||odds.streak>RULES.streakMax){
     return{pick:null,skip:'streak-window',odds}
   }
-  if(odds.homeO15&&odds.homeO15<odds.awayO15){
+  if(odds.homeO15&&odds.awayO15&&odds.homeO15<odds.awayO15){
+    return{pick:null,skip:'fav-is-home',odds}
+  }
+  if(odds.homeWin&&odds.awayWin&&odds.homeWin<odds.awayWin){
     return{pick:null,skip:'fav-is-home',odds}
   }
   const table=tableGate(fixture?.homeSplit,fixture?.awaySplit)
   if(!table.ok)return{pick:null,skip:table.skip,odds}
   const home=venueMetrics(fixture?.home?.fixtures,fixture?.home?.id,'home')
   const away=venueMetrics(fixture?.away?.fixtures,fixture?.away?.id,'away')
-  if(fixture?.earlySeason===true||!home.ready||!away.ready){
+  if(fixture?.earlySeason===true){
     return{pick:null,skip:'early-season',odds,home,away}
   }
   if(similarForm(home,away)){
