@@ -2,6 +2,7 @@ import { select, configured } from './supabase.mjs';
 import { text, canonical } from './core.mjs';
 import { getUpcomingEvents } from './data-service.mjs';
 import { accraWeek } from './week.mjs';
+import { collectQualifyingFixtures, publicEliteItem } from '../../scripts/generate-sportybet-elite.mjs';
 
 const localDate=()=>new Intl.DateTimeFormat('en-CA',{timeZone:text(process.env.APP_TIMEZONE)||'Africa/Accra',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 const normalizeDate=value=>/^\d{4}-\d{2}-\d{2}$/.test(text(value))?text(value):localDate();
@@ -115,17 +116,52 @@ function currentRow(row){
   return true;
 }
 
+let liveCache={at:0,payload:null};
+const LIVE_TTL_MS=15*60*1000;
+let liveInflight=null;
+
+async function liveEliteBoard(week){
+  const now=Date.now();
+  if(liveCache.payload&&now-liveCache.at<LIVE_TTL_MS&&liveCache.payload.count>0)return liveCache.payload;
+  if(liveInflight)return liveInflight;
+  liveInflight=(async()=>{
+    const collected=await collectQualifyingFixtures(week);
+    const items=rankRows(collected.picks.map(publicEliteItem));
+    const payload={
+      source:'sportybet-live',
+      week:{monday:week.monday,sunday:week.sunday},
+      date:week.today,
+      count:items.length,
+      items,
+      generated_at:new Date().toISOString()
+    };
+    if(items.length)liveCache={at:Date.now(),payload};
+    return payload;
+  })();
+  try{
+    return await liveInflight;
+  }finally{
+    liveInflight=null;
+  }
+}
+
 export async function getStats2PitchElite({date}={}){
-  if(!configured())throw new Error('Elite database reader is not configured on the web service');
   const week=accraWeek(date?new Date(`${normalizeDate(date)}T12:00:00Z`):new Date());
-  const batches=await Promise.all(week.dates.map(predictionDate=>select('sporty_elite_picks',{
-    select:'*',
-    source:'eq.stats2pitch',
-    prediction_date:`eq.${predictionDate}`,
-    limit:'200'
-  })));
-  const current=batches.flat().filter(row=>row&&currentRow(row));
-  const enriched=await enrichMatchups(current);
-  const items=rankRows(enriched).map(toPublicEliteItem);
-  return{source:'stats2pitch',week:{monday:week.monday,sunday:week.sunday},date:week.today,count:items.length,items};
+  if(configured()){
+    try{
+      const batches=await Promise.all(week.dates.map(predictionDate=>select('sporty_elite_picks',{
+        select:'*',
+        source:'eq.stats2pitch',
+        prediction_date:`eq.${predictionDate}`,
+        limit:'200'
+      })));
+      const current=batches.flat().filter(row=>row&&currentRow(row));
+      const enriched=await enrichMatchups(current);
+      const items=rankRows(enriched).map(toPublicEliteItem);
+      if(items.length)return{source:'stats2pitch',week:{monday:week.monday,sunday:week.sunday},date:week.today,count:items.length,items};
+    }catch(error){
+      console.warn('[elite-feed] stored Elite rows unavailable:',error?.message||error);
+    }
+  }
+  return liveEliteBoard(week);
 }

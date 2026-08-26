@@ -1,6 +1,6 @@
 import { diagnoseAwayFavFixture } from './elite-engine.mjs';
 import { accraWeek } from '../server/lib/week.mjs';
-import { configured, remove, upsert } from '../server/lib/supabase.mjs';
+import { configured, upsert } from '../server/lib/supabase.mjs';
 
 const text=value=>String(value??'').trim();
 const num=value=>{const n=Number(value);return Number.isFinite(n)?n:null};
@@ -135,7 +135,7 @@ export function fixtureFromSportybet(event){
   };
 }
 
-function publicMarket(row){
+export function publicMarket(row){
   const market=text(row?.market);
   if(market==='both-teams-score'||market==='BTTS')return'Both Teams To Score';
   if(market==='match-winner'||market==='1X2')return'Match winner';
@@ -145,14 +145,40 @@ function publicMarket(row){
   return market||'Market';
 }
 
-function normalizeRow(pick,predictionDate,generatedAt){
+export function eliteDbRow(pick,predictionDate,generatedAt){
   const home=text(pick.home),away=text(pick.away);
+  const selection=text(pick.displaySelection||pick.pick||pick.selection)||'Selection';
   return{
-    id:`stats2pitch-${text(pick.fixtureId)}-${text(pick.market)}-${text(pick.selection)}`,
+    id:`stats2pitch-${text(pick.fixtureId)}-${text(pick.market)}-${text(pick.selection)}`.replace(/\s+/g,'-').slice(0,180),
     source:'stats2pitch',
     source_fixture_id:text(pick.fixtureId)||null,
     prediction_date:predictionDate,
     fixture:home&&away?`${home} vs ${away}`:'Fixture',
+    home_team:home||null,
+    away_team:away||null,
+    league:text(pick.league)||null,
+    country:text(pick.country)||null,
+    kickoff:pick.kickoff||null,
+    market:publicMarket(pick),
+    pick:selection,
+    odds:num(pick.odds),
+    classification:'elite_supported',
+    label:'Elite',
+    status:'upcoming',
+    source_generated_at:generatedAt,
+    imported_at:new Date().toISOString()
+  };
+}
+
+export function publicEliteItem(pick){
+  const home=text(pick.home),away=text(pick.away);
+  const fixture=home&&away?`${home} vs ${away}`:'Fixture';
+  const market=publicMarket(pick);
+  const selection=text(pick.displaySelection||pick.pick||pick.selection)||'Selection';
+  return{
+    id:`stats2pitch-${text(pick.fixtureId)}-${text(pick.market)}-${text(pick.selection)}`.replace(/\s+/g,'-').slice(0,180),
+    key:`${fixture}|${market}|${selection}`,
+    fixture,
     home_team:home||null,
     away_team:away||null,
     home_logo:text(pick.homeLogo)||null,
@@ -161,20 +187,23 @@ function normalizeRow(pick,predictionDate,generatedAt){
     league:text(pick.league)||null,
     country:text(pick.country)||null,
     kickoff:pick.kickoff||null,
-    market:publicMarket(pick),
-    pick:text(pick.displaySelection||pick.pick||pick.selection)||'Selection',
-    odds:num(pick.odds),
-    classification:'elite_supported',
-    label:'Elite',
-    elite_score:null,
-    engine_rating:null,
-    family_count:null,
-    families:[],
-    contradiction:null,
-    reason:null,
-    status:'upcoming',
-    source_generated_at:generatedAt,
-    imported_at:new Date().toISOString()
+    market,
+    pick:selection,
+    average_odds:num(pick.odds),
+    last_verified_at:new Date().toISOString(),
+    slip_item:{
+      id:text(pick.fixtureId)||fixture,
+      fixture,
+      home_team:home||null,
+      away_team:away||null,
+      home_logo:text(pick.homeLogo)||null,
+      away_logo:text(pick.awayLogo)||null,
+      market,
+      pick:selection,
+      odds:num(pick.odds),
+      kickoff:pick.kickoff||null,
+      league:text(pick.league)||null
+    }
   };
 }
 
@@ -252,24 +281,43 @@ export async function collectQualifyingFixtures(week=accraWeek()){
   return{week,candidates:candidates.length,picks,skipCounts,skipped,diagnosed};
 }
 
-async function publish(week,picks,generatedAt){
-  if(!configured())throw new Error('Supabase is not configured for the Elite publisher');
-  const rows=picks.map(pick=>normalizeRow(pick,accraDate(pick.kickoff)||week.today,generatedAt));
-  for(const date of week.dates){
-    await remove('sporty_elite_picks',{prediction_date:`eq.${date}`,source:'eq.stats2pitch'});
+async function upsertRows(rows){
+  try{
+    await upsert('sporty_elite_picks',rows,{onConflict:'id'});
+    return{count:rows.length,failed:[]};
+  }catch(batchError){
+    const failed=[];
+    let count=0;
+    for(const row of rows){
+      try{
+        await upsert('sporty_elite_picks',[row],{onConflict:'id'});
+        count++;
+      }catch(error){
+        failed.push({id:row.id,error:error.message});
+      }
+    }
+    if(!count)throw new Error(`Elite publish failed: ${batchError.message}${failed[0]?` · ${failed[0].error}`:''}`);
+    console.error(JSON.stringify({ok:true,partial:true,published:count,failed:failed.length,sampleError:failed[0]}));
+    return{count,failed};
   }
-  if(rows.length)await upsert('sporty_elite_picks',rows,{onConflict:'id'});
+}
+
+async function publish(week,picks,generatedAt){
+  if(!configured())return{count:picks.length,byDate:{},dryRun:true};
+  if(!picks.length)return{count:0,byDate:{},skippedWipe:true};
+  const rows=picks.map(pick=>eliteDbRow(pick,accraDate(pick.kickoff)||week.today,generatedAt));
+  const written=await upsertRows(rows);
   const byDate=rows.reduce((map,row)=>{map[row.prediction_date]=(map[row.prediction_date]||0)+1;return map},{});
-  return{count:rows.length,byDate};
+  return{count:written.count,byDate,failed:written.failed.length};
 }
 
 async function main(){
   const generatedAt=new Date().toISOString();
   const week=accraWeek();
   const collected=await collectQualifyingFixtures(week);
-  const published=configured()?await publish(week,collected.picks,generatedAt):{count:collected.picks.length,byDate:{},dryRun:true};
+  const published=await publish(week,collected.picks,generatedAt);
   const summary={
-    ok:true,
+    ok:published.count>0||published.dryRun===true,
     week:{monday:week.monday,sunday:week.sunday},
     candidates:collected.candidates,
     published:published.count,
@@ -279,7 +327,7 @@ async function main(){
     sample:collected.picks.slice(0,8).map(pick=>({fixture:`${pick.home} vs ${pick.away}`,kickoff:pick.kickoff,market:pick.market,pick:pick.displaySelection,odds:pick.odds}))
   };
   console.log(JSON.stringify(summary));
-  if(!published.count){
+  if(!published.count&&published.dryRun!==true){
     console.error('[sportybet-elite] no qualifying Elite picks this week');
     process.exitCode=1;
   }

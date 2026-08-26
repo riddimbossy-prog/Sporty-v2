@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {accraWeek} from '../server/lib/week.mjs';
 import {toPublicEliteItem} from '../server/lib/elite-feed.mjs';
+import {eliteDbRow} from '../scripts/generate-sportybet-elite.mjs';
 
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 const page=read('elite-picks.html');
@@ -11,6 +12,7 @@ const feed=read('server/lib/elite-feed.mjs');
 const sync=read('scripts/sync-stats2pitch-elite.mjs');
 const generate=read('scripts/generate-sportybet-elite.mjs');
 const server=read('server/index.mjs');
+const supabase=read('server/lib/supabase.mjs');
 
 const week=accraWeek(new Date('2026-08-26T15:00:00Z'));
 assert.equal(week.monday,'2026-08-24');
@@ -78,6 +80,29 @@ assert.match(feed,/accraWeek/);
 assert.match(sync,/accraWeek/);
 assert.match(generate,/accraWeek/);
 assert.match(page,/This week/);
-assert.match(home,/This week/);
+assert.match(feed,/liveEliteBoard|sportybet-live|collectQualifyingFixtures/);
+assert.doesNotMatch(generate,/await remove\('sporty_elite_picks'/);
+assert.match(generate,/skippedWipe/);
+assert.match(supabase,/bodyHint|parsed\?\.message/);
 
-console.log('Elite weekly public board checks passed');
+const row=eliteDbRow({
+  fixtureId:'sr:match:1',
+  home:'Home FC',
+  away:'Away FC',
+  league:'Test League',
+  country:'England',
+  kickoff:'2026-08-28T18:00:00Z',
+  market:'both-teams-score',
+  selection:'Yes',
+  displaySelection:'BTTS · Yes',
+  odds:1.41
+},'2026-08-28','2026-08-26T21:00:00Z');
+assert.equal(row.source,'stats2pitch');
+assert.equal(row.market,'Both Teams To Score');
+assert.equal(row.pick,'BTTS · Yes');
+assert.equal(row.label,'Elite');
+assert.equal(row.home_logo,undefined);
+assert.equal(row.families,undefined);
+assert.equal(row.elite_score,undefined);
+
+console.log('elite week public tests passed');
