@@ -19,11 +19,24 @@ const key=()=>env('SUPABASE_SERVICE_ROLE_KEY');
 export const configured=()=>Boolean(base()&&key());
 function headers(extra={}){return{apikey:key(),Authorization:`Bearer ${key()}`,'content-type':'application/json',Accept:'application/json',...extra}}
 function urlFor(path,query={}){const url=new URL(`${base()}/rest/v1/${path}`);for(const[k,v]of Object.entries(query))if(v!==undefined&&v!==null&&text(v)!=='')url.searchParams.set(k,text(v));return url}
+function bodyHint(raw){
+  const snippet=text(raw).replace(/\s+/g,' ').slice(0,280);
+  if(!snippet)return'';
+  try{
+    const parsed=JSON.parse(raw);
+    return text(parsed?.message||parsed?.error||parsed?.hint||snippet);
+  }catch{
+    return snippet;
+  }
+}
 async function request(url,options={}){
   const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),Number(env('SUPABASE_TIMEOUT_MS','10000')));
   try{
     const response=await fetch(url,{...options,signal:controller.signal});const raw=await response.text();
-    if(!response.ok)throw new Error(`Database request returned HTTP ${response.status}`);
+    if(!response.ok){
+      const hint=bodyHint(raw);
+      throw new Error(`Database request returned HTTP ${response.status}${hint?`: ${hint}`:''}`);
+    }
     if(!raw)return null;try{return JSON.parse(raw)}catch{throw new Error('Database returned unreadable JSON')}
   }catch(error){if(error?.name==='AbortError')throw new Error('Database request timed out');throw error}finally{clearTimeout(timer)}
 }
