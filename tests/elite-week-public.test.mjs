@@ -80,6 +80,8 @@ assert.match(feed,/accraWeek/);
 assert.match(sync,/accraWeek/);
 assert.match(generate,/accraWeek/);
 assert.match(page,/This week/);
+assert.doesNotMatch(page,/data-auth-required="member"/,'Elite Picks must stay public so this week’s tips are visible without sign-in');
+assert.doesNotMatch(page,/data-auth-gate="pending"/,'Elite Picks must not hide behind the member entry gate');
 assert.match(feed,/liveEliteBoard|sportybet-live|collectQualifyingFixtures/);
 assert.doesNotMatch(generate,/await remove\('sporty_elite_picks'/);
 assert.match(generate,/skippedWipe/);

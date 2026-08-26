@@ -1,4 +1,4 @@
-const VERSION='sporty-codes-v21.7.3-stats2pitch-p1';
+const VERSION='sporty-codes-v21.7.3-stats2pitch-p2';
 const ASSET_VERSION='21.7.3-p6';
 const STATIC_CACHE=`${VERSION}-static`;
 const PAGE_CACHE=`${VERSION}-pages`;
